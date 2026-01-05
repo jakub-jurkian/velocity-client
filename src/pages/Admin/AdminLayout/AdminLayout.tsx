@@ -2,10 +2,13 @@ import { useState } from "react";
 import { Outlet, NavLink, useNavigate, Link } from "react-router-dom";
 import styles from "./AdminLayout.module.scss";
 import toast from "react-hot-toast";
+import { useAppDispatch } from "../../../store/hooks";
+import { logout } from "../../../store/slices/authSlice";
 
 const AdminLayout = () => {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const navigate = useNavigate();
+  const dispatch = useAppDispatch();
 
   const navLinks = [
     { to: "/admin/panel", icon: "📊", label: "Dashboard" },
@@ -14,6 +17,7 @@ const AdminLayout = () => {
   ];
 
   const handleLogout = () => {
+    dispatch(logout());
     navigate("/");
     toast.success("Logged out successfully!");
   };
