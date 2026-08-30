@@ -10,7 +10,7 @@ export const Navbar = () => {
   const navigate = useNavigate();
   const { user } = useAppSelector((state) => state.auth);
 
-  const isAdmin = user?.role === "admin";
+  const isAdmin = user?.role === "ADMIN";
 
   // 1. State for Mobile Menu & Scroll
   const [isMenuOpen, setIsMenuOpen] = useState(false);

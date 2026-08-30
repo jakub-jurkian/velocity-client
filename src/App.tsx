@@ -1,5 +1,11 @@
 // Libraries dependencies
-import { Routes, Route, Outlet, useLocation } from "react-router-dom"; // ✅ Added useLocation, Removed Navigate
+import {
+  Routes,
+  Route,
+  Outlet,
+  useLocation,
+  useNavigate,
+} from "react-router-dom"; // Added useLocation, Removed Navigate
 import { Toaster } from "react-hot-toast";
 import { AnimatePresence } from "framer-motion";
 
@@ -29,73 +35,109 @@ import PanelPage from "./pages/Admin/PanelPage/PanelPage";
 import AdminLayout from "./pages/Admin/AdminLayout/AdminLayout";
 import Redirect from "./components/common/Redirect"; // Added custom Redirect to fix crash
 import { toastConfig } from "./utils/toastConfig";
+import { useEffect, useState } from "react";
+import { loginSuccess } from "./store/slices/authSlice";
+import { useDispatch } from "react-redux";
 
 const App = () => {
   const location = useLocation();
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+
+  useEffect(() => {
+    const verifySession = async () => {
+      try {
+        setIsCheckingAuth(true);
+        const jwtToken = localStorage.getItem("velocity_jwt");
+        if (!jwtToken) return;
+
+        const response = await fetch("http://localhost:8080/api/v1/auth/me", {
+          headers: {
+            Authorization: `Bearer ${jwtToken}`,
+          },
+        });
+        if (!response.ok) return;
+        const user = await response.json();
+        dispatch(loginSuccess(user));
+
+        navigate(user.role === "ADMIN" ? "/admin/panel" : "/dashboard", {
+          replace: true,
+        });
+      } finally {
+        setIsCheckingAuth(false);
+      }
+    };
+
+    verifySession();
+  }, []);
 
   return (
     <>
-      <ScrollToTop />
+      {!isCheckingAuth && (
+        <>
+          <ScrollToTop />
+          <Toaster
+            position="top-center"
+            reverseOrder={false}
+            toastOptions={toastConfig}
+          />
 
-      <Toaster
-        position="top-center"
-        reverseOrder={false}
-        toastOptions={toastConfig}
-      />
+          <AnimatePresence mode="wait">
+            <Routes location={location} key={location.pathname}>
+              {/* Public routes */}
+              <Route element={<MainLayout />}>
+                <Route path="/" element={<LandingPage />} />
+                <Route path="/about" element={<AboutPage />} />
+                <Route path="/pricing" element={<PricingPage />} />
+                <Route path="/fleet" element={<FleetPage />} />
+                <Route path="/contact" element={<ContactPage />} />
+                <Route path="/unauthorized" element={<UnauthorizedPage />} />
+                <Route path="*" element={<NotFoundPage />} />
+              </Route>
 
-      <AnimatePresence mode="wait">
-        <Routes location={location} key={location.pathname}>
-          {/* Public routes */}
-          <Route element={<MainLayout />}>
-            <Route path="/" element={<LandingPage />} />
-            <Route path="/about" element={<AboutPage />} />
-            <Route path="/pricing" element={<PricingPage />} />
-            <Route path="/fleet" element={<FleetPage />} />
-            <Route path="/contact" element={<ContactPage />} />
-            <Route path="/unauthorized" element={<UnauthorizedPage />} />
-            <Route path="*" element={<NotFoundPage />} />
-          </Route>
+              {/* Public ONLY routes (Login/Register) */}
+              <Route element={<PublicOnlyRoute />}>
+                <Route path="/login" element={<LoginPage />} />
+                <Route path="/register" element={<RegisterPage />} />
+              </Route>
 
-          {/* Public ONLY routes (Login/Register) */}
-          <Route element={<PublicOnlyRoute />}>
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/register" element={<RegisterPage />} />
-          </Route>
+              {/* Protected routes (Client & Admin) */}
+              <Route
+                element={
+                  <ProtectedRoute allowedRoles={["ADMIN", "CLIENT"]}>
+                    <Outlet />
+                  </ProtectedRoute>
+                }
+              >
+                <Route element={<MainLayout />}>
+                  <Route path="/dashboard" element={<DashboardPage />} />
+                  <Route path="/profile" element={<ProfilePage />} />
+                  <Route path="/my-rentals" element={<RentalsPage />} />
+                </Route>
+                <Route path="/rent-bike" element={<RentBikePage />} />
+              </Route>
 
-          {/* Protected routes (Client & Admin) */}
-          <Route
-            element={
-              <ProtectedRoute allowedRoles={["admin", "client"]}>
-                <Outlet />
-              </ProtectedRoute>
-            }
-          >
-            <Route element={<MainLayout />}>
-              <Route path="/dashboard" element={<DashboardPage />} />
-              <Route path="/profile" element={<ProfilePage />} />
-              <Route path="/my-rentals" element={<RentalsPage />} />
-            </Route>
-            <Route path="/rent-bike" element={<RentBikePage />} />
-          </Route>
+              {/* Admin routes */}
+              <Route
+                path="/admin"
+                element={
+                  <ProtectedRoute allowedRoles={["ADMIN"]}>
+                    <AdminLayout />
+                  </ProtectedRoute>
+                }
+              >
+                {/* Replaced Navigate with Redirect to prevent AnimatePresence crash */}
+                <Route index element={<Redirect to="panel" />} />
 
-          {/* Admin routes */}
-          <Route
-            path="/admin"
-            element={
-              <ProtectedRoute allowedRoles={["admin"]}>
-                <AdminLayout />
-              </ProtectedRoute>
-            }
-          >
-            {/* Replaced Navigate with Redirect to prevent AnimatePresence crash */}
-            <Route index element={<Redirect to="panel" />} />
-
-            <Route path="panel" element={<PanelPage />} />
-            <Route path="users" element={<UserManagementPage />} />
-            <Route path="calendar" element={<CalendarPage />} />
-          </Route>
-        </Routes>
-      </AnimatePresence>
+                <Route path="panel" element={<PanelPage />} />
+                <Route path="users" element={<UserManagementPage />} />
+                <Route path="calendar" element={<CalendarPage />} />
+              </Route>
+            </Routes>
+          </AnimatePresence>
+        </>
+      )}
     </>
   );
 };

@@ -1,7 +1,7 @@
 import { Link, useNavigate } from "react-router-dom";
 import PageTransition from "../../components/common/PageTransition";
 import styles from "./LoginPage.module.scss";
-import { getUsersFromStorage } from "../../utils/userStorage";
+// import { getUsersFromStorage } from "../../utils/userStorage";
 import { useAppDispatch } from "../../store/hooks";
 import { loginSuccess } from "../../store/slices/authSlice";
 import toast from "react-hot-toast";
@@ -30,29 +30,51 @@ const LoginPage = () => {
     },
     onSubmit: async (vals) => {
       // Fake Delay to show spinner
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      // await new Promise((resolve) => setTimeout(resolve, 1000));
+      const requestData = { email: vals.email, password: vals.password };
+      const response = await fetch("http://localhost:8080/api/v1/auth/login", {
+        headers: {
+          "Content-Type": "application/json",
+        },
+        method: "POST",
+        body: JSON.stringify(requestData),
+      });
 
-      const users = getUsersFromStorage();
-      const user = users.find((u) => u.email === vals.email);
-      const isValid = user && user.password === vals.password;
-
-      if (!isValid) {
-        // Return a toast instead of setting form error for generic auth failures
+      if (!response.ok) {
         toast.error("Invalid email or password");
         return;
-      } // Handle "Remember Me"
-      const storage = vals.rememberMe ? localStorage : sessionStorage;
-      storage.setItem("velocity_user", JSON.stringify(user));
+      }
 
-      // Clean up conflicts
-      if (vals.rememberMe) sessionStorage.removeItem("velocity_user");
-      else localStorage.removeItem("velocity_user");
+      const data = await response.json();
+      localStorage.setItem("velocity_jwt", data.accessToken);
+
+      const request = await fetch("http://localhost:8080/api/v1/auth/me", {
+        headers: {
+          Authorization: `Bearer ${data.accessToken}`,
+        },
+      });
+      const user = await request.json();
+      console.log(user);
+      //id, email, fullName, phone, role, city, joinedDate
+
+      // browser storage way:
+      // const users = getUsersFromStorage();
+      // const user = users.find((u) => u.email === vals.email);
+      // const isValid = user && user.password === vals.password;
+
+      // Handle "Remember Me"
+      // const storage = vals.rememberMe ? localStorage : sessionStorage;
+      // storage.setItem("velocity_user", JSON.stringify(user));
+
+      // // Clean up conflicts
+      // if (vals.rememberMe) sessionStorage.removeItem("velocity_user");
+      // else localStorage.removeItem("velocity_user");
 
       // Success
-      dispatch(loginSuccess(user!));
+      dispatch(loginSuccess(user));
       toast.success("Logged in successfully!");
 
-      navigate(user!.role === "admin" ? "/admin/panel" : "/dashboard", {
+      navigate(user.role === "ADMIN" ? "/admin/panel" : "/dashboard", {
         replace: true,
       });
     },

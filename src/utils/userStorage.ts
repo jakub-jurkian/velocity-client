@@ -5,10 +5,10 @@ const MOCK_ADMIN: User = {
   fullName: "Piotr Kowalski",
   email: "admin@test.com",
   password: "123456",
-  role: "admin",
+  role: "ADMIN",
   phone: "+48 000 000 000",
-  city: "Warsaw",
-  status: "active",
+  city: "WARSAW",
+  status: "ACTIVE",
   joinedDate: "2025-01-15"
 };
 
@@ -17,10 +17,10 @@ const MOCK_CLIENT: User = {
   fullName: "Adam Nowak",
   email: "client@test.com",
   password: "123456",
-  role: "client",
+  role: "CLIENT",
   phone: "+48 111 111 111",
-  city: "Gdansk",
-  status: "active",
+  city: "GDANSK",
+  status: "ACTIVE",
   joinedDate: "2025-04-10"
 };
 

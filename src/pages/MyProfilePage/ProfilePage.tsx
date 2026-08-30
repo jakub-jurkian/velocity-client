@@ -16,12 +16,12 @@ const MyProfilePage = () => {
   const [formData, setFormData] = useState({
     fullName: user?.fullName || "",
     phone: user?.phone || "",
-    city: user?.city || "Warsaw",
+    city: user?.city || "WARSAW",
     email: user?.email || "",
   });
 
   // Check permissions
-  const isAdmin = user?.role === "admin";
+  const isAdmin = user?.role === "ADMIN";
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
@@ -56,7 +56,7 @@ const MyProfilePage = () => {
     setFormData({
       fullName: user?.fullName || "",
       phone: user?.phone || "",
-      city: user?.city || "Warsaw",
+      city: user?.city || "WARSAW",
       email: user?.email || "",
     });
     setIsEditing(false);

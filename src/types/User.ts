@@ -4,8 +4,8 @@ export interface User {
   email: string;
   password: string;
   phone: string;
-  role: "client" | "admin";
-  status: "active" | "blocked";
+  role: "CLIENT" | "ADMIN";
+  status: "ACTIVE" | "BLOCKED";
   joinedDate: string;
-  city: "Warsaw" | "Gdansk" | "Poznan" | "Wroclaw";
+  city: "WARSAW" | "GDANSK" | "POZNAN" | "WROCLAW";
 }
