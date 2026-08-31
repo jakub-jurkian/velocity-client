@@ -1,15 +1,13 @@
-// Libraries dependencies
 import {
   Routes,
   Route,
   Outlet,
   useLocation,
   useNavigate,
-} from "react-router-dom"; // Added useLocation, Removed Navigate
+} from "react-router-dom";
 import { Toaster } from "react-hot-toast";
 import { AnimatePresence } from "framer-motion";
 
-// Pages
 import LandingPage from "./pages/LandingPage/LandingPage";
 import LoginPage from "./pages/LoginPage/LoginPage";
 import RegisterPage from "./pages/RegisterPage/RegisterPage";
@@ -22,7 +20,6 @@ import FleetPage from "./pages/FleetPage/FleetPage";
 import NotFoundPage from "./pages/NotFoundPage/NotFoundPage";
 import ContactPage from "./pages/ContactPage/ContactPage";
 
-// Components & Utils
 import MainLayout from "./components/MainLayout/MainLayout";
 import ProtectedRoute from "./components/Auth/ProtectedRoute";
 import PublicOnlyRoute from "./components/Auth/PublicOnlyRoute";
@@ -59,7 +56,7 @@ const App = () => {
         });
         if (!response.ok) return;
         const user = await response.json();
-        dispatch(loginSuccess(user));
+        dispatch(loginSuccess({ user, token: jwtToken }));
 
         navigate(user.role === "ADMIN" ? "/admin/panel" : "/dashboard", {
           replace: true,

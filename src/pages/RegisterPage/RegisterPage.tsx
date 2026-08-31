@@ -1,20 +1,16 @@
-import { Link, useNavigate } from "react-router-dom";
-import PageTransition from "../../components/common/PageTransition";
-import styles from "./RegisterPage.module.scss";
-import { addUserToStorage, getUsersFromStorage } from "../../utils/userStorage";
-import { useAppDispatch } from "../../store/hooks";
-import { loginSuccess } from "../../store/slices/authSlice";
 import toast from "react-hot-toast";
+import { Link, useNavigate } from "react-router-dom";
 import { useForm } from "../../hooks/useForm";
 import {
   validateEmail,
   validateMinLength,
   validatePhone,
 } from "../../utils/validators";
+import PageTransition from "../../components/common/PageTransition";
+import styles from "./RegisterPage.module.scss";
 
 const RegisterPage = () => {
   const navigate = useNavigate();
-  const dispatch = useAppDispatch();
 
   const { values, errors, isSubmitting, handleChange, handleSubmit } = useForm({
     initialValues: {
@@ -24,7 +20,7 @@ const RegisterPage = () => {
       password: "",
       confirmPassword: "",
       agreeOnTerms: false,
-      city: "Warsaw",
+      city: "WARSAW",
     },
     validate: (vals) => {
       const errs: Record<string, string> = {};
@@ -37,7 +33,7 @@ const RegisterPage = () => {
       const emailError = validateEmail(vals.email);
       if (emailError) errs.email = emailError;
 
-      const passwordError = validateMinLength(vals.password, 6, "Password");
+      const passwordError = validateMinLength(vals.password, 8, "Password");
       if (passwordError) errs.password = passwordError;
 
       if (vals.password !== vals.confirmPassword) {
@@ -51,42 +47,47 @@ const RegisterPage = () => {
       return errs;
     },
     onSubmit: async (vals) => {
-      // Fake delay for spinner
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+      try {
+        const response = await fetch(
+          "http://localhost:8080/api/v1/auth/register",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              email: vals.email,
+              password: vals.password,
+              fullName: vals.fullName,
+              city: vals.city,
+              phone: vals.phone,
+            }),
+          },
+        );
 
-      // CRITICAL: Check if Email already exists
-      const existingUsers = getUsersFromStorage();
-      const emailExists = existingUsers.some((u) => u.email === values.email);
+        if (!response.ok) {
+          // Server replied with an error code (400, 409, 422, etc.)
+          // Read the backend's ProblemDetail payload and show the specific error message
+          const errorData = await response.json();
+          toast.error(errorData.detail || "Action failed");
+          return;
+        }
 
-      if (emailExists) {
-        toast.error("This email is already registered.");
-        return;
+        navigate("/login", {
+          replace: true,
+        });
+        toast.success("You have been registered successfully!");
+      } catch (error) {
+        // Network failure (server is completely unreachable or offline)
+        console.error(error);
+        toast.error(
+          "Unable to connect to VeloCity server. Please check your connection.",
+        );
       }
-
-      // Create User Data
-      const userData = {
-        id: Math.random().toString(36).substring(2, 10),
-        fullName: vals.fullName,
-        phone: vals.phone,
-        email: vals.email,
-        password: vals.password,
-        role: "client" as const,
-        city: vals.city as "Warsaw" | "Gdansk" | "Poznan" | "Wroclaw",
-        status: "active" as const,
-        joinedDate: new Date().toLocaleDateString("en-CA"),
-      };
-
-      // Save & Login
-      addUserToStorage(userData);
-      dispatch(loginSuccess(userData));
-
-      // Redirect immediately (No alert needed, smoother UX)
-      navigate("/dashboard", { replace: true });
-      toast.success("You have been registered and logged in successfully!");
     },
   });
 
-  const cities = ["Warsaw", "Gdansk", "Poznan", "Wroclaw"];
+  const cities = ["WARSAW", "GDANSK", "POZNAN", "WROCLAW"];
 
   return (
     <PageTransition>

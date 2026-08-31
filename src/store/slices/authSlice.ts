@@ -17,37 +17,65 @@ const getStoredUser = (): User | null => {
   }
 };
 
+const getStoredToken = (): string | null => {
+  try {
+    const localToken = localStorage.getItem("velocity_jwt");
+    if (localToken) return localToken;
+
+    const sessionToken = sessionStorage.getItem("velocity_jwt");
+    if (sessionToken) return sessionToken;
+
+    return null;
+  } catch (error) {
+    console.error("Failed to parse token from storage", error);
+    return null;
+  }
+};
+
 const initialUser = getStoredUser();
+const initialToken = getStoredToken();
 
 interface AuthState {
   user: User | null;
   isAuthenticated: boolean;
+  token: string | null;
 }
 
 const initialState: AuthState = {
   user: initialUser,
   isAuthenticated: !!initialUser,
+  token: initialToken,
 };
+
+interface LoginSuccessPayload {
+  user: User;
+  token: string;
+}
 
 const authSlice = createSlice({
   name: "auth",
   initialState,
   reducers: {
-    loginSuccess: (state, action: PayloadAction<User>) => {
+    loginSuccess: (state, action: PayloadAction<LoginSuccessPayload>) => {
       state.isAuthenticated = true;
-      state.user = action.payload;
+      state.user = action.payload.user;
+      state.token = action.payload.token;
     },
     loginFailure: (state) => {
       state.isAuthenticated = false;
       state.user = null;
+      state.token = null;
     },
 
     // We clear BOTH to ensure the user is definitely logged out
     logout: (state) => {
       state.user = null;
       state.isAuthenticated = false;
+      state.token = null;
       localStorage.removeItem("velocity_user");
       sessionStorage.removeItem("velocity_user");
+      localStorage.removeItem("velocity_jwt");
+      sessionStorage.removeItem("velocity_jwt");
     },
 
     // If we update the user (e.g. change name), we must update the storage

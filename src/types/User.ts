@@ -1,8 +1,7 @@
 export interface User {
-  id?: string;
+  id: string;
   fullName: string;
   email: string;
-  password: string;
   phone: string;
   role: "CLIENT" | "ADMIN";
   status: "ACTIVE" | "BLOCKED";

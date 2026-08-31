@@ -1,12 +1,11 @@
 import { Link, useNavigate } from "react-router-dom";
-import PageTransition from "../../components/common/PageTransition";
-import styles from "./LoginPage.module.scss";
-// import { getUsersFromStorage } from "../../utils/userStorage";
+import toast from "react-hot-toast";
 import { useAppDispatch } from "../../store/hooks";
 import { loginSuccess } from "../../store/slices/authSlice";
-import toast from "react-hot-toast";
 import { useForm } from "../../hooks/useForm";
 import { validateEmail, validateMinLength } from "../../utils/validators";
+import PageTransition from "../../components/common/PageTransition";
+import styles from "./LoginPage.module.scss";
 
 const LoginPage = () => {
   const navigate = useNavigate();
@@ -46,32 +45,31 @@ const LoginPage = () => {
       }
 
       const data = await response.json();
-      localStorage.setItem("velocity_jwt", data.accessToken);
+      const jwtToken = data.accessToken;
 
       const request = await fetch("http://localhost:8080/api/v1/auth/me", {
         headers: {
-          Authorization: `Bearer ${data.accessToken}`,
+          Authorization: `Bearer ${jwtToken}`,
         },
       });
       const user = await request.json();
-      console.log(user);
       //id, email, fullName, phone, role, city, joinedDate
 
-      // browser storage way:
-      // const users = getUsersFromStorage();
-      // const user = users.find((u) => u.email === vals.email);
-      // const isValid = user && user.password === vals.password;
-
       // Handle "Remember Me"
-      // const storage = vals.rememberMe ? localStorage : sessionStorage;
-      // storage.setItem("velocity_user", JSON.stringify(user));
+      const storage = vals.rememberMe ? localStorage : sessionStorage;
+      storage.setItem("velocity_user", JSON.stringify(user));
+      storage.setItem("velocity_jwt", jwtToken);
 
-      // // Clean up conflicts
-      // if (vals.rememberMe) sessionStorage.removeItem("velocity_user");
-      // else localStorage.removeItem("velocity_user");
-
+      // Clean up conflicts
+      if (vals.rememberMe) {
+        sessionStorage.removeItem("velocity_user");
+        sessionStorage.removeItem("velocity_jwt");
+      } else {
+        localStorage.removeItem("velocity_user");
+        localStorage.removeItem("velocity_jwt");
+      }
       // Success
-      dispatch(loginSuccess(user));
+      dispatch(loginSuccess({ user, token: data.accessToken }));
       toast.success("Logged in successfully!");
 
       navigate(user.role === "ADMIN" ? "/admin/panel" : "/dashboard", {
@@ -96,7 +94,7 @@ const LoginPage = () => {
             </p>
           </header>
 
-          {/* ✅ Pass handleSubmit from the hook */}
+          {/* Pass handleSubmit from the hook */}
           <form className={styles.form} onSubmit={handleSubmit} noValidate>
             {/* EMAIL INPUT */}
             <div className={styles.inputGroup}>
