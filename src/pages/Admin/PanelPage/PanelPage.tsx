@@ -14,29 +14,16 @@ import {
 } from "recharts";
 import PageTransition from "../../../components/common/PageTransition";
 import styles from "./PanelPage.module.scss";
-import { getUserReservations } from "../../../utils/bookingHelper";
-import { getModels } from "../../../utils/fleetStorage";
 import {
   getMonthlyRevenue,
   getOccupancyRate,
   getPopularityStats,
 } from "../../../utils/analyticsHelper";
-import { getUsersFromStorage } from "../../../utils/userStorage";
 import type { Reservation } from "../../../types/Reservation";
 import type { BikeModel } from "../../../types/Fleet";
 
 const getAllReservations = (): Reservation[] => {
-  const centralData = localStorage.getItem("velocity_reservations");
-  if (centralData) {
-    try {
-      const parsed = JSON.parse(centralData);
-      return Array.isArray(parsed) ? (parsed as Reservation[]) : [];
-    } catch {
-      return [];
-    }
-  }
-  const users = getUsersFromStorage();
-  return users.flatMap((u) => getUserReservations(u.id!));
+  return [];
 };
 
 const PanelPage = () => {
@@ -45,18 +32,18 @@ const PanelPage = () => {
   // It separates "Calculation" from "State".
   const dashboardData = useMemo(() => {
     const reservations = getAllReservations();
-    const models: BikeModel[] = getModels();
+    const models: BikeModel[] = [];
 
     // Heavy calculations
     const revenueChart = getMonthlyRevenue(reservations);
     const popularityChart = getPopularityStats(reservations, models);
 
     const totalRevenue = reservations.reduce(
-      (sum, r) => (r.status !== "cancelled" ? sum + r.totalCost : sum),
-      0
+      (sum, r) => (r.status !== "CANCELLED" ? sum + r.totalCost : sum),
+      0,
     );
     const occupancy = getOccupancyRate(reservations, models.length * 5);
-    const active = reservations.filter((r) => r.status === "confirmed").length;
+    const active = reservations.filter((r) => r.status === "CONFIRMED").length;
 
     return {
       revenueData: revenueChart,
@@ -92,7 +79,9 @@ const PanelPage = () => {
           </div>
           <div className={styles.card}>
             <h3>Active Rentals</h3>
-            <div className={styles.value}>{dashboardData.kpi.activeRentals}</div>
+            <div className={styles.value}>
+              {dashboardData.kpi.activeRentals}
+            </div>
             <div className={styles.subtext}>Current live bookings</div>
           </div>
         </div>
@@ -100,32 +89,37 @@ const PanelPage = () => {
         {/* CHARTS GRID */}
         <div className={styles.chartsGrid}>
           {/* CHART 1: REVENUE */}
-          <div className={`${styles.card} ${styles.chartCard} ${styles.revenueCard}`}>
+          <div
+            className={`${styles.card} ${styles.chartCard} ${styles.revenueCard}`}
+          >
             <h3>Revenue Trend</h3>
             <div className={styles.chartWrapper}>
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={dashboardData.revenueData} margin={{ left: -20 }}>
+                <BarChart
+                  data={dashboardData.revenueData}
+                  margin={{ left: -20 }}
+                >
                   <CartesianGrid
                     strokeDasharray="3 3"
                     stroke="rgba(255,255,255,0.05)"
                     vertical={false}
                   />
-                  <XAxis 
-                    dataKey="name" 
-                    stroke="#94A3B8" 
-                    fontSize={12} 
+                  <XAxis
+                    dataKey="name"
+                    stroke="#94A3B8"
+                    fontSize={12}
                     tickLine={false}
                     axisLine={false}
                     dy={10}
                   />
-                  <YAxis 
-                    stroke="#94A3B8" 
-                    fontSize={12} 
+                  <YAxis
+                    stroke="#94A3B8"
+                    fontSize={12}
                     tickLine={false}
                     axisLine={false}
                   />
                   <Tooltip
-                    cursor={{ fill: 'rgba(255,255,255,0.05)' }}
+                    cursor={{ fill: "rgba(255,255,255,0.05)" }}
                     contentStyle={{
                       backgroundColor: "#1e1e1e",
                       borderColor: "rgba(255,255,255,0.1)",
@@ -134,14 +128,21 @@ const PanelPage = () => {
                     }}
                     itemStyle={{ color: "#fff" }}
                   />
-                  <Bar dataKey="revenue" fill="#00F0FF" radius={[4, 4, 0, 0]} barSize={30} />
+                  <Bar
+                    dataKey="revenue"
+                    fill="#00F0FF"
+                    radius={[4, 4, 0, 0]}
+                    barSize={30}
+                  />
                 </BarChart>
               </ResponsiveContainer>
             </div>
           </div>
 
           {/* CHART 2: POPULARITY */}
-          <div className={`${styles.card} ${styles.chartCard} ${styles.pieCard}`}>
+          <div
+            className={`${styles.card} ${styles.chartCard} ${styles.pieCard}`}
+          >
             <h3>Fleet Popularity</h3>
             <div className={styles.chartWrapper}>
               <ResponsiveContainer width="100%" height="100%">
@@ -163,18 +164,22 @@ const PanelPage = () => {
                       />
                     ))}
                   </Pie>
-                  <Tooltip 
-                     contentStyle={{
+                  <Tooltip
+                    contentStyle={{
                       backgroundColor: "#1e1e1e",
                       borderColor: "rgba(255,255,255,0.1)",
                       borderRadius: "8px",
                     }}
                   />
-                  <Legend 
-                    verticalAlign="bottom" 
-                    height={36} 
+                  <Legend
+                    verticalAlign="bottom"
+                    height={36}
                     iconType="circle"
-                    formatter={(value) => <span style={{ color: '#94A3B8', fontSize: '12px' }}>{value}</span>}
+                    formatter={(value) => (
+                      <span style={{ color: "#94A3B8", fontSize: "12px" }}>
+                        {value}
+                      </span>
+                    )}
                   />
                 </PieChart>
               </ResponsiveContainer>

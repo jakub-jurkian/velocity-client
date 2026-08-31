@@ -1,6 +1,5 @@
 import { useState } from "react";
 import styles from "./UserManagementPage.module.scss";
-import { getUsersFromStorage } from "../../../utils/userStorage";
 import type { User } from "../../../types/User";
 import PageTransition from "../../../components/common/PageTransition";
 import toast from "react-hot-toast";
@@ -107,16 +106,16 @@ const UserManagement = () => {
                   <td data-label="Role">
                     <span
                       className={`${styles.roleTag} ${
-                        user.role === "admin" ? styles.admin : styles.client
+                        user.role === "ADMIN" ? styles.admin : styles.client
                       }`}
                     >
-                      {user.role === "admin" ? "Administrator" : "Client"}
+                      {user.role === "ADMIN" ? "Administrator" : "Client"}
                     </span>
                   </td>
                   <td data-label="Status">
                     <span
                       className={`${styles.statusDot} ${
-                        user.status === "active"
+                        user.status === "ACTIVE"
                           ? styles.active
                           : styles.blocked
                       }`}
@@ -140,13 +139,13 @@ const UserManagement = () => {
 
                     <button
                       className={`${styles.actionBtn} ${
-                        user.status === "active"
+                        user.status === "ACTIVE"
                           ? styles.danger
                           : styles.success
                       }`}
                       onClick={() => handleBlockToggle(user.id!, user.status)}
                     >
-                      {user.status === "active" ? "Block" : "Unblock"}
+                      {user.status === "ACTIVE" ? "Block" : "Unblock"}
                     </button>
                   </td>
                 </tr>
@@ -214,12 +213,12 @@ const UserManagement = () => {
                       onChange={(e) =>
                         setEditingUser({
                           ...editingUser,
-                          role: e.target.value as "admin" | "client",
+                          role: e.target.value as "ADMIN" | "CLIENT",
                         })
                       }
                     >
-                      <option value="client">Client</option>
-                      <option value="admin">Administrator</option>
+                      <option value="CLIENT">Client</option>
+                      <option value="ADMIN">Administrator</option>
                     </select>
                   </div>
 
@@ -231,17 +230,17 @@ const UserManagement = () => {
                         setEditingUser({
                           ...editingUser,
                           city: e.target.value as
-                            | "Warsaw"
-                            | "Gdansk"
-                            | "Poznan"
-                            | "Wroclaw",
+                            | "WARSAW"
+                            | "GDANSK"
+                            | "POZNAN"
+                            | "WROCLAW",
                         })
                       }
                     >
-                      <option value="Warsaw">Warsaw</option>
-                      <option value="Gdansk">Gdansk</option>
-                      <option value="Poznan">Poznan</option>
-                      <option value="Wroclaw">Wroclaw</option>
+                      <option value="WARSAW">Warsaw</option>
+                      <option value="GDANSK">Gdansk</option>
+                      <option value="POZNAN">Poznan</option>
+                      <option value="WROCLAW">Wroclaw</option>
                     </select>
                   </div>
                 </div>
