@@ -3,7 +3,7 @@ import styles from "../RentBikePage.module.scss";
 
 interface Props {
   availableBikes: BikeModel[];
-  city: "Warsaw" | "Gdansk" | "Poznan" | "Wroclaw";
+  city: "WARSAW" | "GDANSK" | "POZNAN" | "WROCLAW";
   setStep: (s: 1 | 2 | 3 | 4 | 5) => void;
   onClick: (e: string) => void;
 }

@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { getModels } from "../../utils/fleetStorage";
 import PageTransition from "../../components/common/PageTransition";
+import { getModels } from "../../utils/fleetStorage";
 import styles from "./FleetPage.module.scss";
 
 const FleetPage = () => {

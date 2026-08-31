@@ -17,5 +17,5 @@ export interface BikeInstance {
   id: string; // UNIQUE: e.g., 'waw-s1-04'
   modelId: string; // Link back to blueprint
   city: string;
-  status: "active" | "maintenance" | "lost" | "retired";
+  status: "ACTIVE" | "MAINTENANCE" | "LOST" | "RETIRED";
 }

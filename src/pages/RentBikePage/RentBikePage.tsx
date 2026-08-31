@@ -1,13 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAppSelector } from "../../store/hooks";
-import { getModels } from "../../utils/fleetStorage";
 import { processPayment } from "../../utils/paymentHelper";
-import {
-  addReservation,
-  generateReservationId,
-  isBikeAvailable,
-} from "../../utils/bookingHelper";
 import { getDynamicPrice, getRentalDays } from "../../utils/rentalCalculations";
 import type { BikeInstance, BikeModel } from "../../types/Fleet";
 import StepDateSelection from "./components/StepDateSelection";
@@ -17,10 +11,7 @@ import StepSummary from "./components/StepSummary";
 import StepPayment from "./components/StepPayment";
 import PageTransition from "../../components/common/PageTransition";
 import styles from "./RentBikePage.module.scss";
-import type { Reservation } from "../../types/Reservation";
 import toast from "react-hot-toast";
-
-const MODELS = getModels();
 
 // Timezone-safe, inclusive day diff for YYYY-MM-DD (e.g., 29→31 = 3 days)
 const getInclusiveDays = (start: string, end: string) => {
@@ -43,13 +34,9 @@ const RentBikePage = () => {
     end: "",
   });
   const [availableBikes, setAvailableBikes] = useState<BikeModel[]>([]);
-  const [bikes] = useState<BikeInstance[]>(() => {
-    const stored = localStorage.getItem("velocity_fleet");
-    return stored ? JSON.parse(stored) : [];
-  });
   const [chosenBike, setChosenBike] = useState<BikeInstance | null>(null);
   const [chosenBikeModel, setChosenBikeModel] = useState<BikeModel | null>(
-    null
+    null,
   );
   const [paymentStatus, setPaymentStatus] = useState<
     "idle" | "processing" | "success" | "error"
@@ -58,7 +45,7 @@ const RentBikePage = () => {
   // Step 1 - dates
   const handleBikeSearch = (
     e: React.FormEvent,
-    setError: (msg: string) => void
+    setError: (msg: string) => void,
   ) => {
     e.preventDefault();
     setError("");
@@ -94,87 +81,80 @@ const RentBikePage = () => {
 
   // Step 2 - simulate API call
   useEffect(() => {
-    if (step === 2) {
-      const timer = setTimeout(() => {
-        // FILTERING ALGORITHM
-        const cityBikes = bikes.filter(
-          (b: BikeInstance) => b.city === userCity
+    if (step !== 2 || !dates.start || !dates.end) return;
+
+    const fetchActiveBikes = async () => {
+      try {
+        const jwtToken = localStorage.getItem("velocity_jwt");
+        if (!jwtToken) return;
+
+        const url = new URL(
+          "http://localhost:8080/api/v1/reservations/availability",
         );
-        const freeBikes = cityBikes.filter((bike: BikeInstance) =>
-          isBikeAvailable(bike.id, dates.start, dates.end)
-        );
+        url.searchParams.append("startDate", dates.start);
+        url.searchParams.append("endDate", dates.end);
+        url.searchParams.append("city", userCity);
+        const response = await fetch(url, {
+          headers: {
+            Authorization: `Bearer ${jwtToken}`,
+          },
+        });
 
-        const catalogFreeBikes = MODELS.map((b: BikeModel) => {
-          // if some bike in freeBikes has modelId prop equal to b.id
-          const res = freeBikes.filter((freeB: BikeInstance) => {
-            if (freeB.modelId === b.id) return true;
-          });
-          if (res.length > 0) return b;
-        }).filter(Boolean) as BikeModel[];
-        setAvailableBikes(catalogFreeBikes);
+        if (response.ok) {
+          const data = await response.json();
+          // Convert flat backend DTO to nested UI Model
 
-        // setLoading(false);
-        setStep(3); // Show results
-      }, 1000); // 1 second delay
+          type ApiBike = {
+            bookableInstanceId: string;
+            modelName: string;
+            modelCategory: string;
+            modelDescription: string;
+            modelSpeed: string;
+            modelRange: string;
+            modelCapacity: string;
+          };
 
-      return () => clearTimeout(timer);
-    }
-  }, [step, userCity, dates, bikes]);
+          const mappedCatalog: BikeModel[] = data.map((apiBike: ApiBike) => ({
+            id: apiBike.bookableInstanceId,
+            name: apiBike.modelName,
+            category: apiBike.modelCategory,
+            description: apiBike.modelDescription,
+            stats: {
+              speed: apiBike.modelSpeed,
+              range: apiBike.modelRange,
+              capacity: apiBike.modelCapacity,
+            },
+            imageEmoji: "🚲", // Fallback emoji
+          }));
 
-  const handleBook = (modelId: string) => {
-    // Get raw reservations
-    const storedData = localStorage.getItem("velocity_reservations");
-    const allReservations = storedData ? JSON.parse(storedData) : [];
-
-    // Define User's requested timeframe (timestamps for easy comparison)
-    const userStart = new Date(dates.start).getTime();
-    const userEnd = new Date(dates.end).getTime();
-
-    // Filter: Find ONLY reservations that conflict with these dates
-    const conflictingReservations = allReservations.filter(
-      (res: Reservation) => {
-        // Safety check: Ignore cancelled bookings
-        if (res.status === "cancelled") return false;
-
-        const resStart = new Date(res.startDate).getTime();
-        const resEnd = new Date(res.endDate).getTime();
-
-        // THE OVERLAP FORMULA:
-        // A booking overlaps if it starts before your request ends...
-        // ...AND ends after your request starts.
-        return userStart <= resEnd && userEnd >= resStart;
+          setAvailableBikes(mappedCatalog);
+          setStep(3);
+        }
+      } catch (error) {
+        console.error("Failed to fetch active bikes:", error);
       }
-    );
+    };
 
-    // 4. Create a Set of IDs that are effectively "Blocked" for this user
-    const blockedBikeIds = new Set(
-      conflictingReservations.map((res: Reservation) => res.bikeId)
-    );
+    fetchActiveBikes();
+  }, [step, userCity, dates]);
 
-    // Find the first physical instance that matches the model AND is not blocked
-    const availableInstance = bikes.find(
-      (bike) =>
-        bike.modelId === modelId &&
-        !blockedBikeIds.has(bike.id) &&
-        bike.city === userCity &&
-        bike.status === "active"
-    );
+  const handleBook = (instanceId: string) => {
+    // Get raw reservations
+    const selectedUiModel = availableBikes.find((b) => b.id === instanceId);
+    if (!selectedUiModel) return;
 
-    // Get Model Details (Metadata)
-    const selectedModel = MODELS.find(
-      (model: BikeModel) => model.id === modelId
-    );
+    // Build the physical instance object for the payment payload
+    const selectedInstance: BikeInstance = {
+      id: instanceId, // The real UUID from the backend
+      modelId: "resolved-by-backend",
+      city: userCity,
+      status: "ACTIVE",
+    };
 
-    // Update State
-    if (availableInstance && selectedModel) {
-      setChosenBike(availableInstance);
-      setChosenBikeModel(selectedModel);
-      setStep(4);
-    } else {
-      console.error(
-        "Critical Error: No bike instance found, even though availability check passed earlier."
-      );
-    }
+    // Update state and advance to Summary
+    setChosenBike(selectedInstance);
+    setChosenBikeModel(selectedUiModel);
+    setStep(4);
   };
 
   const handleProceedToPayment = () => {
@@ -184,7 +164,6 @@ const RentBikePage = () => {
 
   const handleFinalPayment = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!chosenBikeModel) return;
 
     setPaymentStatus("processing"); // STATE: WAITING
 
@@ -195,22 +174,48 @@ const RentBikePage = () => {
       // STATE: SUCCESS
       setPaymentStatus("success");
 
-      // UPDATE RESERVATION STATUS (The Requirement)
-      const totalCost = getDynamicPrice(getRentalDays(dates)).total;
-      const newReservation: Reservation = {
-        id: generateReservationId(),
-        userId: user!.id!,
-        bikeId: chosenBike!.id,
-        startDate: dates.start,
-        endDate: dates.end,
-        totalCost: totalCost,
-        status: "confirmed",
-      };
-      addReservation(newReservation);
-      setTimeout(() => {
-        navigate("/my-rentals");
-        toast.success("Reservation booked successfully!");
-      }, 2000);
+      const jwtToken = localStorage.getItem("velocity_jwt");
+      const response = await fetch(
+        "http://localhost:8080/api/v1/reservations",
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${jwtToken}`,
+            "Content-Type": "Application/json",
+          },
+          body: JSON.stringify({
+            bikeInstanceId: chosenBike!.id,
+            startDate: dates.start,
+            endDate: dates.end,
+          }),
+        },
+      );
+      if (response.status === 409) {
+        toast.error(
+          "Concurrent booking conflict: This bike was just reserved. Please select another",
+        );
+        setStep(2);
+        return;
+      }
+      //returns {id, startDate, endDate, totalCost, status, createdAt, bike: {id, name}}
+      navigate("/my-rentals");
+      toast.success("Reservation booked successfully!");
+      const data = await response.json();
+      // const res = await fetch(
+      //   `http://localhost:8080/api/v1/reservations/${data.id}/confirm`,
+      //   {
+      //     headers: {
+      //       Authorization: `Bearer ${jwtToken}`,
+      //     },
+      //   },
+      // );
+      // if (res.ok) {
+      //   navigate("/my-rentals");
+      //   toast.success("Reservation booked successfully!");
+      // } else {
+      //   toast.error("Finalizing the reservation failed.");
+      //   setPaymentStatus("error");
+      // }
     } catch (error) {
       console.log(error);
       // STATE: REJECTION

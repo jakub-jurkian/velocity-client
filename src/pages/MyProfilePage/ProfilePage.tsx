@@ -5,7 +5,7 @@ import { updateUser } from "../../store/slices/authSlice";
 import PageTransition from "../../components/common/PageTransition";
 import styles from "./ProfilePage.module.scss";
 
-const cities = ["Warsaw", "Gdansk", "Poznan", "Wroclaw"];
+const cities = ["WARSAW", "GDANSK", "POZNAN", "WROCLAW"];
 
 const MyProfilePage = () => {
   const dispatch = useAppDispatch();

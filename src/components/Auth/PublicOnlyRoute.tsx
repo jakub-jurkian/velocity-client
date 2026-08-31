@@ -10,8 +10,9 @@ const PublicOnlyRoute = ({ children }: Props) => {
   const user = useAppSelector((state) => state.auth.user);
 
   if (user) {
-    // Redirect to dashboard if already logged in
-    return <Redirect to="/dashboard" />;
+    return (
+      <Redirect to={user.role === "ADMIN" ? "/admin/panel" : "/dashboard"} />
+    );
   }
 
   return children ? <>{children}</> : <Outlet />;

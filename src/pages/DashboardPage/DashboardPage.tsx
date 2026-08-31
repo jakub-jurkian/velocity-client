@@ -1,25 +1,8 @@
-import { useMemo } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useAppSelector } from "../../store/hooks";
 import PageTransition from "../../components/common/PageTransition";
 import styles from "./DashboardPage.module.scss";
-import type { Reservation } from "../../types/Reservation";
-import { getFleet } from "../../utils/fleetStorage";
-
-const calculateActiveRentals = (userId: string): number => {
-  try {
-    const storedData = localStorage.getItem("velocity_reservations");
-    if (!storedData) return 0;
-
-    const parsedData: Reservation[] = JSON.parse(storedData);
-    return parsedData.filter(
-      (r) => r.userId === userId && r.status === "confirmed"
-    ).length;
-  } catch (error) {
-    console.error("Failed to parse reservations:", error);
-    return 0;
-  }
-};
 
 // Hub addresses by city (normalized keys)
 interface HubInfo {
@@ -70,21 +53,72 @@ const DashboardPage = () => {
   const user = useAppSelector((state) => state.auth.user);
   const userId = user?.id;
   const userCity = user?.city;
+  const [activeRentals, setActiveRentals] = useState<number>(0);
+  const [activeBikes, setActiveBikes] = useState<number>(0);
+
+  useEffect(() => {
+    const fetchActiveRentals = async () => {
+      if (!userId) return;
+
+      try {
+        const jwtToken = localStorage.getItem("velocity_jwt");
+        if (!jwtToken) return;
+
+        const response = await fetch(
+          "http://localhost:8080/api/v1/reservations/my",
+          {
+            headers: {
+              Authorization: `Bearer ${jwtToken}`,
+            },
+          },
+        );
+
+        if (response.ok) {
+          const data = await response.json();
+          // Extract the exact count from our custom backend envelope
+
+          const activeRentals = data.data.filter(
+            (r) => r.status === "CONFIRMED",
+          ).length;
+          setActiveRentals(activeRentals);
+        }
+      } catch (error) {
+        console.error("Failed to fetch active rentals:", error);
+      }
+    };
+
+    fetchActiveRentals();
+
+    const fetchActiveBikes = async () => {
+      if (!userId) return;
+
+      try {
+        const jwtToken = localStorage.getItem("velocity_jwt");
+        if (!jwtToken) return;
+
+        const response = await fetch("http://localhost:8080/api/v1/fleet", {
+          headers: {
+            Authorization: `Bearer ${jwtToken}`,
+          },
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          // Extract the exact count from our custom backend envelope
+          console.log(data.data);
+          const activeBikes = data.data.filter(
+            (r) => r.status === "ACTIVE" && r.city === userCity,
+          ).length;
+          setActiveBikes(activeBikes);
+        }
+      } catch (error) {
+        console.error("Failed to fetch active rentals:", error);
+      }
+    };
+    fetchActiveBikes();
+  }, [userId, userCity]);
 
   const hubInfo = useMemo(() => getHubByCity(userCity), [userCity]);
-
-  const activeFleetCount = useMemo(() => {
-    if (!userCity) return 0;
-
-    const bikes = getFleet();
-    return bikes.filter((b) => b.city === userCity && b.status === "active")
-      .length;
-  }, [userCity]);
-
-  const activeRentals = useMemo(() => {
-    if (!userId) return 0;
-    return calculateActiveRentals(userId);
-  }, [userId]);
 
   if (!user) return null;
 
@@ -137,7 +171,7 @@ const DashboardPage = () => {
 
           <div className={styles.statCard}>
             <h3>Fleet Status</h3>
-            <div className={styles.statValue}>{activeFleetCount}</div>
+            <div className={styles.statValue}>{activeBikes}</div>
             <p className={styles.statLabel}>E-bikes nearby</p>
           </div>
 

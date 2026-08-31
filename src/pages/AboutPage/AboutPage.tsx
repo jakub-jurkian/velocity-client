@@ -1,14 +1,14 @@
 import PageTransition from "../../components/common/PageTransition";
 import styles from "./AboutPage.module.scss";
 
-const STATS = [
+const stats = [
   { number: "2.5M", label: "Kilometers Ridden" },
   { number: "140t", label: "CO₂ Saved" },
   { number: "4", label: "Cities Active" },
   { number: "24/7", label: "Support Team" },
 ];
 
-const VALUES = [
+const values = [
   {
     icon: "🌱",
     title: "Sustainability First",
@@ -49,7 +49,7 @@ const AboutPage = () => {
 
         {/* Stats Grid */}
         <section className={styles.statsGrid}>
-          {STATS.map((stat) => (
+          {stats.map((stat) => (
             <div key={stat.label} className={styles.statCard}>
               <span className={styles.statNumber}>{stat.number}</span>
               <span className={styles.statLabel}>{stat.label}</span>
@@ -61,7 +61,7 @@ const AboutPage = () => {
         <section className={styles.valuesSection}>
           <h2>Our Core Values</h2>
           <div className={styles.valueRow}>
-            {VALUES.map((value) => (
+            {values.map((value) => (
               <div key={value.title} className={styles.valueItem}>
                 <h3>
                   {value.icon} {value.title}
