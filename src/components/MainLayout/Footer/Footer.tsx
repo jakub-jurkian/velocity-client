@@ -10,7 +10,7 @@ export default function Footer() {
         <Link to="/contact">Contact</Link>
       </div>
       <p className={styles.copyright}>
-        © 2025 VeloCity Inc. All rights reserved.
+        © 2026 VeloCity Inc. All rights reserved.
       </p>
     </footer>
   );

@@ -1,6 +1,6 @@
 import PageTransition from "../../components/common/PageTransition";
-import styles from "./LandingPage.module.scss";
 import LandingBtn from "../../components/LandingBtn/LandingBtn";
+import styles from "./LandingPage.module.scss";
 
 const stats = [
   { value: "100 km", label: "Max Range / Charge" },
@@ -22,7 +22,7 @@ const features = [
   {
     icon: "📱",
     title: "Smart App",
-    description: "Book shifts & and unlock bikes via phone.",
+    description: "Book shifts and unlock bikes via phone.",
   },
 ];
 
