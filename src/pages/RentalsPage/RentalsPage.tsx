@@ -1,12 +1,10 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useAppSelector } from "../../store/hooks";
 import {
   cancelReservation,
   getUserReservations,
 } from "../../utils/bookingHelper";
-import { getModels } from "../../utils/fleetStorage";
 import type { Reservation } from "../../types/Reservation";
-import type { BikeModel } from "../../types/Fleet";
 import PageTransition from "../../components/common/PageTransition";
 import styles from "./RentalsPage.module.scss";
 import { downloadReservationsCSV } from "../../utils/exportHelper";
@@ -25,20 +23,49 @@ const RentalsPage = () => {
   const [reservations, setReservations] = useState<Reservation[]>(() => {
     return user?.id ? getUserReservations(user.id) : [];
   });
-  const [models] = useState<BikeModel[]>(() => {
-    return getModels();
-  });
+
+  useEffect(() => {
+    const fetchActiveRentals = async () => {
+      try {
+        const jwtToken = localStorage.getItem("velocity_jwt");
+        if (!jwtToken) return;
+
+        const response = await fetch(
+          "http://localhost:8080/api/v1/reservations/my",
+          {
+            headers: {
+              Authorization: `Bearer ${jwtToken}`,
+            },
+          },
+        );
+
+        if (response.ok) {
+          const rawData = await response.json();
+          console.log(rawData.data);
+          const rawDataTransformed = rawData.data.map((r) => {
+            return {
+              id: r.id,
+              bikeId: r.bike.id,
+              startDate: r.startDate,
+              endDate: r.endDate,
+              status: r.status,
+              totalCost: r.totalCost,
+            };
+          });
+
+          setReservations(rawDataTransformed);
+        }
+      } catch (error) {
+        console.error("Failed to fetch active rentals:", error);
+      }
+    };
+
+    fetchActiveRentals();
+  }, []);
 
   // --- MODAL STATE ---
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedResId, setSelectedResId] = useState<string | null>(null);
-
-  // Helper to get friendly name
-  const getBikeName = (bikeId: string) => {
-    const modelCode = bikeId.split("-")[1];
-    const model = models.find((m) => m.id === modelCode);
-    return model ? model.name : bikeId;
-  };
 
   // TRIGGER MODAL
   const handleCancelClick = (reservationId: string) => {
@@ -71,7 +98,7 @@ const RentalsPage = () => {
   };
 
   const isCancellable = (res: Reservation) => {
-    if (res.status !== "confirmed") return false;
+    if (res.status !== "CONFIRMED") return false;
     const tripDate = new Date(res.startDate);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -112,16 +139,17 @@ const RentalsPage = () => {
               className={`${styles.card} ${styles[res.status]}`}
             >
               <div className={styles.statusBadge}>
-                {res.status === "confirmed" && "✅ Confirmed"}
-                {res.status === "cancelled" && "❌ Cancelled"}
-                {res.status === "completed" && "🏁 Completed"}
+                {res.status === "PENDING" && "Pending"}
+                {res.status === "CONFIRMED" && "Confirmed"}
+                {res.status === "CANCELLED" && "Cancelled"}
+                {res.status === "COMPLETED" && "Completed"}
               </div>
 
               <div className={styles.cardContent}>
                 <div className={styles.row}>
                   <span className={styles.label}>Bike</span>
                   <span className={styles.valueHighlight}>
-                    {getBikeName(res.bikeId)}
+                    {res.bikeId}
                   </span>
                 </div>
 

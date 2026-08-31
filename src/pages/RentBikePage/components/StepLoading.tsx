@@ -1,7 +1,7 @@
 import styles from "../RentBikePage.module.scss";
 
 interface Props {
-  city: "Warsaw" | "Gdansk" | "Poznan" | "Wroclaw";
+  city: "WARSAW" | "GDANSK" | "POZNAN" | "WROCLAW";
 }
 
 export default function StepLoading({ city }: Props) {
