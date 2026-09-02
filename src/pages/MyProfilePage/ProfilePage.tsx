@@ -7,9 +7,15 @@ import styles from "./ProfilePage.module.scss";
 
 const cities = ["WARSAW", "GDANSK", "POZNAN", "WROCLAW"];
 
+interface UserUpdatePayload {
+  fullName?: string;
+  phone?: string;
+  city?: "WARSAW" | "GDANSK" | "POZNAN" | "WROCLAW";
+}
+
 const MyProfilePage = () => {
   const dispatch = useAppDispatch();
-  const { user } = useAppSelector((state) => state.auth);
+  const { user, token } = useAppSelector((state) => state.auth);
 
   const [isEditing, setIsEditing] = useState(false);
 
@@ -24,7 +30,7 @@ const MyProfilePage = () => {
   const isAdmin = user?.role === "ADMIN";
 
   const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
   ) => {
     setFormData({
       ...formData,
@@ -32,24 +38,56 @@ const MyProfilePage = () => {
     });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
 
     // Check if any field has actually changed
-    const fieldsToCheck = ["fullName", "phone", "city", "email"] as const;
-    const hasChanged = fieldsToCheck.some(
-      (field) => user[field] !== formData[field]
-    );
+    const changedPayload: UserUpdatePayload = {};
 
-    if (!hasChanged) {
+    if (user.fullName !== formData.fullName) {
+      changedPayload.fullName = formData.fullName;
+    }
+    if (user.phone !== formData.phone) {
+      changedPayload.phone = formData.phone;
+    }
+    if (user.city !== formData.city) {
+      changedPayload.city = formData.city;
+    }
+
+    if (Object.keys(changedPayload).length === 0) {
       toast("No changes made.", { icon: "ℹ️" });
       return;
     }
 
-    dispatch(updateUser({ ...formData }));
-    setIsEditing(false);
-    toast.success("Profile updated successfully!");
+    try {
+      const response = await fetch(
+        `http://localhost:8080/api/v1/users/${user.id}`,
+        {
+          method: "PATCH",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(changedPayload),
+        },
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        toast.error(errorData.detail || "Failed to update profile.");
+        return;
+      }
+
+      dispatch(updateUser({ ...formData }));
+      setIsEditing(false);
+      toast.success("Profile updated successfully!");
+    } catch (error) {
+      console.error("Network or parsing error:", error);
+      toast.error(
+        "Unable to connect to VeloCity server. Please check your connection.",
+      );
+    }
   };
 
   const handleCancel = () => {
@@ -145,26 +183,14 @@ const MyProfilePage = () => {
                 )}
               </div>
 
-              {/* 2. EMAIL LOGIC: Only Admin can edit */}
+              {/* 2. EMAIL read-only */}
               <div className={styles.inputGroup}>
                 <label>Email Address</label>
 
-                {/* CONDITION: Is Editing AND Is Admin? */}
-                {isEditing && isAdmin ? (
-                  <input
-                    type="email"
-                    name="email"
-                    value={formData.email}
-                    onChange={handleInputChange}
-                    className={styles.input}
-                    required
-                  />
-                ) : (
-                  <div className={`${styles.valueDisplay} ${styles.readOnly}`}>
-                    {user.email}
-                    {!isAdmin && <span className={styles.lockIcon}>🔒</span>}
-                  </div>
-                )}
+                <div className={`${styles.valueDisplay} ${styles.readOnly}`}>
+                  {user.email}
+                  {!isAdmin && <span className={styles.lockIcon}>🔒</span>}
+                </div>
               </div>
 
               {isEditing && (
