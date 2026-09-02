@@ -14,8 +14,8 @@ export interface BikeModel {
 
 // The Physical Bike (The real asset)
 export interface BikeInstance {
-  id: string; // UNIQUE: e.g., 'waw-s1-04'
-  modelId: string; // Link back to blueprint
-  city: string;
+  id: string;
+  modelId: string;
+  city: "GDANSK" | "POZNAN" | "WARSAW" | "WROCLAW";
   status: "ACTIVE" | "MAINTENANCE" | "LOST" | "RETIRED";
 }

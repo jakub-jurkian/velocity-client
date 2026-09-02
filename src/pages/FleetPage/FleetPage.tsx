@@ -1,11 +1,38 @@
-import { useState } from "react";
 import PageTransition from "../../components/common/PageTransition";
-import { getModels } from "../../utils/fleetStorage";
+import type { BikeModel } from "../../types/Fleet";
 import styles from "./FleetPage.module.scss";
 
+const bikeModels: BikeModel[] = [
+  {
+    id: "s1",
+    name: "Sprint Courier S1",
+    category: "Agility",
+    stats: { speed: 45, range: 80, capacity: 40 },
+    description:
+      "The choice for city centers. Lightweight and agile enough to weave through traffic jams. Perfect for backpack delivery.",
+    imageEmoji: "🛵",
+  },
+  {
+    id: "xl",
+    name: "Cargo King XL",
+    category: "Heavy Duty",
+    description:
+      "Large grocery order? 10 Pizzas? No problem. Features a front insulated box and heavy-duty rear rack.",
+    stats: { speed: 25, range: 60, capacity: 100 },
+    imageEmoji: "🍕",
+  },
+  {
+    id: "ep2",
+    name: "Endurance Pro 2.0",
+    category: "Dual-battery system",
+    description:
+      "Built for the 10-hour shift warrior. Dual-battery system ensures you never run out of juice during the dinner rush.",
+    stats: { speed: 35, range: 100, capacity: 60 },
+    imageEmoji: "🔋",
+  },
+];
+
 const FleetPage = () => {
-  const [bikes] = useState(() => getModels());
-  // Lazy init: reads LS only ONCE, on mount
 
   return (
     <PageTransition>
@@ -19,20 +46,20 @@ const FleetPage = () => {
         </div>
 
         <div className={styles.bikeList}>
-          {bikes.map((bike) => (
-            <article key={bike.id} className={styles.bikeCard}>
+          {bikeModels.map((model) => (
+            <article key={model.id} className={styles.bikeCard}>
               {/* Visual Side */}
               <div className={styles.visual}>
-                <div className={styles.categoryTag}>{bike.category}</div>
+                <div className={styles.categoryTag}>{model.category}</div>
                 <div className={styles.bikeImagePlaceholder}>
-                  {bike.imageEmoji}
+                  {model.imageEmoji}
                 </div>
               </div>
 
               {/* Info Side */}
               <div className={styles.info}>
-                <h2>{bike.name}</h2>
-                <p className={styles.desc}>{bike.description}</p>
+                <h2>{model.name}</h2>
+                <p className={styles.desc}>{model.description}</p>
 
                 <div className={styles.statsContainer}>
                   {/* Stat: Speed */}
@@ -42,10 +69,10 @@ const FleetPage = () => {
                       {/* Scaled based on max speed approx 40km/h */}
                       <div
                         className={styles.barFill}
-                        style={{ width: `${(bike.stats.speed / 40) * 100}%` }}
+                        style={{ width: `${(model.stats.speed / 40) * 100}%` }}
                       ></div>
                     </div>
-                    <span className={styles.value}>{bike.stats.speed} km/h</span>
+                    <span className={styles.value}>{model.stats.speed} km/h</span>
                   </div>
 
                   {/* Stat: Range */}
@@ -55,10 +82,10 @@ const FleetPage = () => {
                       {/* Scaled based on max range approx 100km */}
                       <div
                         className={styles.barFill}
-                        style={{ width: `${(bike.stats.range / 100) * 100}%` }}
+                        style={{ width: `${(model.stats.range / 100) * 100}%` }}
                       ></div>
                     </div>
-                    <span className={styles.value}>{bike.stats.range} km</span>
+                    <span className={styles.value}>{model.stats.range} km</span>
                   </div>
 
                   {/* Stat: Capacity */}
@@ -67,10 +94,10 @@ const FleetPage = () => {
                     <div className={styles.barTrack}>
                       <div
                         className={styles.barFill}
-                        style={{ width: `${bike.stats.capacity}%` }}
+                        style={{ width: `${model.stats.capacity}%` }}
                       ></div>
                     </div>
-                    <span className={styles.value}>{bike.stats.capacity}%</span>
+                    <span className={styles.value}>{model.stats.capacity}%</span>
                   </div>
                 </div>
               </div>
