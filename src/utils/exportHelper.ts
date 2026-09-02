@@ -6,7 +6,7 @@ export const downloadReservationsCSV = (reservations: Reservation[]) => {
 
   // Map the data to CSV rows
   const rows = reservations.map((r) => 
-    `${r.id},${r.bikeId},${r.startDate},${r.endDate},${r.status},${r.totalCost}`
+    `${r.id},${r.bike.id},${r.startDate},${r.endDate},${r.status},${r.totalCost}`
   );
 
   // Combine headers and rows with newlines

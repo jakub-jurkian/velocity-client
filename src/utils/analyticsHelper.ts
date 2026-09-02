@@ -14,7 +14,7 @@ export const getMonthlyRevenue = (reservations: Reservation[]) => {
     // Extract "YYYY-MM"
     const monthKey = res.startDate.substring(0, 7); 
     
-    if (res.status !== "cancelled") {
+    if (res.status !== "CANCELLED") {
       acc[monthKey] = (acc[monthKey] || 0) + res.totalCost;
     }
     return acc;
@@ -40,7 +40,7 @@ export const getOccupancyRate = (
 
   // Filter reservations active in this month
   const activeRes = reservations.filter(
-    (r) => r.startDate.startsWith(currentMonth) && r.status !== "cancelled"
+    (r) => r.startDate.startsWith(currentMonth) && r.status !== "CANCELLED"
   );
 
   // Sum total days rented
@@ -60,8 +60,8 @@ export const getOccupancyRate = (
 export const getPopularityStats = (reservations: Reservation[], models: BikeModel[]) => {
   const counts = reservations.reduce((acc, res) => {
     // res.bikeId is like "war-xl-01", we need "xl" (model id)
-    const modelId = res.bikeId.split("-")[1]; 
-    if (res.status !== "cancelled") {
+    const modelId = res.bike.id.split("-")[1];
+    if (res.status !== "CANCELLED") {
       acc[modelId] = (acc[modelId] || 0) + 1;
     }
     return acc;

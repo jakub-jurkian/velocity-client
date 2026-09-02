@@ -1,14 +1,9 @@
 import { useEffect, useState } from "react";
 import { useAppSelector } from "../../store/hooks";
-import {
-  cancelReservation,
-  getUserReservations,
-} from "../../utils/bookingHelper";
 import type { Reservation } from "../../types/Reservation";
 import PageTransition from "../../components/common/PageTransition";
 import styles from "./RentalsPage.module.scss";
 import { downloadReservationsCSV } from "../../utils/exportHelper";
-import toast from "react-hot-toast";
 
 const formatDate = (dateStr: string) => {
   return new Date(dateStr).toLocaleDateString("en-US", {
@@ -19,15 +14,12 @@ const formatDate = (dateStr: string) => {
 };
 
 const RentalsPage = () => {
-  const user = useAppSelector((state) => state.auth.user);
-  const [reservations, setReservations] = useState<Reservation[]>(() => {
-    return user?.id ? getUserReservations(user.id) : [];
-  });
+  const jwtToken = useAppSelector((state) => state.auth.token);
+  const [reservations, setReservations] = useState<Reservation[]>([]);
 
   useEffect(() => {
     const fetchActiveRentals = async () => {
       try {
-        const jwtToken = localStorage.getItem("velocity_jwt");
         if (!jwtToken) return;
 
         const response = await fetch(
@@ -42,18 +34,8 @@ const RentalsPage = () => {
         if (response.ok) {
           const rawData = await response.json();
           console.log(rawData.data);
-          const rawDataTransformed = rawData.data.map((r) => {
-            return {
-              id: r.id,
-              bikeId: r.bike.id,
-              startDate: r.startDate,
-              endDate: r.endDate,
-              status: r.status,
-              totalCost: r.totalCost,
-            };
-          });
 
-          setReservations(rawDataTransformed);
+          setReservations(rawData.data);
         }
       } catch (error) {
         console.error("Failed to fetch active rentals:", error);
@@ -61,7 +43,7 @@ const RentalsPage = () => {
     };
 
     fetchActiveRentals();
-  }, []);
+  }, [jwtToken]);
 
   // --- MODAL STATE ---
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -77,18 +59,19 @@ const RentalsPage = () => {
   const confirmCancel = () => {
     if (!selectedResId) return;
 
-    const success = cancelReservation(selectedResId);
+    // const success = cancelReservation(selectedResId);
+    // send http req for cancel.
 
-    if (success && user) {
-      setReservations(getUserReservations(user.id!)); // Refresh list
-      setIsModalOpen(false); // Close modal
-      setSelectedResId(null);
-      toast.success("Reservation cancelled successfully!");
-    } else {
-      // Handle error (optional: add separate error state)
-      setIsModalOpen(false);
-      toast.error("Failed to cancel reservation. It might be too late.");
-    }
+    // if (success && user) {
+    //   // setReservations(getUserReservations(user.id!)); // Refresh list
+    //   setIsModalOpen(false); // Close modal
+    //   setSelectedResId(null);
+    //   toast.success("Reservation cancelled successfully!");
+    // } else {
+    //   // Handle error (optional: add separate error state)
+    //   setIsModalOpen(false);
+    //   toast.error("Failed to cancel reservation. It might be too late.");
+    // }
   };
 
   // CLOSE MODAL
@@ -148,9 +131,7 @@ const RentalsPage = () => {
               <div className={styles.cardContent}>
                 <div className={styles.row}>
                   <span className={styles.label}>Bike</span>
-                  <span className={styles.valueHighlight}>
-                    {res.bikeId}
-                  </span>
+                  <span className={styles.valueHighlight}>{res.bike.id}</span>
                 </div>
 
                 <div className={styles.row}>
