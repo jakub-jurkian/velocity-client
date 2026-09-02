@@ -3,6 +3,8 @@ import { Link } from "react-router-dom";
 import { useAppSelector } from "../../store/hooks";
 import PageTransition from "../../components/common/PageTransition";
 import styles from "./DashboardPage.module.scss";
+import type { Reservation } from "../../types/Reservation";
+import type { BikeInstance } from "../../types/Fleet";
 
 // Hub addresses by city (normalized keys)
 interface HubInfo {
@@ -50,6 +52,7 @@ const getHubByCity = (city?: string): HubInfo | null => {
 };
 
 const DashboardPage = () => {
+  const jwtToken = useAppSelector((state) => state.auth.token);
   const user = useAppSelector((state) => state.auth.user);
   const userId = user?.id;
   const userCity = user?.city;
@@ -61,7 +64,6 @@ const DashboardPage = () => {
       if (!userId) return;
 
       try {
-        const jwtToken = localStorage.getItem("velocity_jwt");
         if (!jwtToken) return;
 
         const response = await fetch(
@@ -72,13 +74,13 @@ const DashboardPage = () => {
             },
           },
         );
-
         if (response.ok) {
           const data = await response.json();
           // Extract the exact count from our custom backend envelope
+          console.log(data);
 
           const activeRentals = data.data.filter(
-            (r) => r.status === "CONFIRMED",
+            (r: Reservation) => r.status === "CONFIRMED",
           ).length;
           setActiveRentals(activeRentals);
         }
@@ -93,7 +95,6 @@ const DashboardPage = () => {
       if (!userId) return;
 
       try {
-        const jwtToken = localStorage.getItem("velocity_jwt");
         if (!jwtToken) return;
 
         const response = await fetch("http://localhost:8080/api/v1/fleet", {
@@ -107,7 +108,7 @@ const DashboardPage = () => {
           // Extract the exact count from our custom backend envelope
           console.log(data.data);
           const activeBikes = data.data.filter(
-            (r) => r.status === "ACTIVE" && r.city === userCity,
+            (r: BikeInstance) => r.status === "ACTIVE" && r.city === userCity,
           ).length;
           setActiveBikes(activeBikes);
         }
@@ -116,7 +117,7 @@ const DashboardPage = () => {
       }
     };
     fetchActiveBikes();
-  }, [userId, userCity]);
+  }, [userId, userCity, jwtToken]);
 
   const hubInfo = useMemo(() => getHubByCity(userCity), [userCity]);
 
@@ -159,13 +160,13 @@ const DashboardPage = () => {
                 {activeRentals === 1 ? "bike" : "bikes"}
               </span>
             </div>
-            {/* Show 'Ongoing' only if there are active rentals */}
+            {/* Show 'active' only if there are active rentals */}
             <div
               className={`${styles.statusIndicator} ${
                 activeRentals > 0 ? styles.active : ""
               }`}
             >
-              {activeRentals > 0 ? "Ongoing" : "No active rides"}
+              {activeRentals > 0 ? "Active" : "No active rides"}
             </div>
           </div>
 

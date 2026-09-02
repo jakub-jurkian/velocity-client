@@ -35,18 +35,19 @@ import { toastConfig } from "./utils/toastConfig";
 import { useEffect, useState } from "react";
 import { loginSuccess } from "./store/slices/authSlice";
 import { useDispatch } from "react-redux";
+import { useAppSelector } from "./store/hooks";
 
 const App = () => {
   const location = useLocation();
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+  const jwtToken = useAppSelector((state) => state.auth.token);
 
   useEffect(() => {
     const verifySession = async () => {
       try {
         setIsCheckingAuth(true);
-        const jwtToken = localStorage.getItem("velocity_jwt");
         if (!jwtToken) return;
 
         const response = await fetch("http://localhost:8080/api/v1/auth/me", {

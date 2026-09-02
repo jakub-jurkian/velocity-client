@@ -26,6 +26,7 @@ const getInclusiveDays = (start: string, end: string) => {
 const RentBikePage = () => {
   const navigate = useNavigate();
   const user = useAppSelector((state) => state.auth.user);
+  const jwtToken = useAppSelector((state) => state.auth.token);
   const userCity = user!.city;
   // Wizard State (Starts at Step 1: Dates)
   const [step, setStep] = useState<1 | 2 | 3 | 4 | 5>(1);
@@ -85,7 +86,6 @@ const RentBikePage = () => {
 
     const fetchActiveBikes = async () => {
       try {
-        const jwtToken = localStorage.getItem("velocity_jwt");
         if (!jwtToken) return;
 
         const url = new URL(
@@ -136,7 +136,7 @@ const RentBikePage = () => {
     };
 
     fetchActiveBikes();
-  }, [step, userCity, dates]);
+  }, [jwtToken, step, userCity, dates]);
 
   const handleBook = (instanceId: string) => {
     // Get raw reservations
@@ -174,7 +174,6 @@ const RentBikePage = () => {
       // STATE: SUCCESS
       setPaymentStatus("success");
 
-      const jwtToken = localStorage.getItem("velocity_jwt");
       const response = await fetch(
         "http://localhost:8080/api/v1/reservations",
         {
@@ -198,24 +197,24 @@ const RentBikePage = () => {
         return;
       }
       //returns {id, startDate, endDate, totalCost, status, createdAt, bike: {id, name}}
-      navigate("/my-rentals");
-      toast.success("Reservation booked successfully!");
+
       const data = await response.json();
-      // const res = await fetch(
-      //   `http://localhost:8080/api/v1/reservations/${data.id}/confirm`,
-      //   {
-      //     headers: {
-      //       Authorization: `Bearer ${jwtToken}`,
-      //     },
-      //   },
-      // );
-      // if (res.ok) {
-      //   navigate("/my-rentals");
-      //   toast.success("Reservation booked successfully!");
-      // } else {
-      //   toast.error("Finalizing the reservation failed.");
-      //   setPaymentStatus("error");
-      // }
+      const res = await fetch(
+        `http://localhost:8080/api/v1/reservations/${data.id}/confirm`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${jwtToken}`,
+          },
+        },
+      );
+      if (res.ok) {
+        navigate("/my-rentals");
+        toast.success("Reservation booked successfully!");
+      } else {
+        toast.error("Finalizing the reservation failed.");
+        setPaymentStatus("error");
+      }
     } catch (error) {
       console.log(error);
       // STATE: REJECTION
