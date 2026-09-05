@@ -1,27 +1,41 @@
-import {
-  getDynamicPrice,
-  getRentalDays,
-} from "../../../utils/rentalCalculations";
+import { format, parseISO } from "date-fns";
+import { getDynamicPrice, getRentalDays } from "../../../utils/rentalCalculations";
+import { WizardStep } from "../../../types/Wizard";
+import type { BikeModel } from "../../../types/Fleet";
 import styles from "../RentBikePage.module.scss";
 
 interface Props {
-  setStep: (s: 1 | 2 | 3 | 4 | 5) => void;
-  chosenBikeModel: { name: string; imageEmoji: string; category: string };
+  setStep: (step: WizardStep) => void;
+  chosenBikeModel: BikeModel;
   dates: { start: string; end: string };
-  onClick: () => void;
+  onConfirm: () => void;
 }
 
 export default function StepSummary({
   setStep,
   chosenBikeModel,
   dates,
-  onClick,
+  onConfirm,
 }: Props) {
   const RENTAL_DAYS = getRentalDays(dates);
   const PRICE = getDynamicPrice(RENTAL_DAYS);
+
+  // Enterprise formatting utilities
+  const formatCurrency = (amount: number) =>
+    new Intl.NumberFormat("pl-PL", {
+      style: "currency",
+      currency: "PLN",
+    }).format(amount);
+
+  const formatDate = (dateString: string) =>
+    format(parseISO(dateString), "MMM d, yyyy"); // e.g., "Oct 12, 2026"
+
   return (
     <div className={styles.stepContainer}>
-      <button onClick={() => setStep(3)} className={styles.backBtn}>
+      <button
+        onClick={() => setStep(WizardStep.BikeSelection)} // Removed magic number
+        className={styles.backBtn}
+      >
         ← Back to Bikes
       </button>
 
@@ -34,9 +48,11 @@ export default function StepSummary({
           <span className={styles.label}>Bike Model</span>
           <span className={styles.value}>
             {chosenBikeModel.name}{" "}
-            <span style={{ fontSize: "1.2em" }}>
-              {chosenBikeModel.imageEmoji}
-            </span>
+            {chosenBikeModel.imageEmoji && (
+              <span className={styles.bikeEmoji} aria-hidden="true">
+                {chosenBikeModel.imageEmoji}
+              </span>
+            )}
           </span>
         </div>
         <div className={styles.summaryRow}>
@@ -50,7 +66,7 @@ export default function StepSummary({
         <div className={styles.summaryRow}>
           <span className={styles.label}>Dates</span>
           <span className={styles.value}>
-            {dates.start} — {dates.end}
+            {formatDate(dates.start)} — {formatDate(dates.end)}
           </span>
         </div>
         <div className={styles.summaryRow}>
@@ -61,53 +77,41 @@ export default function StepSummary({
         <div className={styles.divider}></div>
 
         {/* --- DETAILED PRICING BREAKDOWN --- */}
-        {/* 1. Daily Rate Row with Discount Logic */}
-        <div className={styles.summaryRow} style={{ alignItems: "center" }}>
+        <div className={`${styles.summaryRow} ${styles.alignCenter}`}>
           <span className={styles.label}>Daily Rate</span>
 
-          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+          <div className={styles.rateContainer}>
             {/* Show Old Rate if discount exists */}
             {PRICE.oldRate && (
-              <span
-                style={{
-                  textDecoration: "line-through",
-                  color: "#6b7280",
-                  fontSize: "0.9rem",
-                }}
-              >
-                {PRICE.oldRate} PLN
+              <span className={styles.oldRate}>
+                {formatCurrency(PRICE.oldRate)}
               </span>
             )}
 
             {/* Final Daily Rate */}
-            <span className={styles.value}>{PRICE.dailyRate} PLN</span>
+            <span className={styles.value}>
+              {formatCurrency(PRICE.dailyRate)}
+            </span>
 
             {/* Discount Badge */}
             {PRICE.discountLabel && (
-              <span
-                style={{
-                  backgroundColor: "#7c3aed", // Purple/Secondary
-                  color: "white",
-                  fontSize: "0.75rem",
-                  padding: "2px 6px",
-                  borderRadius: "4px",
-                  fontWeight: "bold",
-                }}
-              >
+              <span className={styles.discountBadge}>
                 {PRICE.discountLabel}
               </span>
             )}
           </div>
         </div>
 
-        {/* 2. Total Calculation Row */}
+        {/* Total Calculation Row */}
         <div className={`${styles.summaryRow} ${styles.totalRow}`}>
           <span className={styles.label}>Total Price</span>
-          <span className={styles.totalValue}>{PRICE.total} PLN</span>
+          <span className={styles.totalValue}>
+            {formatCurrency(PRICE.total)}
+          </span>
         </div>
       </div>
 
-      <button className={styles.confirmBtn} onClick={onClick}>
+      <button className={styles.confirmBtn} onClick={onConfirm}>
         Confirm & Pay
       </button>
     </div>

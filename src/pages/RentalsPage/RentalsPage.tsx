@@ -1,18 +1,22 @@
 import { useEffect, useState } from "react";
+import { parseISO, format, startOfDay, isBefore } from "date-fns";
+import toast from "react-hot-toast";
 import { useAppSelector } from "../../store/hooks";
 import type { Reservation } from "../../types/Reservation";
 import PageTransition from "../../components/common/PageTransition";
 import PageLoader from "../../components/common/PageLoader";
-import styles from "./RentalsPage.module.scss";
 import { downloadReservationsCSV } from "../../utils/exportHelper";
-import toast from "react-hot-toast";
+import styles from "./RentalsPage.module.scss";
+
+// Formatter Utilities
+const formatCurrency = (amount: number) =>
+  new Intl.NumberFormat("pl-PL", {
+    style: "currency",
+    currency: "PLN",
+  }).format(amount);
 
 const formatDate = (dateStr: string) => {
-  return new Date(dateStr).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
+  return format(parseISO(dateStr), "MMM d, yyyy");
 };
 
 const RentalsPage = () => {
@@ -20,30 +24,47 @@ const RentalsPage = () => {
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
+  // --- Modal State ---
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedResId, setSelectedResId] = useState<string | null>(null);
+  const [isCancelling, setIsCancelling] = useState(false); // Prevents double-clicks
+
+  // --- Data Fetching ---
   const fetchReservations = async () => {
     try {
-      if (!jwtToken) {
-        setIsLoading(false);
+      if (!jwtToken) return;
+
+      const apiUrl = import.meta.env.VITE_API_URL;
+      const response = await fetch(`${apiUrl}/api/v1/reservations/my`, {
+        headers: { Authorization: `Bearer ${jwtToken}` },
+      });
+
+      // Success Path
+      if (response.ok) {
+        const rawData = await response.json();
+        setReservations(rawData.data);
         return;
       }
 
-      const response = await fetch(
-        "http://localhost:8080/api/v1/reservations/my",
-        {
-          headers: {
-            Authorization: `Bearer ${jwtToken}`,
-          },
-        },
-      );
+      // Error Path: Safe Parsing for Spring Boot ProblemDetail
+      const contentType = response.headers.get("content-type") || "";
+      const isJson = contentType.includes("application/problem+json") || 
+                     contentType.includes("application/json");
 
-      if (response.ok) {
-        const rawData = await response.json();
-        console.log(rawData.data);
-
-        setReservations(rawData.data);
+      if (isJson) {
+        const problemDetail = await response.json();
+        toast.error(problemDetail.detail || "Failed to load reservations.");
+        throw new Error(problemDetail.title || "API Error");
+      } else {
+        throw new Error(`Server error with status: ${response.status}`);
       }
+
     } catch (error) {
-      console.error("Failed to fetch active rentals:", error);
+      console.error("Fetch reservations error:", error);
+      // Fallback toast if the error wasn't handled by the Spring ProblemDetail block
+      if (error instanceof Error && !error.message.includes("API Error")) {
+         toast.error("An unexpected error occurred while loading your reservations.");
+      }
     } finally {
       setIsLoading(false);
     }
@@ -52,68 +73,78 @@ const RentalsPage = () => {
   useEffect(() => {
     setIsLoading(true);
     fetchReservations();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [jwtToken]);
 
-  // --- MODAL STATE ---
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedResId, setSelectedResId] = useState<string | null>(null);
-
-  // TRIGGER MODAL
+  // --- Cancellation Logic ---
   const handleCancelClick = (reservationId: string) => {
     setSelectedResId(reservationId);
     setIsModalOpen(true);
   };
 
-  // CONFIRM ACTION
   const confirmCancel = async () => {
     if (!selectedResId) return;
 
-    // const success = cancelReservation(selectedResId);
-    // send http req for cancel.
     try {
+      setIsCancelling(true);
+      const apiUrl = import.meta.env.VITE_API_URL;
+
       const response = await fetch(
-        `http://localhost:8080/api/v1/reservations/${selectedResId}/cancel`,
+        `${apiUrl}/api/v1/reservations/${selectedResId}/cancel`,
         {
           method: "POST",
-          headers: {
-            Authorization: `Bearer ${jwtToken}`,
-          },
-        },
+          headers: { Authorization: `Bearer ${jwtToken}` },
+        }
       );
 
-      // const data = await response.json();
       if (!response.ok) {
-        setIsModalOpen(false);
-        toast.error("Failed to cancel reservation. It might be too late.");
-        return;
+        // Safe parsing for Cancellation errors as well
+        const contentType = response.headers.get("content-type") || "";
+        const isJson = contentType.includes("application/problem+json") || 
+                       contentType.includes("application/json");
+
+        if (isJson) {
+          const problemDetail = await response.json();
+          throw new Error(problemDetail.detail || "Failed to cancel.");
+        } else {
+          throw new Error("Failed to cancel reservation. It might be too late.");
+        }
       }
 
-      setIsModalOpen(false); // Close modal
-      setSelectedResId(null);
       toast.success("Reservation cancelled successfully!");
-      fetchReservations();
+      setIsModalOpen(false);
+      setSelectedResId(null);
+      await fetchReservations(); // Refresh the list seamlessly
+
     } catch (error) {
       console.error(error);
+      const errorMessage = error instanceof Error ? error.message : "An error occurred";
+      toast.error(errorMessage);
+      setIsModalOpen(false); // Close modal on error so they aren't stuck
+    } finally {
+      setIsCancelling(false);
     }
   };
 
-  // CLOSE MODAL
   const closeModal = () => {
+    if (isCancelling) return; // Prevent clicking out while request is in flight
     setIsModalOpen(false);
     setSelectedResId(null);
   };
 
+  // --- Business Logic ---
   const isCancellable = (res: Reservation) => {
     if (res.status !== "CONFIRMED") return false;
-    const tripDate = new Date(res.startDate);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    return tripDate >= today;
+    
+    // Strict, timezone-safe date comparison
+    const tripDate = startOfDay(parseISO(res.startDate));
+    const today = startOfDay(new Date());
+    
+    return !isBefore(tripDate, today); 
   };
 
-  if (isLoading) {
-    return <PageLoader />;
-  }
+  // --- Renders ---
+  if (isLoading) return <PageLoader />;
 
   if (!reservations.length) {
     return (
@@ -131,15 +162,12 @@ const RentalsPage = () => {
         <header className={styles.header}>
           <h1>Ride History</h1>
           <p>Your past and upcoming journeys.</p>
-          {/* EXPORT BUTTON */}
-          {reservations.length > 0 && (
-            <button
-              className={styles.exportBtn}
-              onClick={() => downloadReservationsCSV(reservations)}
-            >
-              Export CSV
-            </button>
-          )}
+          <button
+            className={styles.exportBtn}
+            onClick={() => downloadReservationsCSV(reservations)}
+          >
+            Export CSV
+          </button>
         </header>
 
         <div className={styles.grid}>
@@ -149,16 +177,15 @@ const RentalsPage = () => {
               className={`${styles.card} ${styles[res.status]}`}
             >
               <div className={styles.statusBadge}>
-                {res.status === "PENDING" && "Pending"}
-                {res.status === "CONFIRMED" && "Confirmed"}
-                {res.status === "CANCELLED" && "Cancelled"}
-                {res.status === "COMPLETED" && "Completed"}
+                {res.status.charAt(0) + res.status.slice(1).toLowerCase()}
               </div>
 
               <div className={styles.cardContent}>
                 <div className={styles.row}>
                   <span className={styles.label}>Bike</span>
-                  <span className={styles.valueHighlight}>{res.bike.modelName}</span>
+                  <span className={styles.valueHighlight}>
+                    {res.bike.modelName}
+                  </span>
                 </div>
 
                 <div className={styles.row}>
@@ -177,11 +204,12 @@ const RentalsPage = () => {
 
                 <div className={styles.totalRow}>
                   <span>Total Paid</span>
-                  <span className={styles.price}>{res.totalCost} PLN</span>
+                  <span className={styles.price}>
+                    {formatCurrency(res.totalCost)}
+                  </span>
                 </div>
               </div>
 
-              {/* Show Cancel button only if cancellable */}
               {isCancellable(res) && (
                 <div className={styles.cardFooter}>
                   <button
@@ -199,19 +227,33 @@ const RentalsPage = () => {
         {/* --- CONFIRMATION MODAL --- */}
         {isModalOpen && (
           <div className={styles.modalOverlay} onClick={closeModal}>
-            <div className={styles.modal} onClick={(event) => event.stopPropagation()}>
-              <h2>Cancel Reservation?</h2>
+            <div
+              className={styles.modal}
+              onClick={(e) => e.stopPropagation()}
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="modal-title"
+            >
+              <h2 id="modal-title">Cancel Reservation?</h2>
               <p>
                 Are you sure you want to cancel this reservation?
                 <br />
                 This action cannot be undone.
               </p>
               <div className={styles.modalActions}>
-                <button className={styles.secondaryBtn} onClick={closeModal}>
+                <button
+                  className={styles.secondaryBtn}
+                  onClick={closeModal}
+                  disabled={isCancelling}
+                >
                   No, Keep it
                 </button>
-                <button className={styles.dangerBtn} onClick={confirmCancel}>
-                  Yes, Cancel it
+                <button
+                  className={styles.dangerBtn}
+                  onClick={confirmCancel}
+                  disabled={isCancelling}
+                >
+                  {isCancelling ? "Cancelling..." : "Yes, Cancel it"}
                 </button>
               </div>
             </div>

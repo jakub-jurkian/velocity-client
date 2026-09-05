@@ -1,7 +1,7 @@
 @use "sass:color";
 @use "../../styles/variables" as v;
 
-// --- 1. MAIN LAYOUT ---
+// --- MAIN LAYOUT ---
 .container {
   min-height: 100vh;
   background-color: v.$color-bg-main;
@@ -71,7 +71,7 @@
   }
 }
 
-// --- 2. STEP 1: DATE SELECTION ---
+// --- STEP 1: DATE SELECTION ---
 
 // The "You are here" Banner
 .locationBanner {
@@ -97,6 +97,18 @@
     justify-content: center;
     border-radius: 50%;
     box-shadow: 0 0 10px rgba(v.$color-primary, 0.1);
+  }
+
+  .bikeEmoji {
+    margin-left: 8px;
+    font-size: 1.2em;
+  }
+
+  .helperText {
+    font-size: "0.8rem";
+    color: "#888";
+    margin-top: "4px";
+    display: "block";
   }
 
   .bannerText {
@@ -192,7 +204,7 @@
   }
 }
 
-// --- 3. STEP 2: LOADING ---
+// --- STEP 2: LOADING ---
 .loadingContainer {
   display: flex;
   flex-direction: column;
@@ -221,7 +233,7 @@
   }
 }
 
-// --- 4. STEP 3: RESULTS ---
+// --- STEP 3: RESULTS ---
 .backBtn {
   color: v.$color-text-muted;
   margin-bottom: 1.5rem;
@@ -518,6 +530,31 @@
     cursor: not-allowed;
     color: #9ca3af;
   }
+}
+
+.alignCenter {
+  align-items: center;
+}
+
+.rateContainer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.oldRate {
+  text-decoration: line-through;
+  color: #6b7280;
+  font-size: 0.9rem;
+}
+
+.discountBadge {
+  background-color: #7c3aed; // Primary purple
+  color: white;
+  font-size: 0.75rem;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: bold;
 }
 
 .miniSpinner {
