@@ -1,9 +1,10 @@
-import { useState, useEffect } from "react";
+import { useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { differenceInCalendarDays, parseISO } from "date-fns";
+import toast from "react-hot-toast";
 import { useAppSelector } from "../../store/hooks";
-import { processPayment } from "../../utils/paymentHelper";
 import { getDynamicPrice, getRentalDays } from "../../utils/rentalCalculations";
-import type { BikeInstance, BikeModel } from "../../types/Fleet";
+import type { ApiBike, BikeInstance, BikeModel } from "../../types/Fleet";
 import StepDateSelection from "./components/StepDateSelection";
 import StepLoading from "./components/StepLoading";
 import StepBikeSelection from "./components/StepBikeSelection";
@@ -11,16 +12,13 @@ import StepSummary from "./components/StepSummary";
 import StepPayment from "./components/StepPayment";
 import PageTransition from "../../components/common/PageTransition";
 import styles from "./RentBikePage.module.scss";
-import toast from "react-hot-toast";
+import { useCheckout } from "../../hooks/useCheckout";
+import Redirect from "../../components/common/Redirect";
+import { WizardStep } from "../../types/Wizard";
 
-// Timezone-safe, inclusive day diff for YYYY-MM-DD (e.g., 29→31 = 3 days)
+// parseISO safely converts 'YYYY-MM-DD' strings into Date objects
 const getInclusiveDays = (start: string, end: string) => {
-  const [sy, sm, sd] = start.split("-").map(Number);
-  const [ey, em, ed] = end.split("-").map(Number);
-  const startUTC = Date.UTC(sy, sm - 1, sd);
-  const endUTC = Date.UTC(ey, em - 1, ed);
-  const msPerDay = 24 * 60 * 60 * 1000;
-  return Math.floor((endUTC - startUTC) / msPerDay) + 1;
+  return differenceInCalendarDays(parseISO(end), parseISO(start)) + 1;
 };
 
 const formatCategory = (category: string) => {
@@ -28,13 +26,16 @@ const formatCategory = (category: string) => {
   return words.join(" ").replace(/^[a-z]/, (letter) => letter.toUpperCase());
 };
 
+const MIN_RENTAL_DAYS = 3;
+const MAX_RENTAL_DAYS = 21;
+
 const RentBikePage = () => {
   const navigate = useNavigate();
   const user = useAppSelector((state) => state.auth.user);
   const jwtToken = useAppSelector((state) => state.auth.token);
-  const userCity = user!.city;
+
   // Wizard State (Starts at Step 1: Dates)
-  const [step, setStep] = useState<1 | 2 | 3 | 4 | 5>(1);
+  const [step, setStep] = useState<WizardStep>(WizardStep.Dates);
   const [dates, setDates] = useState<{ start: string; end: string }>({
     start: "",
     end: "",
@@ -44,12 +45,23 @@ const RentBikePage = () => {
   const [chosenBikeModel, setChosenBikeModel] = useState<BikeModel | null>(
     null,
   );
-  const [paymentStatus, setPaymentStatus] = useState<
-    "idle" | "processing" | "success" | "error"
-  >("idle");
+
+  // 1. Initialize our custom hook
+  const { paymentStatus, setPaymentStatus, executeCheckout } =
+    useCheckout(jwtToken);
+
+  // 2. Create a ref to store the current AbortController
+  const abortControllerRef = useRef<AbortController | null>(null);
+
+  // If Redux hasn't loaded the user yet (e.g., hard refresh),
+  // or they somehow bypassed the protected route, stop rendering.
+  if (!user || !jwtToken) {
+    return <Redirect to="/login" />;
+  }
+  const userCity = user.city;
 
   // Step 1 - dates
-  const handleBikeSearch = (
+  const handleBikeSearch = async (
     e: React.FormEvent,
     setError: (msg: string) => void,
   ) => {
@@ -71,76 +83,69 @@ const RentBikePage = () => {
     // Inclusive, timezone-safe day count
     const diffDays = getInclusiveDays(dates.start, dates.end);
 
-    if (diffDays < 3) {
-      setError("Minimum rental period is 3 days.");
+    if (diffDays < MIN_RENTAL_DAYS) {
+      setError(`Minimum rental period is ${MIN_RENTAL_DAYS} days.`);
       return;
     }
 
-    if (diffDays > 21) {
-      setError("Maximum rental period is 21 days.");
+    if (diffDays > MAX_RENTAL_DAYS) {
+      setError(`Maximum rental period is ${MAX_RENTAL_DAYS} days.`);
       return;
     }
 
-    // Move to loading
-    setStep(2);
-  };
+    // Cancel any previous pending request before starting a new one
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    // Create a new controller for this specific request
+    abortControllerRef.current = new AbortController();
 
-  // Step 2 - simulate API call
-  useEffect(() => {
-    if (step !== 2 || !dates.start || !dates.end) return;
+    try {
+      // Move to loading
+      setStep(WizardStep.Loading);
+      const apiUrl = import.meta.env.VITE_API_URL;
+      const url = new URL(`${apiUrl}/api/v1/reservations/availability`);
+      url.searchParams.append("startDate", dates.start);
+      url.searchParams.append("endDate", dates.end);
+      url.searchParams.append("city", userCity);
 
-    const fetchActiveBikes = async () => {
-      try {
-        if (!jwtToken) return;
+      const response = await fetch(url, {
+        headers: { Authorization: `Bearer ${jwtToken}` },
+        signal: abortControllerRef.current.signal,
+      });
 
-        const url = new URL(
-          "http://localhost:8080/api/v1/reservations/availability",
-        );
-        url.searchParams.append("startDate", dates.start);
-        url.searchParams.append("endDate", dates.end);
-        url.searchParams.append("city", userCity);
-        const response = await fetch(url, {
-          headers: {
-            Authorization: `Bearer ${jwtToken}`,
-          },
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          // Convert flat backend DTO to nested UI Model
-
-          type ApiBike = {
-            bookableInstanceId: string;
-            modelName: string;
-            modelCategory: string;
-            modelDescription: string;
-            modelSpeed: string;
-            modelRange: string;
-            modelCapacity: string;
-          };
-
-          const mappedCatalog: BikeModel[] = data.map((apiBike: ApiBike) => ({
-            id: apiBike.bookableInstanceId,
-            name: apiBike.modelName,
-            category: formatCategory(apiBike.modelCategory),
-            description: apiBike.modelDescription,
-            stats: {
-              speed: apiBike.modelSpeed,
-              range: apiBike.modelRange,
-              capacity: apiBike.modelCapacity,
-            },
-          }));
-
-          setAvailableBikes(mappedCatalog);
-          setStep(3);
-        }
-      } catch (error) {
-        console.error("Failed to fetch active bikes:", error);
+      if (!response.ok) {
+        throw new Error("Failed to fetch available bikes");
       }
-    };
 
-    fetchActiveBikes();
-  }, [jwtToken, step, userCity, dates]);
+      const data = await response.json();
+
+      const mappedCatalog: BikeModel[] = data.map((apiBike: ApiBike) => ({
+        id: apiBike.bookableInstanceId,
+        name: apiBike.modelName,
+        category: formatCategory(apiBike.modelCategory),
+        description: apiBike.modelDescription,
+        stats: {
+          speed: apiBike.modelSpeed,
+          range: apiBike.modelRange,
+          capacity: apiBike.modelCapacity,
+        },
+      }));
+
+      setAvailableBikes(mappedCatalog);
+      setStep(WizardStep.BikeSelection);
+    } catch (error: unknown) {
+      // Ignore errors caused by our intentional abort
+      if (error instanceof Error && error.name === "AbortError") {
+        console.log("Previous search request aborted.");
+        return;
+      }
+
+      console.error("Search failed:", error);
+      toast.error("Failed to load available bikes.");
+      setStep(WizardStep.Dates); // Kick back to step 1 so they aren't stuck loading
+    }
+  };
 
   const handleBook = (instanceId: string) => {
     // Get raw reservations
@@ -158,72 +163,26 @@ const RentBikePage = () => {
     // Update state and advance to Summary
     setChosenBike(selectedInstance);
     setChosenBikeModel(selectedUiModel);
-    setStep(4);
+    setStep(WizardStep.Summary);
   };
 
   const handleProceedToPayment = () => {
     setPaymentStatus("idle"); // Reset payment state
-    setStep(5);
+    setStep(WizardStep.Payment);
   };
 
   const handleFinalPayment = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!chosenBike) return;
 
-    setPaymentStatus("processing"); // STATE: WAITING
-
-    try {
-      // ASYNC SIMULATION (The Requirement)
-      await processPayment();
-
-      // STATE: SUCCESS
-      setPaymentStatus("success");
-
-      const response = await fetch(
-        "http://localhost:8080/api/v1/reservations",
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${jwtToken}`,
-            "Content-Type": "Application/json",
-          },
-          body: JSON.stringify({
-            bikeInstanceId: chosenBike!.id,
-            startDate: dates.start,
-            endDate: dates.end,
-          }),
-        },
-      );
-      if (response.status === 409) {
-        toast.error(
-          "Concurrent booking conflict: This bike was just reserved. Please select another",
-        );
-        setStep(2);
-        return;
-      }
-      //returns {id, startDate, endDate, totalCost, status, createdAt, bike: {id, name}}
-
-      const data = await response.json();
-      const res = await fetch(
-        `http://localhost:8080/api/v1/reservations/${data.id}/confirm`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${jwtToken}`,
-          },
-        },
-      );
-      if (res.ok) {
-        navigate("/my-rentals");
-        toast.success("Reservation booked successfully!");
-      } else {
-        toast.error("Finalizing the reservation failed.");
-        setPaymentStatus("error");
-      }
-    } catch (error) {
-      console.log(error);
-      // STATE: REJECTION
-      setPaymentStatus("error");
-    }
+    // Call the hook, passing callbacks for navigation routing
+    executeCheckout(
+      chosenBike.id,
+      dates.start,
+      dates.end,
+      () => navigate("/my-rentals"), // onSuccess
+      () => setStep(WizardStep.Loading), // onConflict (reverts to search)
+    );
   };
 
   return (
@@ -241,7 +200,7 @@ const RentBikePage = () => {
 
           <main className={styles.wizardContent}>
             {/* --- STEP 1: DATE SELECTION --- */}
-            {step === 1 && (
+            {step === WizardStep.Dates && (
               <StepDateSelection
                 dates={dates}
                 setDates={setDates}
@@ -251,28 +210,28 @@ const RentBikePage = () => {
             )}
 
             {/* --- STEP 2: LOADING --- */}
-            {step === 2 && <StepLoading city={userCity} />}
+            {step === WizardStep.Loading && <StepLoading city={userCity} />}
 
             {/* --- STEP 3: RESULTS --- */}
-            {step === 3 && (
+            {step === WizardStep.BikeSelection && (
               <StepBikeSelection
                 availableBikes={availableBikes}
                 setStep={setStep}
-                onClick={handleBook}
+                onBookBike={handleBook}
                 city={userCity}
               />
             )}
             {/* --- STEP 4: SUMMARY & CONFIRM --- */}
-            {step === 4 && chosenBikeModel && (
+            {step === WizardStep.Summary && chosenBikeModel && (
               <StepSummary
                 setStep={setStep}
                 chosenBikeModel={chosenBikeModel}
                 dates={dates}
-                onClick={handleProceedToPayment}
+                onConfirm={handleProceedToPayment}
               />
             )}
             {/* --- STEP 5: PAYMENT PROCESS --- */}
-            {step === 5 && chosenBikeModel && (
+            {step === WizardStep.Payment && chosenBikeModel && (
               <StepPayment
                 setStep={setStep}
                 onSubmit={handleFinalPayment}

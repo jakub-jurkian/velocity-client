@@ -1,7 +1,8 @@
+import type { City } from "../../../types/Fleet";
 import styles from "../RentBikePage.module.scss";
 
 interface Props {
-  city: "WARSAW" | "GDANSK" | "POZNAN" | "WROCLAW";
+  city: City;
 }
 
 export default function StepLoading({ city }: Props) {

@@ -1,18 +1,19 @@
-import type { BikeModel } from "../../../types/Fleet";
+import type { BikeModel, City } from "../../../types/Fleet";
+import type { WizardStep } from "../../../types/Wizard";
 import styles from "../RentBikePage.module.scss";
 
 interface Props {
   availableBikes: BikeModel[];
-  city: "WARSAW" | "GDANSK" | "POZNAN" | "WROCLAW";
-  setStep: (s: 1 | 2 | 3 | 4 | 5) => void;
-  onClick: (e: string) => void;
+  city: City;
+  setStep: (step: WizardStep) => void;
+  onBookBike: (bikeId: string) => void;
 }
 
 export default function StepBikeSelection({
   availableBikes,
   city,
   setStep,
-  onClick,
+  onBookBike,
 }: Props) {
   return (
     <div className={styles.stepContainer}>
@@ -35,35 +36,38 @@ export default function StepBikeSelection({
             </button>
           </div>
         ) : (
-          availableBikes.map((bike: BikeModel) => (
+          availableBikes.map((bike) => (
             <div key={bike.id} className={styles.bikeCard}>
               <div className={styles.bikeInfo}>
                 <h3>
                   {bike.name}
-                  <span style={{ marginLeft: "8px", fontSize: "1.2em" }}>
-                    {bike.imageEmoji}
-                  </span>
+                  {bike.imageEmoji && (
+                    <span className={styles.bikeEmoji} aria-hidden="true">
+                      {bike.imageEmoji}
+                    </span>
+                  )}
                 </h3>
 
                 <div className={styles.specs}>
                   <span className={styles.spec} title="Category">
-                    🏷️ {bike.category}
+                    <span aria-hidden="true">🏷️</span> {bike.category}
                   </span>
                   <span className={styles.spec} title="Max Speed">
-                    ⚡ {bike.stats.speed} km/h
+                    <span aria-hidden="true">⚡</span> {bike.stats.speed} km/h
                   </span>
                   <span className={styles.spec} title="Range">
-                    🛣️ {bike.stats.range} km
+                    <span aria-hidden="true">🛣️</span> {bike.stats.range} km
                   </span>
                   <span className={styles.spec} title="Cargo Capacity">
-                    📦 {bike.stats.capacity} kg
+                    <span aria-hidden="true">📦</span> {bike.stats.capacity} kg
                   </span>
                 </div>
               </div>
 
               <button
                 className={styles.bookBtn}
-                onClick={() => onClick(bike.id)}
+                onClick={() => onBookBike(bike.id)}
+                aria-label={`Book ${bike.name}`} // Crucial for accessibility
               >
                 Book
               </button>

@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import {
   BarChart,
   Bar,
@@ -11,15 +12,38 @@ import {
   Cell,
   Legend,
 } from "recharts";
+import toast from "react-hot-toast";
 import PageTransition from "../../../components/common/PageTransition";
+import { useAppSelector } from "../../../store/hooks";
 import styles from "./PanelPage.module.scss";
 
-import { useAppSelector } from "../../../store/hooks";
-import { useEffect, useState } from "react";
+// Explicit TypeScript interfaces for type safety
+interface RevenueItem {
+  name: string;
+  revenue: number;
+}
+
+interface PopularityItem {
+  modelName: string;
+  count: number;
+  [key: string]: string | number;
+}
+
+interface DashboardState {
+  revenueData: RevenueItem[];
+  popularityData: PopularityItem[];
+  kpi: {
+    revenue: number;
+    occupancy: number;
+    activeRentals: number;
+  };
+}
 
 const PanelPage = () => {
   const jwtToken = useAppSelector((state) => state.auth.token);
-  const [dashboard, setDashboard] = useState({
+
+  // Typed state to prevent never[] inference bugs
+  const [dashboard, setDashboard] = useState<DashboardState>({
     revenueData: [],
     popularityData: [],
     kpi: {
@@ -29,75 +53,85 @@ const PanelPage = () => {
     },
   });
 
-  const fetchDashboardData = async () => {
-    // Heavy calculations
-    // const revenueChart = getMonthlyRevenue(reservations);
-    // const popularityChart = getPopularityStats(reservations, models);
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        if (!jwtToken) return;
 
-    // const totalRevenue = reservations.reduce(
-    //   (sum, r) => (r.status !== "CANCELLED" ? sum + r.totalCost : sum),
-    //   0,
-    // );
-    // const occupancy = getOccupancyRate(reservations, models.length * 5);
-    // const active = reservations.filter((r) => r.status === "CONFIRMED").length;
-    try {
-      const response = await fetch(
-        "http://localhost:8080/api/v1/admin/analytics",
-        {
+        const apiUrl = import.meta.env.VITE_API_URL;
+        const response = await fetch(`${apiUrl}/api/v1/admin/analytics`, {
           headers: {
             Authorization: `Bearer ${jwtToken}`,
           },
-        },
-      );
+        });
 
-      const data = await response.json();
+        if (!response.ok) {
+          const contentType = response.headers.get("content-type") || "";
+          const isJson =
+            contentType.includes("application/problem+json") ||
+            contentType.includes("application/json");
 
-      if (!response.ok) {
-        return;
+          if (isJson) {
+            const errorData = await response.json();
+            throw new Error(errorData.detail || "Failed to load analytics.");
+          } else {
+            throw new Error(`Server error: ${response.status}`);
+          }
+        }
+
+        const data = await response.json();
+
+        setDashboard({
+          revenueData: data.revenueTrend.map(
+            (r: { month: number; year: number; revenue: number }) => ({
+              name: `${r.month}/${r.year}`,
+              revenue: r.revenue,
+            }),
+          ),
+          popularityData: data.popularityStats,
+          kpi: {
+            revenue: data.totalRevenue,
+            occupancy: data.occupancyRate,
+            activeRentals: data.activeRentals,
+          },
+        });
+      } catch (error) {
+        console.error("Dashboard fetch error:", error);
+        toast.error("Could not load real-time analytics.");
       }
+    };
 
-      console.log(data.revenueTrend);
-      return {
-        revenueData: data.revenueTrend.map((r) => {
-          return { name: `${r.month}/${r.year}`, revenue: r.revenue };
-        }),
-        popularityData: data.popularityStats,
-        kpi: {
-          revenue: data.totalRevenue,
-          occupancy: data.occupancyRate,
-          activeRentals: data.activeRentals,
-        },
-      };
-    } catch (error) {
-      console.error(error);
-    }
-
-    return;
-  };
-
-  useEffect(() => {
-    fetchDashboardData().then((data) => {
-      if (data) {
-        setDashboard(data);
-      }
-    });
+    fetchDashboardData();
   }, [jwtToken]);
 
   const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042"];
 
+  // Enterprise currency formatter
+  const formatCurrency = (amount: number) =>
+    new Intl.NumberFormat("pl-PL", {
+      style: "currency",
+      currency: "PLN",
+      maximumFractionDigits: 0,
+    }).format(amount);
+
   return (
     <PageTransition>
-      <div className={styles.panelPage}>
+      <main className={styles.panelPage}>
         <header className={styles.header}>
           <h1>Dashboard Overview</h1>
           <p>Real-time fleet analytics.</p>
         </header>
 
         {/* KPI CARDS */}
-        <div className={styles.kpiGrid}>
+        <section
+          className={styles.kpiGrid}
+          aria-label="Key Performance Indicators"
+        >
           <div className={styles.card}>
             <h3>Total Revenue</h3>
-            <div className={styles.value}>{dashboard.kpi.revenue} PLN</div>
+            <div className={styles.value}>
+              {formatCurrency(dashboard.kpi.revenue)}
+            </div>
           </div>
           <div className={styles.card}>
             <h3>Occupancy Rate</h3>
@@ -109,17 +143,22 @@ const PanelPage = () => {
             <div className={styles.value}>{dashboard.kpi.activeRentals}</div>
             <div className={styles.subtext}>Current live bookings</div>
           </div>
-        </div>
+        </section>
 
         {/* CHARTS GRID */}
         <div className={styles.chartsGrid}>
           {/* CHART 1: REVENUE */}
-          <div
+          <section
             className={`${styles.card} ${styles.chartCard} ${styles.revenueCard}`}
           >
             <h3>Revenue Trend</h3>
             <div className={styles.chartWrapper}>
-              <ResponsiveContainer width="100%" height="100%">
+              <ResponsiveContainer
+                width="100%"
+                height="100%"
+                minWidth={0}
+                minHeight={280}
+              >
                 <BarChart data={dashboard.revenueData} margin={{ left: -20 }}>
                   <CartesianGrid
                     strokeDasharray="3 3"
@@ -150,7 +189,10 @@ const PanelPage = () => {
                     }}
                     itemStyle={{ color: "#fff" }}
                     separator=""
-                    formatter={(value) => [value, ""]}
+                    formatter={(value) => [
+                      formatCurrency(Number(value) || 0),
+                      "",
+                    ]}
                   />
                   <Bar
                     dataKey="revenue"
@@ -161,15 +203,20 @@ const PanelPage = () => {
                 </BarChart>
               </ResponsiveContainer>
             </div>
-          </div>
+          </section>
 
           {/* CHART 2: POPULARITY */}
-          <div
+          <section
             className={`${styles.card} ${styles.chartCard} ${styles.pieCard}`}
           >
             <h3>Fleet Popularity</h3>
             <div className={styles.chartWrapper}>
-              <ResponsiveContainer width="100%" height="100%">
+              <ResponsiveContainer
+                width="100%"
+                height="100%"
+                minWidth={0}
+                minHeight={280}
+              >
                 <PieChart>
                   <Pie
                     data={dashboard.popularityData}
@@ -197,24 +244,22 @@ const PanelPage = () => {
                     }}
                     itemStyle={{ color: "#fff" }}
                     separator=""
-                    formatter={(value) => [value, ""]}
+                    formatter={(value) => [value, "Bookings"]}
                   />
                   <Legend
                     verticalAlign="bottom"
-                    height={36}
+                    height={72}
                     iconType="circle"
                     formatter={(value) => (
-                      <span style={{ color: "#94A3B8", fontSize: "12px" }}>
-                        {value}
-                      </span>
+                      <span className={styles.legendText}>{value}</span>
                     )}
                   />
                 </PieChart>
               </ResponsiveContainer>
             </div>
-          </div>
+          </section>
         </div>
-      </div>
+      </main>
     </PageTransition>
   );
 };

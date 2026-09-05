@@ -5,7 +5,7 @@ import styles from "./LandingPage.module.scss";
 const stats = [
   { value: "100 km", label: "Max Range / Charge" },
   { value: "45 km/h", label: "Max Speed" },
-  { value: "$0", label: "Maintenance Cost" },
+  { value: "0 PLN", label: "Maintenance Cost" },
 ];
 
 const features = [
@@ -71,7 +71,7 @@ const LandingPage = () => {
           <div className={styles.grid}>
             {features.map((feature) => (
               <div key={feature.title} className={styles.card}>
-                <div className={styles.icon}>{feature.icon}</div>
+                <div className={styles.icon} aria-hidden="true">{feature.icon}</div>
                 <h3>{feature.title}</h3>
                 <p>{feature.description}</p>
               </div>

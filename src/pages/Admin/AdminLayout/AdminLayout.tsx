@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { Outlet, NavLink, useNavigate, Link } from "react-router-dom";
-import styles from "./AdminLayout.module.scss";
 import toast from "react-hot-toast";
 import { useAppDispatch } from "../../../store/hooks";
-import { logout } from "../../../store/slices/authSlice";
+import { logout } from "../../../store/slices/authSlice"; // Note: Ensure this matches your auth slice action name
+import styles from "./AdminLayout.module.scss";
 
 const AdminLayout = () => {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
@@ -17,22 +17,28 @@ const AdminLayout = () => {
   ];
 
   const handleLogout = () => {
+    setIsMobileOpen(false); // Close drawer on logout
     dispatch(logout());
     navigate("/");
     toast.success("Logged out successfully!");
   };
 
+  const handleClientView = () => {
+    setIsMobileOpen(false); // Close drawer on navigation
+  };
+
   return (
     <div className={styles.adminContainer}>
       {/* === TOP NAVIGATION BAR === */}
-      <nav className={styles.topNav}>
+      <nav className={styles.topNav} aria-label="Admin Navigation">
         
         {/* LEFT: Mobile Toggle + Brand */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+        <div className={styles.brandGroup}>
           <button 
             className={styles.mobileToggle}
             onClick={() => setIsMobileOpen(!isMobileOpen)}
-            aria-label="Toggle menu"
+            aria-label="Toggle navigation menu"
+            aria-expanded={isMobileOpen}
           >
             {isMobileOpen ? "✕" : "☰"}
           </button>
@@ -84,15 +90,19 @@ const AdminLayout = () => {
           </NavLink>
         ))}
 
-        {/* MOBILE ACTIONS (Visible only in Drawer) */}
+        {/* MOBILE ACTIONS */}
         <div className={styles.mobileActions}>
-            <Link to="/dashboard" className={styles.mobileSwitch}>
-               Client View
-            </Link>
-            
-            <button className={styles.mobileLogout} onClick={handleLogout}>
-               Logout
-            </button>
+          <Link 
+            to="/dashboard" 
+            className={styles.mobileSwitch}
+            onClick={handleClientView} // Closes drawer when switching views
+          >
+             Client View
+          </Link>
+          
+          <button className={styles.mobileLogout} onClick={handleLogout}>
+             Logout
+          </button>
         </div>
       </div>
 

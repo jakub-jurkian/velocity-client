@@ -272,6 +272,7 @@
   .avatar {
     width: 36px;
     height: 36px;
+    flex: 0 0 36px;
     background: rgba(255, 255, 255, 0.1);
     border-radius: 50%;
     display: flex;
@@ -501,6 +502,18 @@
   gap: 1rem;
   margin-top: 2rem;
   justify-content: flex-end;
+}
+
+@media (max-width: v.$mobile) {
+  .modalActions {
+    gap: 0.75rem;
+
+    button {
+      min-width: 0;
+      padding: 0.6rem 0.75rem;
+      line-height: 1.2;
+    }
+  }
 }
 
 .secondaryBtn {

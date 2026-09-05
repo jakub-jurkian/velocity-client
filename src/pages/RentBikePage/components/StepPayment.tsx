@@ -1,7 +1,8 @@
+import { WizardStep } from "../../../types/Wizard";
 import styles from "../RentBikePage.module.scss";
 
 interface Props {
-  setStep: (s: 1 | 2 | 3 | 4 | 5) => void;
+  setStep: (step: WizardStep) => void;
   onSubmit: (e: React.FormEvent) => void;
   paymentStatus: "idle" | "processing" | "success" | "error";
   price: number;
@@ -13,12 +14,21 @@ export default function StepPayment({
   paymentStatus,
   price,
 }: Props) {
+  // Enterprise currency formatting
+  const formattedPrice = new Intl.NumberFormat("pl-PL", {
+    style: "currency",
+    currency: "PLN",
+  }).format(price);
+
+  const isProcessingOrSuccess =
+    paymentStatus === "processing" || paymentStatus === "success";
+
   return (
     <div className={styles.stepContainer}>
       <button
-        onClick={() => setStep(4)}
+        onClick={() => setStep(WizardStep.Summary)}
         className={styles.backBtn}
-        disabled={paymentStatus === "processing" || paymentStatus === "success"}
+        disabled={isProcessingOrSuccess}
       >
         ← Back to Summary
       </button>
@@ -30,9 +40,11 @@ export default function StepPayment({
         {/* CARD UI */}
         <div className={styles.cardContainer}>
           <div className={styles.inputGroup}>
-            <label>Cardholder Name</label>
+            <label htmlFor="ccName">Cardholder Name</label>
             <input
+              id="ccName"
               type="text"
+              autoComplete="cc-name" // Enables browser autofill
               placeholder="John Doe"
               required
               disabled={paymentStatus === "processing"}
@@ -40,9 +52,12 @@ export default function StepPayment({
           </div>
 
           <div className={styles.inputGroup}>
-            <label>Card Number</label>
+            <label htmlFor="ccNumber">Card Number</label>
             <input
+              id="ccNumber"
               type="text"
+              inputMode="numeric" // Opens numpad on mobile
+              autoComplete="cc-number"
               placeholder="0000 0000 0000 0000"
               maxLength={19}
               required
@@ -52,9 +67,12 @@ export default function StepPayment({
 
           <div className={styles.row}>
             <div className={styles.inputGroup}>
-              <label>Expiry</label>
+              <label htmlFor="ccExpiry">Expiry</label>
               <input
+                id="ccExpiry"
                 type="text"
+                inputMode="numeric"
+                autoComplete="cc-exp"
                 placeholder="MM/YY"
                 maxLength={5}
                 required
@@ -62,11 +80,14 @@ export default function StepPayment({
               />
             </div>
             <div className={styles.inputGroup}>
-              <label>CVC</label>
+              <label htmlFor="ccCvc">CVC</label>
               <input
+                id="ccCvc"
                 type="text"
+                inputMode="numeric"
+                autoComplete="cc-csc"
                 placeholder="123"
-                maxLength={3}
+                maxLength={4} // Some AMEX cards use 4 digits
                 required
                 disabled={paymentStatus === "processing"}
               />
@@ -74,16 +95,16 @@ export default function StepPayment({
           </div>
         </div>
 
-        {/* STATUS MESSAGES */}
+        {/* STATUS MESSAGES - added role="alert" for screen readers */}
         {paymentStatus === "error" && (
-          <div className={styles.errorBanner}>
-            ⚠️ Transaction declined. Bank rejected the operation.
+          <div className={styles.errorBanner} role="alert">
+            Transaction declined. Bank rejected the operation.
           </div>
         )}
 
         {paymentStatus === "success" && (
-          <div className={styles.successBanner}>
-            ✅ Payment Successful! Redirecting...
+          <div className={styles.successBanner} role="alert">
+            Payment Successful! Redirecting...
           </div>
         )}
 
@@ -91,14 +112,12 @@ export default function StepPayment({
         <button
           type="submit"
           className={styles.payBtn}
-          disabled={
-            paymentStatus === "processing" || paymentStatus === "success"
-          }
+          disabled={isProcessingOrSuccess}
         >
           {paymentStatus === "processing" ? (
-            <span className={styles.miniSpinner}></span>
+            <span className={styles.miniSpinner} aria-label="Processing payment"></span>
           ) : (
-            `Pay ${price} PLN`
+            `Pay ${formattedPrice}`
           )}
         </button>
       </form>

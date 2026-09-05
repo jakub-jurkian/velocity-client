@@ -1,9 +1,10 @@
 import { useAppSelector } from "../../store/hooks";
 import { Outlet } from "react-router-dom";
 import Redirect from "../common/Redirect.tsx";
+import type { UserRole } from "../../types/User.ts";
 
 interface Props {
-  allowedRoles?: string[];
+  allowedRoles?: UserRole[];
   children?: React.ReactNode;
 }
 

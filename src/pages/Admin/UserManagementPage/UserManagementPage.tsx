@@ -4,33 +4,36 @@ import type { User } from "../../../types/User";
 import PageTransition from "../../../components/common/PageTransition";
 import toast from "react-hot-toast";
 import { useAppSelector } from "../../../store/hooks";
+import { SUPPORTED_CITIES, type City } from "../../../types/Fleet";
 
 interface UserUpdatePayloadByAdmin {
   fullName?: string;
   phone?: string;
-  city?: "WARSAW" | "GDANSK" | "POZNAN" | "WROCLAW";
+  city?: City;
   email?: string;
 }
 
-// Pure fetch function extracted outside the component
-// It handles the network request and returns the data (or undefined on failure)
-// It knows absolutely nothing about React state
+// Pure fetch function using environment variables and safe JSON parsing
 const fetchUsersFromApi = async (
   token: string,
 ): Promise<User[] | undefined> => {
   try {
-    const response = await fetch("http://localhost:8080/api/v1/admin/users", {
+    const apiUrl = import.meta.env.VITE_API_URL;
+    const response = await fetch(`${apiUrl}/api/v1/admin/users`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
     });
-    if (!response.ok) {
+
+    const contentType = response.headers.get("content-type") || "";
+    if (!response.ok || !contentType.includes("application/json")) {
       return undefined;
     }
+
     const data = await response.json();
     return data.data;
   } catch (error) {
-    console.error(error);
+    console.error("Failed to fetch users:", error);
     return undefined;
   }
 };
@@ -41,14 +44,15 @@ const UserManagement = () => {
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [isBlockModalOpen, setIsBlockModalOpen] = useState(false);
   const [userToBlock, setUserToBlock] = useState<User | null>(null);
+
   const jwtToken = useAppSelector((state) => state.auth.token);
   const currentUserId = useAppSelector((state) => state.auth.user?.id);
+  const apiUrl = import.meta.env.VITE_API_URL;
 
-  // The useEffect calls the pure function and handles state safely in the promise resolution.
   useEffect(() => {
     if (!jwtToken) return;
 
-    let ignore = false; // Prevents race conditions in React
+    let ignore = false;
 
     fetchUsersFromApi(jwtToken).then((freshUsers) => {
       if (!ignore && freshUsers) {
@@ -79,9 +83,10 @@ const UserManagement = () => {
 
     const { id: userId, status: currentStatus } = userToBlock;
     const statusUrl = currentStatus === "ACTIVE" ? "block" : "unblock";
+
     try {
       const response = await fetch(
-        `http://localhost:8080/api/v1/admin/users/${userId}/${statusUrl}`,
+        `${apiUrl}/api/v1/admin/users/${userId}/${statusUrl}`,
         {
           method: "POST",
           headers: {
@@ -89,6 +94,7 @@ const UserManagement = () => {
           },
         },
       );
+
       if (!response.ok) {
         toast.error(
           currentStatus === "ACTIVE"
@@ -109,7 +115,6 @@ const UserManagement = () => {
     );
 
     setUsers(updatedUsers);
-    localStorage.setItem("velocity_users", JSON.stringify(updatedUsers));
 
     if (newStatus === "ACTIVE") {
       toast.success("User unblocked successfully!");
@@ -151,6 +156,7 @@ const UserManagement = () => {
 
     if (!hasChanged) {
       toast("No changes made.", { icon: "ℹ️" });
+      setIsModalOpen(false);
       return;
     }
 
@@ -173,7 +179,7 @@ const UserManagement = () => {
     if (Object.keys(changedPayload).length !== 0) {
       try {
         const response = await fetch(
-          `http://localhost:8080/api/v1/admin/users/${originalUser.id}`,
+          `${apiUrl}/api/v1/admin/users/${originalUser.id}`,
           {
             method: "PATCH",
             headers: {
@@ -185,12 +191,18 @@ const UserManagement = () => {
         );
 
         if (!response.ok) {
-          const errorData = await response.json();
-          toast.error(errorData.detail || "Failed to update profile.");
+          const contentType = response.headers.get("content-type") || "";
+          if (contentType.includes("application/json")) {
+            const errorData = await response.json();
+            toast.error(errorData.detail || "Failed to update profile.");
+          } else {
+            toast.error("Server error during update.");
+          }
           return;
         }
       } catch (error) {
         console.error(error);
+        toast.error("Network connection failed.");
         return;
       }
     }
@@ -199,7 +211,7 @@ const UserManagement = () => {
     if (originalUser.role !== editingUser.role) {
       try {
         const responseRole = await fetch(
-          `http://localhost:8080/api/v1/admin/users/${originalUser.id}/role`,
+          `${apiUrl}/api/v1/admin/users/${originalUser.id}/role`,
           {
             method: "PATCH",
             headers: {
@@ -211,11 +223,14 @@ const UserManagement = () => {
         );
 
         if (!responseRole.ok) {
-          const errorData = await responseRole.json();
-          toast.error(errorData.detail);
+          const contentType = responseRole.headers.get("content-type") || "";
+          if (contentType.includes("application/json")) {
+            const errorData = await responseRole.json();
+            toast.error(errorData.detail || "Failed to update role.");
+          } else {
+            toast.error("Server error during role update.");
+          }
 
-          // The Resync Fallback
-          // Fetch fresh data and update the state locally so the UI matches the DB exactly.
           const freshUsers = await fetchUsersFromApi(jwtToken);
           if (freshUsers) {
             setUsers(freshUsers);
@@ -224,6 +239,7 @@ const UserManagement = () => {
         }
       } catch (error) {
         console.error(error);
+        toast.error("Network connection failed.");
         return;
       }
     }
@@ -239,7 +255,7 @@ const UserManagement = () => {
 
   return (
     <PageTransition>
-      <div className={styles.container}>
+      <main className={styles.container}>
         <header className={styles.pageHeader}>
           <div className={styles.headerText}>
             <h1>User Management</h1>
@@ -263,7 +279,7 @@ const UserManagement = () => {
                 <tr key={user.id}>
                   <td className={styles.primaryCell}>
                     <div className={styles.userCell}>
-                      <div className={styles.avatar}>
+                      <div className={styles.avatar} aria-hidden="true">
                         {user.fullName.charAt(0)}
                       </div>
                       <div className={styles.userInfo}>
@@ -323,17 +339,22 @@ const UserManagement = () => {
           </table>
         </div>
 
+        {/* EDIT MODAL */}
         {isModalOpen && editingUser && (
           <div
             className={styles.modalOverlay}
             onClick={() => setIsModalOpen(false)}
           >
-            <div className={styles.modal} onClick={(event) => event.stopPropagation()}>
+            <div
+              className={styles.modal}
+              onClick={(event) => event.stopPropagation()}
+            >
               <h2>Edit User</h2>
               <form onSubmit={handleSaveUser}>
                 <div className={styles.formGroup}>
-                  <label>Full Name</label>
+                  <label htmlFor="modal-fullName">Full Name</label>
                   <input
+                    id="modal-fullName"
                     type="text"
                     value={editingUser.fullName}
                     onChange={(e) =>
@@ -348,8 +369,9 @@ const UserManagement = () => {
 
                 <div className={styles.formRow}>
                   <div className={styles.formGroup}>
-                    <label>Email</label>
+                    <label htmlFor="modal-email">Email</label>
                     <input
+                      id="modal-email"
                       type="email"
                       value={editingUser.email}
                       onChange={(e) =>
@@ -362,8 +384,9 @@ const UserManagement = () => {
                     />
                   </div>
                   <div className={styles.formGroup}>
-                    <label>Phone Number</label>
+                    <label htmlFor="modal-phone">Phone Number</label>
                     <input
+                      id="modal-phone"
                       type="tel"
                       value={editingUser.phone}
                       onChange={(e) =>
@@ -379,53 +402,52 @@ const UserManagement = () => {
 
                 <div className={styles.formRow}>
                   <div className={styles.formGroup}>
-                    <label>Role</label>
+                    <label htmlFor="modal-role">Role</label>
                     {editingUser.id === currentUserId ? (
-                      // Read-only state for the logged-in admin
                       <div
                         className={`${styles.valueDisplay} ${styles.readOnly}`}
                       >
                         {editingUser.role === "ADMIN"
                           ? "Administrator"
                           : "Client"}
-                        <span className={styles.lockIcon}>🔒</span>
+                        <span className={styles.lockIcon} aria-hidden="true">
+                          🔒
+                        </span>
                       </div>
                     ) : (
-                      // Editable state for everyone else
                       <select
+                        id="modal-role"
                         value={editingUser.role}
                         onChange={(e) =>
                           setEditingUser({
                             ...editingUser,
-                            role: e.target.value as "ADMIN" | "CLIENT",
+                            role: e.target.value as "ADMIN" | "USER",
                           })
                         }
                       >
-                        <option value="CLIENT">Client</option>
+                        <option value="USER">Client</option>
                         <option value="ADMIN">Administrator</option>
                       </select>
                     )}
                   </div>
 
                   <div className={styles.formGroup}>
-                    <label>City</label>
+                    <label htmlFor="modal-city">City</label>
                     <select
+                      id="modal-city"
                       value={editingUser.city}
                       onChange={(e) =>
                         setEditingUser({
                           ...editingUser,
-                          city: e.target.value as
-                            | "WARSAW"
-                            | "GDANSK"
-                            | "POZNAN"
-                            | "WROCLAW",
+                          city: e.target.value as City,
                         })
                       }
                     >
-                      <option value="WARSAW">Warsaw</option>
-                      <option value="GDANSK">Gdansk</option>
-                      <option value="POZNAN">Poznan</option>
-                      <option value="WROCLAW">Wroclaw</option>
+                      {SUPPORTED_CITIES.map((city) => (
+                        <option key={city} value={city}>
+                          {city.charAt(0) + city.slice(1).toLowerCase()}
+                        </option>
+                      ))}
                     </select>
                   </div>
                 </div>
@@ -447,16 +469,22 @@ const UserManagement = () => {
           </div>
         )}
 
+        {/* BLOCK / UNBLOCK MODAL */}
         {isBlockModalOpen && userToBlock && (
           <div className={styles.modalOverlay} onClick={closeBlockModal}>
-            <div className={styles.modal} onClick={(event) => event.stopPropagation()}>
+            <div
+              className={styles.modal}
+              onClick={(event) => event.stopPropagation()}
+            >
               <h2>
                 {userToBlock.status === "ACTIVE"
                   ? "Block User?"
                   : "Unblock User?"}
               </h2>
               <p>
-                Are you sure you want to {userToBlock.status === "ACTIVE" ? "block" : "unblock"} {userToBlock.fullName}?
+                Are you sure you want to{" "}
+                {userToBlock.status === "ACTIVE" ? "block" : "unblock"}{" "}
+                {userToBlock.fullName}?
                 <br />
                 This action will change their system access.
               </p>
@@ -475,13 +503,15 @@ const UserManagement = () => {
                   }
                   onClick={confirmBlockToggle}
                 >
-                  {userToBlock.status === "ACTIVE" ? "Yes, Block" : "Yes, Unblock"}
+                  {userToBlock.status === "ACTIVE"
+                    ? "Yes, Block"
+                    : "Yes, Unblock"}
                 </button>
               </div>
             </div>
           </div>
         )}
-      </div>
+      </main>
     </PageTransition>
   );
 };

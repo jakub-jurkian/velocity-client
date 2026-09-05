@@ -48,12 +48,12 @@ const AboutPage = () => {
         </section>
 
         {/* Stats Grid */}
-        <section className={styles.statsGrid}>
+        <section className={styles.statsGrid} aria-label="Company Statistics">
           {stats.map((stat) => (
-            <div key={stat.label} className={styles.statCard}>
+            <article key={stat.label} className={styles.statCard}>
               <span className={styles.statNumber}>{stat.number}</span>
               <span className={styles.statLabel}>{stat.label}</span>
-            </div>
+            </article>
           ))}
         </section>
 
@@ -62,12 +62,12 @@ const AboutPage = () => {
           <h2>Our Core Values</h2>
           <div className={styles.valueRow}>
             {values.map((value) => (
-              <div key={value.title} className={styles.valueItem}>
+              <article key={value.title} className={styles.valueItem}>
                 <h3>
-                  {value.icon} {value.title}
+                  <span aria-hidden="true">{value.icon}</span> {value.title}
                 </h3>
                 <p>{value.description}</p>
-              </div>
+              </article>
             ))}
           </div>
         </section>

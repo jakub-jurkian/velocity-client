@@ -7,6 +7,7 @@ import {
   validatePhone,
 } from "../../utils/validators";
 import PageTransition from "../../components/common/PageTransition";
+import { SUPPORTED_CITIES } from "../../types/Fleet"; // 1. Use the central source of truth
 import styles from "./RegisterPage.module.scss";
 
 const RegisterPage = () => {
@@ -20,10 +21,11 @@ const RegisterPage = () => {
       password: "",
       confirmPassword: "",
       agreeOnTerms: false,
-      city: "WARSAW",
+      city: SUPPORTED_CITIES[0], // Default to the first supported city safely
     },
     validate: (vals) => {
       const errs: Record<string, string> = {};
+      
       const fullNameError = validateMinLength(vals.fullName, 2, "Full Name");
       if (fullNameError) errs.fullName = fullNameError;
 
@@ -48,46 +50,46 @@ const RegisterPage = () => {
     },
     onSubmit: async (vals) => {
       try {
-        const response = await fetch(
-          "http://localhost:8080/api/v1/auth/register",
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              email: vals.email,
-              password: vals.password,
-              fullName: vals.fullName,
-              city: vals.city,
-              phone: vals.phone,
-            }),
+        const apiUrl = import.meta.env.VITE_API_URL; // 2. No hardcoded localhost
+
+        const response = await fetch(`${apiUrl}/api/v1/auth/register`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
           },
-        );
+          body: JSON.stringify({
+            email: vals.email,
+            password: vals.password,
+            fullName: vals.fullName,
+            city: vals.city,
+            phone: vals.phone,
+          }),
+        });
 
         if (!response.ok) {
-          // Server replied with an error code (400, 409, 422, etc.)
-          // Read the backend's ProblemDetail payload and show the specific error message
-          const errorData = await response.json();
-          toast.error(errorData.detail || "Action failed");
+          // 3. Safe JSON parsing to protect against HTML server crashes
+          const contentType = response.headers.get("content-type") || "";
+          const isJson = contentType.includes("application/problem+json") || 
+                         contentType.includes("application/json");
+
+          if (isJson) {
+            const errorData = await response.json();
+            toast.error(errorData.detail || "Registration failed. Please check your inputs.");
+          } else {
+            toast.error("Server error. Please try again later.");
+          }
           return;
         }
 
-        navigate("/login", {
-          replace: true,
-        });
+        navigate("/login", { replace: true });
         toast.success("You have been registered successfully!");
+        
       } catch (error) {
-        // Network failure (server is completely unreachable or offline)
-        console.error(error);
-        toast.error(
-          "Unable to connect to VeloCity server. Please check your connection.",
-        );
+        console.error("Registration network error:", error);
+        toast.error("Unable to connect to VeloCity server. Please check your connection.");
       }
     },
   });
-
-  const cities = ["WARSAW", "GDANSK", "POZNAN", "WROCLAW"];
 
   return (
     <PageTransition>
@@ -211,7 +213,8 @@ const RegisterPage = () => {
                   onChange={handleChange}
                   required
                 >
-                  {cities.map((city) => (
+                  {/* Iterate over the central source of truth */}
+                  {SUPPORTED_CITIES.map((city) => (
                     <option key={city} value={city}>
                       {city}
                     </option>
@@ -232,8 +235,9 @@ const RegisterPage = () => {
                 />
                 <span className={styles.checkmark}></span>
                 <span className={styles.termsText}>
-                  I agree to the <a href="#">Terms of Service</a> and{" "}
-                  <a href="#">Privacy Policy</a>.
+                  {/* 4. Removed href="#" to prevent page jumping. Use spans or real <Link>s */}
+                  I agree to the <span className={styles.fakeLink}>Terms of Service</span> and{" "}
+                  <span className={styles.fakeLink}>Privacy Policy</span>.
                 </span>
               </label>
               {errors.agreeOnTerms && (
@@ -251,7 +255,7 @@ const RegisterPage = () => {
             >
               {isSubmitting ? (
                 <>
-                  <span className="spinner"></span>
+                  <span className="spinner" aria-hidden="true"></span>
                   Creating Account...
                 </>
               ) : (

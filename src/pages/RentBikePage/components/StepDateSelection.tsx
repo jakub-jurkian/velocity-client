@@ -1,11 +1,15 @@
 import { useState, useMemo } from "react";
+import { format, addDays, parseISO, isAfter } from "date-fns";
 import styles from "../RentBikePage.module.scss";
+import type { City } from "../../../types/Fleet";
+
+const MAX_RENTAL_DAYS = 21;
 
 interface Props {
   dates: { start: string; end: string };
   setDates: (d: { start: string; end: string }) => void;
   onSubmit: (e: React.FormEvent, setError: (msg: string) => void) => void;
-  city: string;
+  city: City;
 }
 
 export default function StepDateSelection({
@@ -16,29 +20,36 @@ export default function StepDateSelection({
 }: Props) {
   const [error, setError] = useState("");
 
-  const today = new Date().toISOString().split("T")[0];
+  // Safely get local date as YYYY-MM-DD
+  const today = format(new Date(), "yyyy-MM-dd");
 
-  // Calculate dynamic limits for the END DATE input
-  // It only exists if a Start Date is selected
   const maxEndDate = useMemo(() => {
     if (!dates.start) return undefined;
-
-    const startDate = new Date(dates.start);
-    // Inclusive window: allow up to 21 calendar days (start + 20)
-    startDate.setDate(startDate.getDate() + 20);
-
-    return startDate.toISOString().split("T")[0];
+    
+    // Use date-fns to safely add days ignoring timezone shifts
+    const maxDate = addDays(parseISO(dates.start), MAX_RENTAL_DAYS - 1);
+    return format(maxDate, "yyyy-MM-dd");
   }, [dates.start]);
 
   const handleDateChange = (field: "start" | "end", value: string) => {
     if (error) setError("");
-    setDates({ ...dates, [field]: value });
+
+    const newDates = { ...dates, [field]: value };
+
+    // UX Fix: If start date moves past end date, clear the end date
+    if (field === "start" && newDates.end) {
+      if (isAfter(parseISO(value), parseISO(newDates.end))) {
+        newDates.end = "";
+      }
+    }
+
+    setDates(newDates);
   };
 
   return (
     <div className={styles.stepContainer}>
       <div className={styles.locationBanner}>
-        <span className={styles.pinIcon}>📍</span>
+        <span className={styles.pinIcon} aria-hidden="true">📍</span>
         <div className={styles.bannerText}>
           <span className={styles.label}>Browsing fleet in</span>
           <span className={styles.city}>{city}</span>
@@ -46,12 +57,15 @@ export default function StepDateSelection({
       </div>
 
       <h1>When do you need it?</h1>
-      <p className={styles.subtitle}>Select your rental dates (3-21 days).</p>
+      <p className={styles.subtitle}>
+        Select your rental dates (3-{MAX_RENTAL_DAYS} days).
+      </p>
 
       <form onSubmit={(e) => onSubmit(e, setError)} className={styles.dateForm}>
         <div className={styles.inputGroup}>
-          <label>Start Date</label>
+          <label htmlFor="startDate">Start Date</label>
           <input
+            id="startDate"
             type="date"
             value={dates.start}
             onChange={(e) => handleDateChange("start", e.target.value)}
@@ -62,8 +76,9 @@ export default function StepDateSelection({
         </div>
 
         <div className={styles.inputGroup}>
-          <label>End Date</label>
+          <label htmlFor="endDate">End Date</label>
           <input
+            id="endDate"
             type="date"
             value={dates.end}
             onChange={(e) => handleDateChange("end", e.target.value)}
@@ -74,14 +89,7 @@ export default function StepDateSelection({
             required
           />
           {dates.start && (
-            <span
-              style={{
-                fontSize: "0.8rem",
-                color: "#888",
-                marginTop: "4px",
-                display: "block",
-              }}
-            >
+            <span className={styles.helperText}>
               Max return date: {maxEndDate}
             </span>
           )}

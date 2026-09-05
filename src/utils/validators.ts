@@ -1,4 +1,3 @@
-
 // Checks if a value is empty or just whitespace.
 export const validateRequired = (
   value: string,
