@@ -4,7 +4,6 @@ import { useAppSelector } from "../../store/hooks";
 import PageTransition from "../../components/common/PageTransition";
 import styles from "./DashboardPage.module.scss";
 import type { Reservation } from "../../types/Reservation";
-import type { BikeInstance } from "../../types/Fleet";
 
 // Hub addresses by city (normalized keys)
 interface HubInfo {
@@ -57,7 +56,7 @@ const DashboardPage = () => {
   const userId = user?.id;
   const userCity = user?.city;
   const [activeRentals, setActiveRentals] = useState<number>(0);
-  const [activeBikes, setActiveBikes] = useState<number>(0);
+  const [activeBikesCount, setActiveBikesCount] = useState<number>(0);
 
   useEffect(() => {
     const fetchActiveRentals = async () => {
@@ -97,7 +96,7 @@ const DashboardPage = () => {
       try {
         if (!jwtToken) return;
 
-        const response = await fetch("http://localhost:8080/api/v1/fleet", {
+        const response = await fetch(`http://localhost:8080/api/v1/fleet/count?city=${userCity}`, {
           headers: {
             Authorization: `Bearer ${jwtToken}`,
           },
@@ -106,11 +105,7 @@ const DashboardPage = () => {
         if (response.ok) {
           const data = await response.json();
           // Extract the exact count from our custom backend envelope
-          console.log(data.data);
-          const activeBikes = data.data.filter(
-            (r: BikeInstance) => r.status === "ACTIVE" && r.city === userCity,
-          ).length;
-          setActiveBikes(activeBikes);
+          setActiveBikesCount(data.count);
         }
       } catch (error) {
         console.error("Failed to fetch active rentals:", error);
@@ -172,7 +167,7 @@ const DashboardPage = () => {
 
           <div className={styles.statCard}>
             <h3>Fleet Status</h3>
-            <div className={styles.statValue}>{activeBikes}</div>
+            <div className={styles.statValue}>{activeBikesCount}</div>
             <p className={styles.statLabel}>E-bikes nearby</p>
           </div>
 

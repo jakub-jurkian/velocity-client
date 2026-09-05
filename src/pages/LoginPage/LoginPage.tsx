@@ -39,12 +39,17 @@ const LoginPage = () => {
         body: JSON.stringify(requestData),
       });
 
+      const data = await response.json();
+
+      if (response.status === 401) {
+        toast.error(data.detail);
+        return;
+      }
       if (!response.ok) {
         toast.error("Invalid email or password");
         return;
       }
 
-      const data = await response.json();
       const jwtToken = data.accessToken;
 
       const request = await fetch("http://localhost:8080/api/v1/auth/me", {

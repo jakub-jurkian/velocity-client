@@ -85,7 +85,13 @@ export const Navbar = () => {
               Dashboard
             </Link>
             <div className={styles.userInfo}>
-              <span className={styles.userName}>{user?.fullName}</span>
+              <span
+                className={styles.userName}
+                title={user.fullName}
+                aria-label={`Signed in as ${user.fullName}`}
+              >
+                {user.fullName.split(" ")[0]}
+              </span>
               <div className={styles.avatar}>
                 {user?.fullName?.charAt(0).toUpperCase()}
               </div>

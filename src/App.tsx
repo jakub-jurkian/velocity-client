@@ -1,10 +1,4 @@
-import {
-  Routes,
-  Route,
-  Outlet,
-  useLocation,
-  useNavigate,
-} from "react-router-dom";
+import { Routes, Route, Outlet, useLocation } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
 import { AnimatePresence } from "framer-motion";
 
@@ -40,7 +34,6 @@ import { useAppSelector } from "./store/hooks";
 const App = () => {
   const location = useLocation();
   const dispatch = useDispatch();
-  const navigate = useNavigate();
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const jwtToken = useAppSelector((state) => state.auth.token);
 
@@ -58,17 +51,13 @@ const App = () => {
         if (!response.ok) return;
         const user = await response.json();
         dispatch(loginSuccess({ user, token: jwtToken }));
-
-        navigate(user.role === "ADMIN" ? "/admin/panel" : "/dashboard", {
-          replace: true,
-        });
       } finally {
         setIsCheckingAuth(false);
       }
     };
 
     verifySession();
-  }, []);
+  }, [jwtToken]);
 
   return (
     <>
