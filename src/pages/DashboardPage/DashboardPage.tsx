@@ -5,7 +5,6 @@ import PageTransition from "../../components/common/PageTransition";
 import styles from "./DashboardPage.module.scss";
 import type { Reservation } from "../../types/Reservation";
 
-// Hub addresses by city (normalized keys)
 interface HubInfo {
   cityLabel: string;
   address: string;
@@ -55,62 +54,64 @@ const DashboardPage = () => {
   const user = useAppSelector((state) => state.auth.user);
   const userId = user?.id;
   const userCity = user?.city;
+
   const [activeRentals, setActiveRentals] = useState<number>(0);
   const [activeBikesCount, setActiveBikesCount] = useState<number>(0);
 
   useEffect(() => {
+    const apiUrl = import.meta.env.VITE_API_URL;
+
     const fetchActiveRentals = async () => {
-      if (!userId) return;
+      if (!userId || !jwtToken) return;
 
       try {
-        if (!jwtToken) return;
+        const response = await fetch(`${apiUrl}/api/v1/reservations/my`, {
+          headers: {
+            Authorization: `Bearer ${jwtToken}`,
+          },
+        });
 
+        const contentType = response.headers.get("content-type") || "";
+        const isJson = contentType.includes("application/json");
+
+        if (response.ok && isJson) {
+          const data = await response.json();
+          const active = data.data.filter(
+            (r: Reservation) => r.status === "CONFIRMED",
+          ).length;
+          setActiveRentals(active);
+        }
+      } catch (error) {
+        console.error("Failed to fetch active rentals:", error);
+      }
+    };
+
+    const fetchActiveBikes = async () => {
+      if (!userId || !jwtToken) return;
+
+      try {
         const response = await fetch(
-          "http://localhost:8080/api/v1/reservations/my",
+          `${apiUrl}/api/v1/fleet/count?city=${userCity}`,
           {
             headers: {
               Authorization: `Bearer ${jwtToken}`,
             },
           },
         );
-        if (response.ok) {
-          const data = await response.json();
-          // Extract the exact count from our custom backend envelope
-          console.log(data);
 
-          const activeRentals = data.data.filter(
-            (r: Reservation) => r.status === "CONFIRMED",
-          ).length;
-          setActiveRentals(activeRentals);
+        const contentType = response.headers.get("content-type") || "";
+        const isJson = contentType.includes("application/json");
+
+        if (response.ok && isJson) {
+          const data = await response.json();
+          setActiveBikesCount(data.count);
         }
       } catch (error) {
-        console.error("Failed to fetch active rentals:", error);
+        console.error("Failed to fetch fleet count:", error);
       }
     };
 
     fetchActiveRentals();
-
-    const fetchActiveBikes = async () => {
-      if (!userId) return;
-
-      try {
-        if (!jwtToken) return;
-
-        const response = await fetch(`http://localhost:8080/api/v1/fleet/count?city=${userCity}`, {
-          headers: {
-            Authorization: `Bearer ${jwtToken}`,
-          },
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          // Extract the exact count from our custom backend envelope
-          setActiveBikesCount(data.count);
-        }
-      } catch (error) {
-        console.error("Failed to fetch active rentals:", error);
-      }
-    };
     fetchActiveBikes();
   }, [userId, userCity, jwtToken]);
 
@@ -120,7 +121,7 @@ const DashboardPage = () => {
 
   return (
     <PageTransition>
-      <div className={styles.dashboardPage}>
+      <main className={styles.dashboardPage}>
         <section className={styles.welcomeSection}>
           <h1>
             Hello,{" "}
@@ -132,7 +133,7 @@ const DashboardPage = () => {
           <p className={styles.subtitle}>Ready for your next ride?</p>
           {hubInfo && (
             <div className={styles.hubNotice} role="note" aria-live="polite">
-              <div className={styles.hubIcon}>📍</div>
+              <div className={styles.hubIcon} aria-hidden="true">📍</div>
               <div className={styles.hubContent}>
                 <div className={styles.hubLine}>
                   Pick-up hub{" "}
@@ -146,8 +147,8 @@ const DashboardPage = () => {
         </section>
 
         {/* --- Stats Grid --- */}
-        <section className={styles.statsGrid}>
-          <div className={styles.statCard}>
+        <section className={styles.statsGrid} aria-label="User Statistics">
+          <article className={styles.statCard}>
             <h3>Rentals</h3>
             <div className={styles.statValue}>
               {activeRentals}
@@ -155,7 +156,6 @@ const DashboardPage = () => {
                 {activeRentals === 1 ? "bike" : "bikes"}
               </span>
             </div>
-            {/* Show 'active' only if there are active rentals */}
             <div
               className={`${styles.statusIndicator} ${
                 activeRentals > 0 ? styles.active : ""
@@ -163,58 +163,55 @@ const DashboardPage = () => {
             >
               {activeRentals > 0 ? "Active" : "No active rides"}
             </div>
-          </div>
+          </article>
 
-          <div className={styles.statCard}>
+          <article className={styles.statCard}>
             <h3>Fleet Status</h3>
             <div className={styles.statValue}>{activeBikesCount}</div>
             <p className={styles.statLabel}>E-bikes nearby</p>
-          </div>
+          </article>
 
-          <div className={styles.statCard}>
+          <article className={styles.statCard}>
             <h3>Your Impact</h3>
             <div className={styles.statValue}>128 km</div>
             <p className={styles.statLabel}>Total distance ridden</p>
-          </div>
+          </article>
         </section>
 
         {/* --- Actions Grid --- */}
         <h2 className={styles.sectionTitle}>Quick Actions</h2>
-        <section className={styles.actionsGrid}>
-          {/* Action 1: Rent a Bike */}
+        <section className={styles.actionsGrid} aria-label="Quick Actions">
           <Link
             to="/rent-bike"
             className={`${styles.actionCard} ${styles.primaryAction}`}
           >
-            <div className={styles.icon}>🚲</div>
+            <div className={styles.icon} aria-hidden="true">🚲</div>
             <div className={styles.actionInfo}>
               <h3>Rent a Bike</h3>
               <p>Find and book an e-bike near you</p>
             </div>
-            <div className={styles.arrow}>➜</div>
+            <div className={styles.arrow} aria-hidden="true">➜</div>
           </Link>
 
-          {/* Action 2: Edit Profile */}
           <Link to="/profile" className={styles.actionCard}>
-            <div className={styles.icon}>👤</div>
+            <div className={styles.icon} aria-hidden="true">👤</div>
             <div className={styles.actionInfo}>
               <h3>My Profile</h3>
               <p>Update your personal details</p>
             </div>
-            <div className={styles.arrow}>➜</div>
+            <div className={styles.arrow} aria-hidden="true">➜</div>
           </Link>
 
-          {/* Action 3: History */}
           <Link to="/my-rentals" className={styles.actionCard}>
-            <div className={styles.icon}>📜</div>
+            <div className={styles.icon} aria-hidden="true">📜</div>
             <div className={styles.actionInfo}>
               <h3>Ride History</h3>
               <p>View your ride history</p>
             </div>
-            <div className={styles.arrow}>➜</div>
+            <div className={styles.arrow} aria-hidden="true">➜</div>
           </Link>
         </section>
-      </div>
+      </main>
     </PageTransition>
   );
 };
