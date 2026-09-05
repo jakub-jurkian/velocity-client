@@ -108,7 +108,7 @@ export default function StepSummary({
       </div>
 
       <button className={styles.confirmBtn} onClick={onClick}>
-        Confirm & Pay 💳
+        Confirm & Pay
       </button>
     </div>
   );

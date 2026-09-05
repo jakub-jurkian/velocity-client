@@ -110,29 +110,49 @@
 }
 
 .row {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 0.75rem;
+  display: grid;
+  grid-template-columns: minmax(90px, auto) minmax(0, 1fr);
+  align-items: start;
+  column-gap: 1.25rem;
+  margin-bottom: 1.25rem;
   font-size: 0.95rem;
 
   .label {
     color: v.$color-text-muted;
+    line-height: 1.5;
   }
 
   .valueHighlight {
     color: v.$color-primary;
     font-weight: 600;
+    line-height: 1.5;
+    min-width: 0;
+    text-align: right;
+    overflow-wrap: anywhere;
   }
   
   .value {
-    padding-left: 48px;
+    min-width: 0;
+    line-height: 1.5;
+    text-align: right;
+    overflow-wrap: anywhere;
   }
 
   .mono {
     font-family: monospace;
     opacity: 0.6;
-    font-size: 0.85rem;
+    font-size: 0.8rem;
+    line-height: 1.5;
+    min-width: 0;
+    text-align: right;
+    overflow-wrap: anywhere;
   }
+}
+
+.idRow {
+  align-items: center;
+  margin-bottom: 0;
+  padding-top: 0.15rem;
 }
 
 .divider {

@@ -66,11 +66,13 @@
       background: v.$color-primary;
       color: #000;
       font-weight: 700;
-      font-size: 0.75rem;
-      padding: 4px 12px;
+      font-size: 0.7rem;
+      padding: 6px 14px;
       border-radius: 99px;
       text-transform: uppercase;
-      letter-spacing: 1px;
+      letter-spacing: 0.8px;
+      white-space: nowrap;
+      width: max-content;
     }
 
     .durationBadge {

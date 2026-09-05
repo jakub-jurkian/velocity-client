@@ -23,6 +23,11 @@ const getInclusiveDays = (start: string, end: string) => {
   return Math.floor((endUTC - startUTC) / msPerDay) + 1;
 };
 
+const formatCategory = (category: string) => {
+  const words = category.toLowerCase().split("_");
+  return words.join(" ").replace(/^[a-z]/, (letter) => letter.toUpperCase());
+};
+
 const RentBikePage = () => {
   const navigate = useNavigate();
   const user = useAppSelector((state) => state.auth.user);
@@ -117,14 +122,13 @@ const RentBikePage = () => {
           const mappedCatalog: BikeModel[] = data.map((apiBike: ApiBike) => ({
             id: apiBike.bookableInstanceId,
             name: apiBike.modelName,
-            category: apiBike.modelCategory,
+            category: formatCategory(apiBike.modelCategory),
             description: apiBike.modelDescription,
             stats: {
               speed: apiBike.modelSpeed,
               range: apiBike.modelRange,
               capacity: apiBike.modelCapacity,
             },
-            imageEmoji: "🚲", // Fallback emoji
           }));
 
           setAvailableBikes(mappedCatalog);

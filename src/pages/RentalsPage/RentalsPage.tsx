@@ -2,8 +2,10 @@ import { useEffect, useState } from "react";
 import { useAppSelector } from "../../store/hooks";
 import type { Reservation } from "../../types/Reservation";
 import PageTransition from "../../components/common/PageTransition";
+import PageLoader from "../../components/common/PageLoader";
 import styles from "./RentalsPage.module.scss";
 import { downloadReservationsCSV } from "../../utils/exportHelper";
+import toast from "react-hot-toast";
 
 const formatDate = (dateStr: string) => {
   return new Date(dateStr).toLocaleDateString("en-US", {
@@ -16,33 +18,40 @@ const formatDate = (dateStr: string) => {
 const RentalsPage = () => {
   const jwtToken = useAppSelector((state) => state.auth.token);
   const [reservations, setReservations] = useState<Reservation[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const fetchReservations = async () => {
+    try {
+      if (!jwtToken) {
+        setIsLoading(false);
+        return;
+      }
+
+      const response = await fetch(
+        "http://localhost:8080/api/v1/reservations/my",
+        {
+          headers: {
+            Authorization: `Bearer ${jwtToken}`,
+          },
+        },
+      );
+
+      if (response.ok) {
+        const rawData = await response.json();
+        console.log(rawData.data);
+
+        setReservations(rawData.data);
+      }
+    } catch (error) {
+      console.error("Failed to fetch active rentals:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchActiveRentals = async () => {
-      try {
-        if (!jwtToken) return;
-
-        const response = await fetch(
-          "http://localhost:8080/api/v1/reservations/my",
-          {
-            headers: {
-              Authorization: `Bearer ${jwtToken}`,
-            },
-          },
-        );
-
-        if (response.ok) {
-          const rawData = await response.json();
-          console.log(rawData.data);
-
-          setReservations(rawData.data);
-        }
-      } catch (error) {
-        console.error("Failed to fetch active rentals:", error);
-      }
-    };
-
-    fetchActiveRentals();
+    setIsLoading(true);
+    fetchReservations();
   }, [jwtToken]);
 
   // --- MODAL STATE ---
@@ -56,22 +65,36 @@ const RentalsPage = () => {
   };
 
   // CONFIRM ACTION
-  const confirmCancel = () => {
+  const confirmCancel = async () => {
     if (!selectedResId) return;
 
     // const success = cancelReservation(selectedResId);
     // send http req for cancel.
+    try {
+      const response = await fetch(
+        `http://localhost:8080/api/v1/reservations/${selectedResId}/cancel`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${jwtToken}`,
+          },
+        },
+      );
 
-    // if (success && user) {
-    //   // setReservations(getUserReservations(user.id!)); // Refresh list
-    //   setIsModalOpen(false); // Close modal
-    //   setSelectedResId(null);
-    //   toast.success("Reservation cancelled successfully!");
-    // } else {
-    //   // Handle error (optional: add separate error state)
-    //   setIsModalOpen(false);
-    //   toast.error("Failed to cancel reservation. It might be too late.");
-    // }
+      // const data = await response.json();
+      if (!response.ok) {
+        setIsModalOpen(false);
+        toast.error("Failed to cancel reservation. It might be too late.");
+        return;
+      }
+
+      setIsModalOpen(false); // Close modal
+      setSelectedResId(null);
+      toast.success("Reservation cancelled successfully!");
+      fetchReservations();
+    } catch (error) {
+      console.error(error);
+    }
   };
 
   // CLOSE MODAL
@@ -87,6 +110,10 @@ const RentalsPage = () => {
     today.setHours(0, 0, 0, 0);
     return tripDate >= today;
   };
+
+  if (isLoading) {
+    return <PageLoader />;
+  }
 
   if (!reservations.length) {
     return (
@@ -110,7 +137,7 @@ const RentalsPage = () => {
               className={styles.exportBtn}
               onClick={() => downloadReservationsCSV(reservations)}
             >
-              📥 Export CSV
+              Export CSV
             </button>
           )}
         </header>
@@ -131,7 +158,7 @@ const RentalsPage = () => {
               <div className={styles.cardContent}>
                 <div className={styles.row}>
                   <span className={styles.label}>Bike</span>
-                  <span className={styles.valueHighlight}>{res.bike.id}</span>
+                  <span className={styles.valueHighlight}>{res.bike.modelName}</span>
                 </div>
 
                 <div className={styles.row}>
@@ -141,7 +168,7 @@ const RentalsPage = () => {
                   </span>
                 </div>
 
-                <div className={styles.row}>
+                <div className={`${styles.row} ${styles.idRow}`}>
                   <span className={styles.label}>Reservation ID</span>
                   <span className={styles.mono}>{res.id}</span>
                 </div>
@@ -171,8 +198,8 @@ const RentalsPage = () => {
 
         {/* --- CONFIRMATION MODAL --- */}
         {isModalOpen && (
-          <div className={styles.modalOverlay}>
-            <div className={styles.modal}>
+          <div className={styles.modalOverlay} onClick={closeModal}>
+            <div className={styles.modal} onClick={(event) => event.stopPropagation()}>
               <h2>Cancel Reservation?</h2>
               <p>
                 Are you sure you want to cancel this reservation?
