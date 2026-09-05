@@ -3,14 +3,13 @@ import toast from "react-hot-toast";
 import { useAppDispatch, useAppSelector } from "../../store/hooks";
 import { updateUser } from "../../store/slices/authSlice";
 import PageTransition from "../../components/common/PageTransition";
+import { SUPPORTED_CITIES, type City } from "../../types/Fleet";
 import styles from "./ProfilePage.module.scss";
-
-const cities = ["WARSAW", "GDANSK", "POZNAN", "WROCLAW"];
 
 interface UserUpdatePayload {
   fullName?: string;
   phone?: string;
-  city?: "WARSAW" | "GDANSK" | "POZNAN" | "WROCLAW";
+  city?: City;
 }
 
 const MyProfilePage = () => {
@@ -19,10 +18,11 @@ const MyProfilePage = () => {
 
   const [isEditing, setIsEditing] = useState(false);
 
+  // Initialized safely from Redux user state
   const [formData, setFormData] = useState({
     fullName: user?.fullName || "",
     phone: user?.phone || "",
-    city: user?.city || "WARSAW",
+    city: user?.city || SUPPORTED_CITIES[0],
     email: user?.email || "",
   });
 
@@ -57,33 +57,42 @@ const MyProfilePage = () => {
 
     if (Object.keys(changedPayload).length === 0) {
       toast("No changes made.", { icon: "ℹ️" });
+      setIsEditing(false);
       return;
     }
 
     try {
-      const response = await fetch(
-        `http://localhost:8080/api/v1/users/${user.id}`,
-        {
-          method: "PATCH",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(changedPayload),
+      const apiUrl = import.meta.env.VITE_API_URL;
+      const response = await fetch(`${apiUrl}/api/v1/users/${user.id}`, {
+        method: "PATCH",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
         },
-      );
+        body: JSON.stringify(changedPayload),
+      });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        toast.error(errorData.detail || "Failed to update profile.");
+        const contentType = response.headers.get("content-type") || "";
+        const isJson =
+          contentType.includes("application/problem+json") ||
+          contentType.includes("application/json");
+
+        if (isJson) {
+          const errorData = await response.json();
+          toast.error(errorData.detail || "Failed to update profile.");
+        } else {
+          toast.error("Server error. Please try again later.");
+        }
         return;
       }
 
-      dispatch(updateUser({ ...formData }));
+      // Update Redux state
+      dispatch(updateUser(changedPayload)); 
       setIsEditing(false);
       toast.success("Profile updated successfully!");
     } catch (error) {
-      console.error("Network or parsing error:", error);
+      console.error("Network error during profile update:", error);
       toast.error(
         "Unable to connect to VeloCity server. Please check your connection.",
       );
@@ -91,12 +100,15 @@ const MyProfilePage = () => {
   };
 
   const handleCancel = () => {
-    setFormData({
-      fullName: user?.fullName || "",
-      phone: user?.phone || "",
-      city: user?.city || "WARSAW",
-      email: user?.email || "",
-    });
+    // Reset form state back to current user values on cancel
+    if (user) {
+      setFormData({
+        fullName: user.fullName,
+        phone: user.phone,
+        city: user.city,
+        email: user.email,
+      });
+    }
     setIsEditing(false);
   };
 
@@ -130,14 +142,16 @@ const MyProfilePage = () => {
 
             <form onSubmit={handleSubmit} className={styles.formGrid}>
               <div className={styles.inputGroup}>
-                <label>Full Name</label>
+                <label htmlFor="fullName">Full Name</label>
                 {isEditing ? (
                   <input
+                    id="fullName"
                     type="text"
                     name="fullName"
                     value={formData.fullName}
                     onChange={handleInputChange}
                     className={styles.input}
+                    required
                   />
                 ) : (
                   <div className={styles.valueDisplay}>{user.fullName}</div>
@@ -145,33 +159,36 @@ const MyProfilePage = () => {
               </div>
 
               <div className={styles.inputGroup}>
-                <label>Phone Number</label>
+                <label htmlFor="phone">Phone Number</label>
                 {isEditing ? (
                   <input
+                    id="phone"
                     type="tel"
                     name="phone"
                     value={formData.phone}
                     onChange={handleInputChange}
                     className={styles.input}
+                    required
                   />
                 ) : (
                   <div className={styles.valueDisplay}>{user.phone}</div>
                 )}
               </div>
 
-              {/* City (Editable for everyone) */}
+              {/* City */}
               <div className={styles.inputGroup}>
-                <label>City</label>
+                <label htmlFor="city">City</label>
                 {isEditing ? (
                   <div className={styles.selectControl}>
                     <select
+                      id="city"
                       name="city"
                       value={formData.city}
                       onChange={handleInputChange}
                       className={styles.input}
                       required
                     >
-                      {cities.map((city) => (
+                      {SUPPORTED_CITIES.map((city) => (
                         <option key={city} value={city}>
                           {city}
                         </option>
@@ -183,13 +200,12 @@ const MyProfilePage = () => {
                 )}
               </div>
 
-              {/* 2. EMAIL read-only */}
+              {/* EMAIL read-only */}
               <div className={styles.inputGroup}>
                 <label>Email Address</label>
-
                 <div className={`${styles.valueDisplay} ${styles.readOnly}`}>
                   {user.email}
-                  {!isAdmin && <span className={styles.lockIcon}>🔒</span>}
+                  {!isAdmin && <span className={styles.lockIcon} aria-hidden="true">🔒</span>}
                 </div>
               </div>
 

@@ -1,11 +1,11 @@
 import { Link, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { useAppDispatch } from "../../store/hooks";
-import { loginSuccess } from "../../store/slices/authSlice";
 import { useForm } from "../../hooks/useForm";
 import { validateEmail, validateMinLength } from "../../utils/validators";
 import PageTransition from "../../components/common/PageTransition";
 import styles from "./LoginPage.module.scss";
+import { performLogin } from "../../store/slices/authSlice";
 
 const LoginPage = () => {
   const navigate = useNavigate();
@@ -28,58 +28,55 @@ const LoginPage = () => {
       return errs;
     },
     onSubmit: async (vals) => {
-      // Fake Delay to show spinner
-      // await new Promise((resolve) => setTimeout(resolve, 1000));
-      const requestData = { email: vals.email, password: vals.password };
-      const response = await fetch("http://localhost:8080/api/v1/auth/login", {
-        headers: {
-          "Content-Type": "application/json",
-        },
-        method: "POST",
-        body: JSON.stringify(requestData),
-      });
+      try {
+        const apiUrl = import.meta.env.VITE_API_URL;
+        const requestData = { email: vals.email, password: vals.password };
 
-      const data = await response.json();
+        const loginResponse = await fetch(`${apiUrl}/api/v1/auth/login`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(requestData),
+        });
 
-      if (response.status === 401) {
-        toast.error(data.detail);
-        return;
+        // Handle standard HTTP errors safely
+        if (!loginResponse.ok) {
+          if (loginResponse.status === 401) {
+            const errorData = await loginResponse.json();
+            toast.error(errorData.detail || "Unauthorized");
+          } else {
+            toast.error("Invalid email or password");
+          }
+          return;
+        }
+
+        const data = await loginResponse.json();
+        const jwtToken = data.accessToken;
+
+        // fetch user profile
+        const userResponse = await fetch(`${apiUrl}/api/v1/auth/me`, {
+          headers: { Authorization: `Bearer ${jwtToken}` },
+        });
+
+        if (!userResponse.ok) {
+          throw new Error("Failed to fetch user details"); // Pushes to the catch block
+        }
+
+        const user = await userResponse.json();
+        //id, email, fullName, phone, role, city, joinedDate
+
+        // Delegate State & Storage to Redux Thunk
+        dispatch(performLogin(user, jwtToken, vals.rememberMe));
+
+        // Success
+        toast.success("Logged in successfully!");
+        navigate(user.role === "ADMIN" ? "/admin/panel" : "/dashboard", {
+          replace: true,
+        });
+      } catch (error: unknown) {
+        // Catch network failures (e.g., server offline, CORS errors)
+        console.error("Login Error:", error);
+        toast.error("A network error occurred. Please check your connection.");
       }
-      if (!response.ok) {
-        toast.error("Invalid email or password");
-        return;
-      }
-
-      const jwtToken = data.accessToken;
-
-      const request = await fetch("http://localhost:8080/api/v1/auth/me", {
-        headers: {
-          Authorization: `Bearer ${jwtToken}`,
-        },
-      });
-      const user = await request.json();
-      //id, email, fullName, phone, role, city, joinedDate
-
-      // Handle "Remember Me"
-      const storage = vals.rememberMe ? localStorage : sessionStorage;
-      storage.setItem("velocity_user", JSON.stringify(user));
-      storage.setItem("velocity_jwt", jwtToken);
-
-      // Clean up conflicts
-      if (vals.rememberMe) {
-        sessionStorage.removeItem("velocity_user");
-        sessionStorage.removeItem("velocity_jwt");
-      } else {
-        localStorage.removeItem("velocity_user");
-        localStorage.removeItem("velocity_jwt");
-      }
-      // Success
-      dispatch(loginSuccess({ user, token: data.accessToken }));
-      toast.success("Logged in successfully!");
-
-      navigate(user.role === "ADMIN" ? "/admin/panel" : "/dashboard", {
-        replace: true,
-      });
     },
   });
 

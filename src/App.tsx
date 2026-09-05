@@ -1,5 +1,5 @@
 import { Routes, Route, Outlet, useLocation } from "react-router-dom";
-import { Toaster } from "react-hot-toast";
+import toast, { Toaster } from "react-hot-toast";
 import { AnimatePresence } from "framer-motion";
 
 import LandingPage from "./pages/LandingPage/LandingPage";
@@ -24,12 +24,13 @@ import UserManagementPage from "./pages/Admin/UserManagementPage/UserManagementP
 import CalendarPage from "./pages/Admin/CalendarPage/CalendarPage";
 import PanelPage from "./pages/Admin/PanelPage/PanelPage";
 import AdminLayout from "./pages/Admin/AdminLayout/AdminLayout";
-import Redirect from "./components/common/Redirect"; // Added custom Redirect to fix crash
+import Redirect from "./components/common/Redirect";
 import { toastConfig } from "./utils/toastConfig";
 import { useEffect, useState } from "react";
-import { loginSuccess } from "./store/slices/authSlice";
+import { loginSuccess, logout } from "./store/slices/authSlice";
 import { useDispatch } from "react-redux";
 import { useAppSelector } from "./store/hooks";
+import PageLoader from "./components/common/PageLoader";
 
 const App = () => {
   const location = useLocation();
@@ -38,26 +39,62 @@ const App = () => {
   const jwtToken = useAppSelector((state) => state.auth.token);
 
   useEffect(() => {
+    const abortController = new AbortController();
+
     const verifySession = async () => {
+      if (!jwtToken) {
+        setIsCheckingAuth(false);
+        return;
+      }
+
       try {
         setIsCheckingAuth(true);
-        if (!jwtToken) return;
 
-        const response = await fetch("http://localhost:8080/api/v1/auth/me", {
+        const apiUrl = import.meta.env.VITE_API_URL;
+
+        const response = await fetch(`${apiUrl}/api/v1/auth/me`, {
           headers: {
             Authorization: `Bearer ${jwtToken}`,
           },
+          signal: abortController.signal,
         });
-        if (!response.ok) return;
+
+        if (!response.ok) {
+          if (response.status === 401 || response.status === 403) {
+            // Token is invalid/expired -> force logout to clear bad state
+            dispatch(logout());
+          }
+          throw new Error(`Auth check failed with status: ${response.status}`);
+        }
         const user = await response.json();
         dispatch(loginSuccess({ user, token: jwtToken }));
+      } catch (error: unknown) {
+        // Check if the error is a standard JavaScript Error object
+        if (error instanceof Error) {
+          if (error.name !== "AbortError") {
+            console.error("Session verification failed:", error.message);
+            toast.error("Network error.");
+          }
+        }
+        // Handle edge cases where a non-Error primitive was thrown
+        else {
+          console.error("An unexpected error occurred:", error);
+        }
       } finally {
         setIsCheckingAuth(false);
       }
     };
 
     verifySession();
-  }, [jwtToken]);
+
+    return () => {
+      abortController.abort();
+    };
+  }, [jwtToken, dispatch]);
+
+  if (isCheckingAuth) {
+    return <PageLoader />;
+  }
 
   return (
     <>
@@ -92,7 +129,7 @@ const App = () => {
               {/* Protected routes (Client & Admin) */}
               <Route
                 element={
-                  <ProtectedRoute allowedRoles={["ADMIN", "CLIENT"]}>
+                  <ProtectedRoute allowedRoles={["ADMIN", "USER"]}>
                     <Outlet />
                   </ProtectedRoute>
                 }
@@ -114,7 +151,6 @@ const App = () => {
                   </ProtectedRoute>
                 }
               >
-                {/* Replaced Navigate with Redirect to prevent AnimatePresence crash */}
                 <Route index element={<Redirect to="panel" />} />
 
                 <Route path="panel" element={<PanelPage />} />
