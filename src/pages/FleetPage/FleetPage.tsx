@@ -51,7 +51,7 @@ const FleetPage = () => {
               {/* Visual Side */}
               <div className={styles.visual}>
                 <div className={styles.categoryTag}>{model.category}</div>
-                <div className={styles.bikeImagePlaceholder}>
+                <div className={styles.bikeImagePlaceholder} aria-hidden="true">
                   {model.imageEmoji}
                 </div>
               </div>

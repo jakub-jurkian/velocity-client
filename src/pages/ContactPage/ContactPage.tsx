@@ -13,37 +13,43 @@ const ContactPage = () => {
 
           <div className={styles.contactGrid}>
             {/* Address Card */}
-            <div className={styles.contactCard}>
-              <div className={styles.icon}>📍</div>
+            <article className={styles.contactCard}>
+              <div className={styles.icon} aria-hidden="true">
+                📍
+              </div>
               <h3>Visit HQ</h3>
               <p>
                 ul. Marszałkowska 1
                 <br />
                 00-001 Warszawa, PL
               </p>
-            </div>
+            </article>
 
             {/* Phone Card */}
-            <div className={styles.contactCard}>
-              <div className={styles.icon}>📞</div>
+            <article className={styles.contactCard}>
+              <div className={styles.icon} aria-hidden="true">
+                📞
+              </div>
               <h3>Call Us</h3>
               <p>
                 <a href="tel:+48123456789">+48 123 456 789</a>
                 <br />
                 <span className={styles.sub}>Mon-Fri, 9am - 5pm</span>
               </p>
-            </div>
+            </article>
 
             {/* Email Card */}
-            <div className={styles.contactCard}>
-              <div className={styles.icon}>✉️</div>
+            <article className={styles.contactCard}>
+              <div className={styles.icon} aria-hidden="true">
+                ✉️
+              </div>
               <h3>Email Us</h3>
               <p>
                 <a href="mailto:hello@velocity.com">hello@velocity.com</a>
                 <br />
                 <span className={styles.sub}>We reply within 24h</span>
               </p>
-            </div>
+            </article>
           </div>
         </section>
       </div>

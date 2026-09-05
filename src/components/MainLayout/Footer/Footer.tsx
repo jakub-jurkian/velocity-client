@@ -2,6 +2,8 @@ import { Link } from "react-router-dom";
 import styles from "./Footer.module.scss";
 
 export default function Footer() {
+  const currentYear = new Date().getFullYear();
+
   return (
     <footer className={styles.footer}>
       <div className={styles.footerLinks}>
@@ -10,7 +12,7 @@ export default function Footer() {
         <Link to="/contact">Contact</Link>
       </div>
       <p className={styles.copyright}>
-        © 2026 VeloCity Inc. All rights reserved.
+        © {currentYear} VeloCity Inc. All rights reserved.
       </p>
     </footer>
   );

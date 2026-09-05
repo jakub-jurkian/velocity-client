@@ -8,7 +8,7 @@ const NotFoundPage = () => {
         <h1 className={styles.errorCode}>404</h1>
 
         <div className={styles.messageBox}>
-          <div className={styles.icon}>🚲💨</div>
+          <div className={styles.icon} aria-hidden="true">🚲💨</div>
           <h2>You've gone off-road!</h2>
           <p>
             The page you are looking for doesn't exist or has been moved to

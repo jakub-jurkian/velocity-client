@@ -1,7 +1,7 @@
 @use "variables" as v;
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap");
 
-// 1. Basic Reset
+// Basic Reset
 *,
 *::before,
 *::after {
@@ -9,7 +9,7 @@
   margin: 0;
   padding: 0;
 }
-// 2. CSS Variables for Theming
+// CSS Variables for Theming
 :root {
   // Backgrounds
   --color-bg: #{v.$color-bg-main};
@@ -28,7 +28,7 @@
   --radius-main: #{v.$radius-md};
 }
 
-// 3. Global Body Styles
+// Global Body Styles
 body {
   font-family: #{v.$font-main}, sans-serif;
   background-color: var(--color-bg);
@@ -44,7 +44,7 @@ body {
   overflow-x: hidden;
 }
 
-// 4. Global Link Styling
+// Global Link Styling
 a {
   color: inherit;
   text-decoration: none;
@@ -55,7 +55,7 @@ a {
   }
 }
 
-// 5. Global Button Reset
+// Global Button Reset
 button {
   font-family: inherit;
   cursor: pointer;
@@ -64,7 +64,7 @@ button {
   color: inherit;
 }
 
-// 6. Layout Utilities
+// Layout Utilities
 .container {
   max-width: 1200px;
   margin: 0 auto;
@@ -72,7 +72,7 @@ button {
   width: 100%;
 }
 
-// 7. Accessibility (Focus State)
+// Accessibility (Focus State)
 :focus-visible {
   outline: 2px solid var(--color-primary);
   outline-offset: 4px;
