@@ -130,7 +130,7 @@
 .tableContainer {
   width: 100%;
 
-  @media (min-width: v.$tablet) {
+  @media (min-width: v.$desktop) {
     background: v.$color-bg-card;
     border: 1px solid rgba(255, 255, 255, 0.05);
     border-radius: v.$radius-lg;
@@ -146,7 +146,7 @@
   width: 100%;
   border-collapse: collapse;
 
-  @media (min-width: v.$tablet) {
+  @media (min-width: v.$desktop) {
     min-width: 900px; // Forces the table to be at least this wide, triggering the scrollbar if needed
   }
   // MOBILE VIEW (Card Layout)
@@ -193,7 +193,7 @@
   }
 
   // DESKTOP VIEW (Table Layout)
-  @media (min-width: v.$tablet) {
+  @media (min-width: v.$desktop) {
     display: table;
 
     thead {
@@ -255,7 +255,7 @@
   padding-bottom: 1rem;
   margin-bottom: 0.5rem;
 
-  @media (min-width: v.$tablet) {
+  @media (min-width: v.$desktop) {
     border-bottom: none;
     padding-bottom: 0;
     margin-bottom: 0;
@@ -267,6 +267,7 @@
   display: flex;
   align-items: center;
   gap: 1rem;
+  min-width: 0;
 
   .avatar {
     width: 36px;
@@ -283,13 +284,17 @@
   .userInfo {
     display: flex;
     flex-direction: column;
+    min-width: 0;
+
     .name {
       font-weight: 600;
       color: v.$color-text-main;
+      overflow-wrap: anywhere;
     }
     .email {
       font-size: 0.8rem;
       color: v.$color-text-muted;
+      overflow-wrap: anywhere;
     }
   }
 }
@@ -339,11 +344,13 @@
 .actionsCell {
   margin-top: 0.5rem;
   justify-content: flex-end;
+  flex-wrap: wrap;
   gap: 0.5rem;
 
-  @media (min-width: v.$tablet) {
+  @media (min-width: v.$desktop) {
     margin-top: 0;
     text-align: right;
+    white-space: nowrap;
   }
 }
 
@@ -357,7 +364,11 @@
   font-size: 0.85rem;
   cursor: pointer;
   transition: all 0.2s;
-  margin-left: 0.5rem;
+  margin-left: 0;
+
+  & + & {
+    margin-left: 0.5rem;
+  }
 
   &:hover {
     border-color: rgba(255, 255, 255, 0.5);
@@ -502,5 +513,20 @@
 
   &:hover {
     color: v.$color-text-main;
+  }
+}
+
+.dangerBtn {
+  background: rgba(v.$danger, 0.15);
+  color: v.$danger;
+  border: 1px solid rgba(v.$danger, 0.5);
+  border-radius: v.$radius-sm;
+  cursor: pointer;
+  padding: 0.6rem 1.2rem;
+  font-weight: 600;
+
+  &:hover {
+    background: v.$danger;
+    color: white;
   }
 }

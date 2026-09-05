@@ -39,6 +39,8 @@ const UserManagement = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [isBlockModalOpen, setIsBlockModalOpen] = useState(false);
+  const [userToBlock, setUserToBlock] = useState<User | null>(null);
   const jwtToken = useAppSelector((state) => state.auth.token);
   const currentUserId = useAppSelector((state) => state.auth.user?.id);
 
@@ -59,10 +61,23 @@ const UserManagement = () => {
     };
   }, [jwtToken]);
 
-  const handleBlockToggle = async (
-    userId: string,
-    currentStatus: "ACTIVE" | "BLOCKED",
-  ) => {
+  const handleBlockClick = (userId: string) => {
+    if (userId === currentUserId) {
+      toast.error("You cannot block your own admin account.");
+      return;
+    }
+
+    const user = users.find((candidate) => candidate.id === userId);
+    if (!user) return;
+
+    setUserToBlock(user);
+    setIsBlockModalOpen(true);
+  };
+
+  const confirmBlockToggle = async () => {
+    if (!userToBlock || !jwtToken) return;
+
+    const { id: userId, status: currentStatus } = userToBlock;
     const statusUrl = currentStatus === "ACTIVE" ? "block" : "unblock";
     try {
       const response = await fetch(
@@ -75,10 +90,17 @@ const UserManagement = () => {
         },
       );
       if (!response.ok) {
+        toast.error(
+          currentStatus === "ACTIVE"
+            ? "Failed to block user."
+            : "Failed to unblock user.",
+        );
         return;
       }
     } catch (error) {
       console.error(error);
+      toast.error("Unable to update user status.");
+      return;
     }
 
     const newStatus = currentStatus === "ACTIVE" ? "BLOCKED" : "ACTIVE";
@@ -94,6 +116,14 @@ const UserManagement = () => {
     } else {
       toast.success("User blocked successfully!");
     }
+
+    setIsBlockModalOpen(false);
+    setUserToBlock(null);
+  };
+
+  const closeBlockModal = () => {
+    setIsBlockModalOpen(false);
+    setUserToBlock(null);
   };
 
   const openEditModal = (user: User) => {
@@ -282,7 +312,7 @@ const UserManagement = () => {
                           ? styles.danger
                           : styles.success
                       }`}
-                      onClick={() => handleBlockToggle(user.id!, user.status)}
+                      onClick={() => handleBlockClick(user.id!)}
                     >
                       {user.status === "ACTIVE" ? "Block" : "Unblock"}
                     </button>
@@ -294,8 +324,11 @@ const UserManagement = () => {
         </div>
 
         {isModalOpen && editingUser && (
-          <div className={styles.modalOverlay}>
-            <div className={styles.modal}>
+          <div
+            className={styles.modalOverlay}
+            onClick={() => setIsModalOpen(false)}
+          >
+            <div className={styles.modal} onClick={(event) => event.stopPropagation()}>
               <h2>Edit User</h2>
               <form onSubmit={handleSaveUser}>
                 <div className={styles.formGroup}>
@@ -410,6 +443,41 @@ const UserManagement = () => {
                   </button>
                 </div>
               </form>
+            </div>
+          </div>
+        )}
+
+        {isBlockModalOpen && userToBlock && (
+          <div className={styles.modalOverlay} onClick={closeBlockModal}>
+            <div className={styles.modal} onClick={(event) => event.stopPropagation()}>
+              <h2>
+                {userToBlock.status === "ACTIVE"
+                  ? "Block User?"
+                  : "Unblock User?"}
+              </h2>
+              <p>
+                Are you sure you want to {userToBlock.status === "ACTIVE" ? "block" : "unblock"} {userToBlock.fullName}?
+                <br />
+                This action will change their system access.
+              </p>
+              <div className={styles.modalActions}>
+                <button
+                  className={styles.secondaryBtn}
+                  onClick={closeBlockModal}
+                >
+                  No, Keep it
+                </button>
+                <button
+                  className={
+                    userToBlock.status === "ACTIVE"
+                      ? styles.dangerBtn
+                      : styles.primaryBtn
+                  }
+                  onClick={confirmBlockToggle}
+                >
+                  {userToBlock.status === "ACTIVE" ? "Yes, Block" : "Yes, Unblock"}
+                </button>
+              </div>
             </div>
           </div>
         )}

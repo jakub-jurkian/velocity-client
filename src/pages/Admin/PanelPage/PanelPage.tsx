@@ -1,4 +1,3 @@
-import { useMemo } from "react";
 import {
   BarChart,
   Bar,
@@ -14,47 +13,75 @@ import {
 } from "recharts";
 import PageTransition from "../../../components/common/PageTransition";
 import styles from "./PanelPage.module.scss";
-import {
-  getMonthlyRevenue,
-  getOccupancyRate,
-  getPopularityStats,
-} from "../../../utils/analyticsHelper";
-import type { Reservation } from "../../../types/Reservation";
-import type { BikeModel } from "../../../types/Fleet";
 
-const getAllReservations = (): Reservation[] => {
-  return [];
-};
+import { useAppSelector } from "../../../store/hooks";
+import { useEffect, useState } from "react";
 
 const PanelPage = () => {
-  // OPTIMIZATION: Replaced useState with useMemo
-  // This logic now runs ONLY once on mount, or if dependencies change.
-  // It separates "Calculation" from "State".
-  const dashboardData = useMemo(() => {
-    const reservations = getAllReservations();
-    const models: BikeModel[] = [];
+  const jwtToken = useAppSelector((state) => state.auth.token);
+  const [dashboard, setDashboard] = useState({
+    revenueData: [],
+    popularityData: [],
+    kpi: {
+      revenue: 0,
+      occupancy: 0,
+      activeRentals: 0,
+    },
+  });
 
+  const fetchDashboardData = async () => {
     // Heavy calculations
-    const revenueChart = getMonthlyRevenue(reservations);
-    const popularityChart = getPopularityStats(reservations, models);
+    // const revenueChart = getMonthlyRevenue(reservations);
+    // const popularityChart = getPopularityStats(reservations, models);
 
-    const totalRevenue = reservations.reduce(
-      (sum, r) => (r.status !== "CANCELLED" ? sum + r.totalCost : sum),
-      0,
-    );
-    const occupancy = getOccupancyRate(reservations, models.length * 5);
-    const active = reservations.filter((r) => r.status === "CONFIRMED").length;
+    // const totalRevenue = reservations.reduce(
+    //   (sum, r) => (r.status !== "CANCELLED" ? sum + r.totalCost : sum),
+    //   0,
+    // );
+    // const occupancy = getOccupancyRate(reservations, models.length * 5);
+    // const active = reservations.filter((r) => r.status === "CONFIRMED").length;
+    try {
+      const response = await fetch(
+        "http://localhost:8080/api/v1/admin/analytics",
+        {
+          headers: {
+            Authorization: `Bearer ${jwtToken}`,
+          },
+        },
+      );
 
-    return {
-      revenueData: revenueChart,
-      popularityData: popularityChart,
-      kpi: {
-        revenue: totalRevenue,
-        occupancy: occupancy,
-        activeRentals: active,
-      },
-    };
-  }, []); // Empty array = Calculate once on mount (Component Did Mount)
+      const data = await response.json();
+
+      if (!response.ok) {
+        return;
+      }
+
+      console.log(data.revenueTrend);
+      return {
+        revenueData: data.revenueTrend.map((r) => {
+          return { name: `${r.month}/${r.year}`, revenue: r.revenue };
+        }),
+        popularityData: data.popularityStats,
+        kpi: {
+          revenue: data.totalRevenue,
+          occupancy: data.occupancyRate,
+          activeRentals: data.activeRentals,
+        },
+      };
+    } catch (error) {
+      console.error(error);
+    }
+
+    return;
+  };
+
+  useEffect(() => {
+    fetchDashboardData().then((data) => {
+      if (data) {
+        setDashboard(data);
+      }
+    });
+  }, [jwtToken]);
 
   const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042"];
 
@@ -70,18 +97,16 @@ const PanelPage = () => {
         <div className={styles.kpiGrid}>
           <div className={styles.card}>
             <h3>Total Revenue</h3>
-            <div className={styles.value}>{dashboardData.kpi.revenue} PLN</div>
+            <div className={styles.value}>{dashboard.kpi.revenue} PLN</div>
           </div>
           <div className={styles.card}>
             <h3>Occupancy Rate</h3>
-            <div className={styles.value}>{dashboardData.kpi.occupancy}%</div>
+            <div className={styles.value}>{dashboard.kpi.occupancy}%</div>
             <div className={styles.subtext}>Monthly Average</div>
           </div>
           <div className={styles.card}>
             <h3>Active Rentals</h3>
-            <div className={styles.value}>
-              {dashboardData.kpi.activeRentals}
-            </div>
+            <div className={styles.value}>{dashboard.kpi.activeRentals}</div>
             <div className={styles.subtext}>Current live bookings</div>
           </div>
         </div>
@@ -95,10 +120,7 @@ const PanelPage = () => {
             <h3>Revenue Trend</h3>
             <div className={styles.chartWrapper}>
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  data={dashboardData.revenueData}
-                  margin={{ left: -20 }}
-                >
+                <BarChart data={dashboard.revenueData} margin={{ left: -20 }}>
                   <CartesianGrid
                     strokeDasharray="3 3"
                     stroke="rgba(255,255,255,0.05)"
@@ -127,6 +149,8 @@ const PanelPage = () => {
                       color: "#fff",
                     }}
                     itemStyle={{ color: "#fff" }}
+                    separator=""
+                    formatter={(value) => [value, ""]}
                   />
                   <Bar
                     dataKey="revenue"
@@ -148,16 +172,17 @@ const PanelPage = () => {
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
-                    data={dashboardData.popularityData}
+                    data={dashboard.popularityData}
                     cx="50%"
                     cy="50%"
                     innerRadius={60}
                     outerRadius={80}
                     paddingAngle={5}
                     dataKey="count"
+                    nameKey="modelName"
                     stroke="none"
                   >
-                    {dashboardData.popularityData.map((_, index) => (
+                    {dashboard.popularityData.map((_, index) => (
                       <Cell
                         key={`cell-${index}`}
                         fill={COLORS[index % COLORS.length]}
@@ -170,6 +195,9 @@ const PanelPage = () => {
                       borderColor: "rgba(255,255,255,0.1)",
                       borderRadius: "8px",
                     }}
+                    itemStyle={{ color: "#fff" }}
+                    separator=""
+                    formatter={(value) => [value, ""]}
                   />
                   <Legend
                     verticalAlign="bottom"

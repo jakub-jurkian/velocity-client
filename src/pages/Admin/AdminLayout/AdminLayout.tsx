@@ -11,9 +11,9 @@ const AdminLayout = () => {
   const dispatch = useAppDispatch();
 
   const navLinks = [
-    { to: "/admin/panel", icon: "📊", label: "Dashboard" },
-    { to: "/admin/users", icon: "👥", label: "Users" },
-    { to: "/admin/calendar", icon: "📅", label: "Calendar" },
+    { to: "/admin/panel", label: "Dashboard" },
+    { to: "/admin/users", label: "Users" },
+    { to: "/admin/calendar", label: "Calendar" },
   ];
 
   const handleLogout = () => {
@@ -52,7 +52,6 @@ const AdminLayout = () => {
                 `${styles.navItem} ${isActive ? styles.active : ""}`
               }
             >
-              <span className={styles.icon}>{link.icon}</span>
               {link.label}
             </NavLink>
           ))}
@@ -61,11 +60,11 @@ const AdminLayout = () => {
         {/* RIGHT: User Actions (HIDDEN ON MOBILE via CSS) */}
         <div className={styles.userSection}>
           <Link to="/dashboard" className={styles.switchBtn} title="Go to User View">
-            🏠 <span>Client View</span>
+            <span>Client View</span>
           </Link>
 
           <button className={styles.logoutBtn} onClick={handleLogout}>
-            🚪 <span>Logout</span>
+            <span>Logout</span>
           </button>
         </div>
       </nav>
@@ -81,7 +80,6 @@ const AdminLayout = () => {
             }
             onClick={() => setIsMobileOpen(false)}
           >
-            <span className={styles.icon}>{link.icon}</span>
             {link.label}
           </NavLink>
         ))}
@@ -89,11 +87,11 @@ const AdminLayout = () => {
         {/* MOBILE ACTIONS (Visible only in Drawer) */}
         <div className={styles.mobileActions}>
             <Link to="/dashboard" className={styles.mobileSwitch}>
-               🏠 Client View
+               Client View
             </Link>
             
             <button className={styles.mobileLogout} onClick={handleLogout}>
-               🚪 Logout
+               Logout
             </button>
         </div>
       </div>

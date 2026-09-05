@@ -148,4 +148,10 @@
 .pieCard {
   // Mobile order: 2
   order: 2;
+
+  :global(.recharts-sector:focus),
+  :global(.recharts-pie-sector:focus),
+  :global(.recharts-legend-item:focus) {
+    outline: none;
+  }
 }
