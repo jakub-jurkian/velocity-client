@@ -91,7 +91,7 @@ const DashboardPage = () => {
 
       try {
         const response = await fetch(
-          `${apiUrl}/api/v1/fleet/count?city=${userCity}`,
+          `${apiUrl}/api/v1/fleet/count?city=${userCity}&status=ACTIVE`,
           {
             headers: {
               Authorization: `Bearer ${jwtToken}`,
