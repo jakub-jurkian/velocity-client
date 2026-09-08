@@ -109,6 +109,7 @@ const LoginPage = () => {
                 onChange={handleChange} // From Hook
                 className={errors.email ? styles.errorInput : ""}
                 placeholder="name@velocity.com"
+                autoComplete="email"
                 required
               />
               {errors.email && (
@@ -127,6 +128,7 @@ const LoginPage = () => {
                 onChange={handleChange} // From Hook
                 className={errors.password ? styles.errorInput : ""}
                 placeholder="••••••••"
+                autoComplete="current-password"
                 required
               />
               {errors.password && (
