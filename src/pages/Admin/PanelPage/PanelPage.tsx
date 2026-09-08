@@ -244,7 +244,7 @@ const PanelPage = () => {
                     }}
                     itemStyle={{ color: "#fff" }}
                     separator=""
-                    formatter={(value) => [value, "Bookings"]}
+                    formatter={(value) => [value, "Bookings: "]}
                   />
                   <Legend
                     verticalAlign="bottom"
