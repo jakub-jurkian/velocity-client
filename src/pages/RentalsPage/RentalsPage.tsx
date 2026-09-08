@@ -140,7 +140,7 @@ const RentalsPage = () => {
     const tripDate = startOfDay(parseISO(res.startDate));
     const today = startOfDay(new Date());
     
-    return !isBefore(tripDate, today); 
+    return isBefore(today, tripDate); 
   };
 
   // --- Renders ---
