@@ -4,6 +4,7 @@ import { useAppSelector } from "../../store/hooks";
 import PageTransition from "../../components/common/PageTransition";
 import styles from "./DashboardPage.module.scss";
 import type { Reservation } from "../../types/Reservation";
+import { fetchAllPages } from "../../api/pagination";
 
 interface HubInfo {
   cityLabel: string;
@@ -60,27 +61,25 @@ const DashboardPage = () => {
 
   useEffect(() => {
     const apiUrl = import.meta.env.VITE_API_URL;
+    let ignore = false;
 
     const fetchActiveRentals = async () => {
       if (!userId || !jwtToken) return;
 
       try {
-        const response = await fetch(`${apiUrl}/api/v1/reservations/my`, {
-          headers: {
-            Authorization: `Bearer ${jwtToken}`,
-          },
-        });
+        // This is a true aggregate, not a screenful, so it walks every page.
+        // Counting only the first page under-reported anyone with more
+        // reservations than the default page size.
+        const all = await fetchAllPages<Reservation>(
+          "/api/v1/reservations/my",
+          jwtToken,
+        );
 
-        const contentType = response.headers.get("content-type") || "";
-        const isJson = contentType.includes("application/json");
+        if (ignore) return;
 
-        if (response.ok && isJson) {
-          const data = await response.json();
-          const active = data.data.filter(
-            (r: Reservation) => r.status === "CONFIRMED",
-          ).length;
-          setActiveRentals(active);
-        }
+        setActiveRentals(
+          all.filter((r) => r.status === "CONFIRMED").length,
+        );
       } catch (error) {
         console.error("Failed to fetch active rentals:", error);
       }
@@ -102,7 +101,7 @@ const DashboardPage = () => {
         const contentType = response.headers.get("content-type") || "";
         const isJson = contentType.includes("application/json");
 
-        if (response.ok && isJson) {
+        if (response.ok && isJson && !ignore) {
           const data = await response.json();
           setActiveBikesCount(data.count);
         }
@@ -113,6 +112,10 @@ const DashboardPage = () => {
 
     fetchActiveRentals();
     fetchActiveBikes();
+
+    return () => {
+      ignore = true;
+    };
   }, [userId, userCity, jwtToken]);
 
   const hubInfo = useMemo(() => getHubByCity(userCity), [userCity]);
