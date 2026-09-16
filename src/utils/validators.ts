@@ -35,13 +35,24 @@ export const validateMinLength = (
 };
 
 
-// Checks if a phone number contains only digits/spaces/+ and is reasonable length.
-export const validatePhone = (phone: string): string | undefined => {
-  if (!phone) return undefined; // Optional field usually, remove if required
+/**
+ * Mirrors the backend E.164 constraint exactly: the `@Pattern` on
+ * `UserRegistrationRequest.phone` and `User.normalizeAndValidatePhone`, both
+ * of which use `^\+?[1-9]\d{1,14}$`.
+ *
+ * The previous pattern allowed spaces, dots, dashes and parentheses that the
+ * API rejects, so a number the form accepted could still fail server-side.
+ * Phone is also required, not optional: the backend marks it `@NotBlank`.
+ */
+const E164_PATTERN = /^\+?[1-9]\d{1,14}$/;
 
-  const regex = /^[+]?[(]?[0-9]{3}[)]?[-\s.]?[0-9]{3}[-\s.]?[0-9]{4,6}$/;
-  if (!regex.test(phone)) {
-    return "Invalid phone number format";
+export const validatePhone = (phone: string): string | undefined => {
+  const trimmed = (phone || "").trim();
+
+  if (!trimmed) return "Phone number is required";
+
+  if (!E164_PATTERN.test(trimmed)) {
+    return "Use international format without spaces, e.g. +48123456789";
   }
   return undefined;
 };

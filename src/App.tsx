@@ -129,7 +129,7 @@ const App = () => {
               {/* Protected routes (Client & Admin) */}
               <Route
                 element={
-                  <ProtectedRoute allowedRoles={["ADMIN", "USER"]}>
+                  <ProtectedRoute allowedRoles={["ADMIN", "CLIENT"]}>
                     <Outlet />
                   </ProtectedRoute>
                 }

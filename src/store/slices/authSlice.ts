@@ -1,6 +1,6 @@
 import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
 import type { User } from "../../types/User";
-import type { AppDispatch } from "..";
+import type { AppDispatch, RootState } from "..";
 
 // Safe storage utility (handles SSR environments or blocked cookies)
 const getStoredToken = (): string | null => {
@@ -69,15 +69,43 @@ const authSlice = createSlice({
 export const { loginSuccess, loginFailure, logout, updateUser } =
   authSlice.actions;
 
-// Thunk for Logging Out
-export const performLogout = () => (dispatch: AppDispatch) => {
-  // Clear side effects first
-  localStorage.removeItem("velocity_jwt");
-  sessionStorage.removeItem("velocity_jwt");
+/**
+ * Thunk for Logging Out.
+ *
+ * Revokes the token server-side before dropping it locally. Without the API
+ * call the JWT stays valid for its full lifetime, so "Log Out" only hid the
+ * session from this browser while the token remained usable elsewhere.
+ *
+ * The local session is cleared even if the request fails. A user who clicked
+ * log out must end up logged out of this browser regardless of the network,
+ * so revocation is best-effort and clearing is unconditional.
+ */
+export const performLogout =
+  () => async (dispatch: AppDispatch, getState: () => RootState) => {
+    const { token } = getState().auth;
 
-  // Then update Redux state
-  dispatch(logout());
-};
+    if (token) {
+      try {
+        await fetch(`${import.meta.env.VITE_API_URL}/api/v1/auth/logout`, {
+          method: "POST",
+          headers: { Authorization: `Bearer ${token}` },
+          // Logging out navigates away at the same time, which can abort an
+          // in-flight request. keepalive lets the browser finish delivering it
+          // regardless, so revocation is not lost to the redirect.
+          keepalive: true,
+        });
+      } catch (error) {
+        console.error("Token revocation failed; clearing local session.", error);
+      }
+    }
+
+    // Clear side effects
+    localStorage.removeItem("velocity_jwt");
+    sessionStorage.removeItem("velocity_jwt");
+
+    // Then update Redux state
+    dispatch(logout());
+  };
 
 // Thunk for Logging In
 export const performLogin =

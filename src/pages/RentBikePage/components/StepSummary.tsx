@@ -1,13 +1,15 @@
 import { format, parseISO } from "date-fns";
-import { getDynamicPrice, getRentalDays } from "../../../utils/rentalCalculations";
 import { WizardStep } from "../../../types/Wizard";
 import type { BikeModel } from "../../../types/Fleet";
+import type { RentalQuote } from "../../../types/Pricing";
 import styles from "../RentBikePage.module.scss";
 
 interface Props {
   setStep: (step: WizardStep) => void;
   chosenBikeModel: BikeModel;
   dates: { start: string; end: string };
+  /** Server-priced quote. Every figure below is rendered, never recomputed. */
+  quote: RentalQuote;
   onConfirm: () => void;
 }
 
@@ -16,9 +18,9 @@ export default function StepSummary({
   chosenBikeModel,
   dates,
   onConfirm,
+  quote,
 }: Props) {
-  const RENTAL_DAYS = getRentalDays(dates);
-  const PRICE = getDynamicPrice(RENTAL_DAYS);
+  const hasDiscount = quote.discountPercentage > 0;
 
   // Enterprise formatting utilities
   const formatCurrency = (amount: number) =>
@@ -71,7 +73,7 @@ export default function StepSummary({
         </div>
         <div className={styles.summaryRow}>
           <span className={styles.label}>Duration</span>
-          <span className={styles.value}>{RENTAL_DAYS} days</span>
+          <span className={styles.value}>{quote.rentalDays} days</span>
         </div>
 
         <div className={styles.divider}></div>
@@ -81,22 +83,22 @@ export default function StepSummary({
           <span className={styles.label}>Daily Rate</span>
 
           <div className={styles.rateContainer}>
-            {/* Show Old Rate if discount exists */}
-            {PRICE.oldRate && (
+            {/* Show the undiscounted rate only when a tier actually applied */}
+            {hasDiscount && (
               <span className={styles.oldRate}>
-                {formatCurrency(PRICE.oldRate)}
+                {formatCurrency(quote.baseDailyRate)}
               </span>
             )}
 
             {/* Final Daily Rate */}
             <span className={styles.value}>
-              {formatCurrency(PRICE.dailyRate)}
+              {formatCurrency(quote.effectiveDailyRate)}
             </span>
 
             {/* Discount Badge */}
-            {PRICE.discountLabel && (
+            {hasDiscount && (
               <span className={styles.discountBadge}>
-                {PRICE.discountLabel}
+                -{quote.discountPercentage}%
               </span>
             )}
           </div>
@@ -106,7 +108,7 @@ export default function StepSummary({
         <div className={`${styles.summaryRow} ${styles.totalRow}`}>
           <span className={styles.label}>Total Price</span>
           <span className={styles.totalValue}>
-            {formatCurrency(PRICE.total)}
+            {formatCurrency(quote.totalCost)}
           </span>
         </div>
       </div>

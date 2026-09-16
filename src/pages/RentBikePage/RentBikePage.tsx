@@ -3,8 +3,13 @@ import { Link, useNavigate } from "react-router-dom";
 import { differenceInCalendarDays, parseISO } from "date-fns";
 import toast from "react-hot-toast";
 import { useAppSelector } from "../../store/hooks";
-import { getDynamicPrice, getRentalDays } from "../../utils/rentalCalculations";
-import type { ApiBike, BikeInstance, BikeModel } from "../../types/Fleet";
+import type {
+  AvailabilityResponse,
+  AvailableBikeModel,
+  BikeInstance,
+  BikeModel,
+} from "../../types/Fleet";
+import type { RentalQuote } from "../../types/Pricing";
 import StepDateSelection from "./components/StepDateSelection";
 import StepLoading from "./components/StepLoading";
 import StepBikeSelection from "./components/StepBikeSelection";
@@ -16,9 +21,16 @@ import { useCheckout } from "../../hooks/useCheckout";
 import Redirect from "../../components/common/Redirect";
 import { WizardStep } from "../../types/Wizard";
 
-// parseISO safely converts 'YYYY-MM-DD' strings into Date objects
-const getInclusiveDays = (start: string, end: string) => {
-  return differenceInCalendarDays(parseISO(end), parseISO(start)) + 1;
+/**
+ * Rental length using the backend's exclusive-end convention, matching
+ * ChronoUnit.DAYS.between(startDate, endDate) in ReservationService.
+ * Sep 10 -> Sep 15 is 5 days. parseISO keeps 'YYYY-MM-DD' timezone-safe.
+ *
+ * Used only to pre-validate the 3..21 day window before calling the API.
+ * It is deliberately NOT used to price anything — the server returns the quote.
+ */
+const getRentalDays = (start: string, end: string) => {
+  return differenceInCalendarDays(parseISO(end), parseISO(start));
 };
 
 const formatCategory = (category: string) => {
@@ -41,6 +53,10 @@ const RentBikePage = () => {
     end: "",
   });
   const [availableBikes, setAvailableBikes] = useState<BikeModel[]>([]);
+  // Server-priced quote for the searched date range. Null until a search
+  // succeeds, and cleared whenever the dates change so a stale price can
+  // never reach the summary or payment step.
+  const [quote, setQuote] = useState<RentalQuote | null>(null);
   const [chosenBike, setChosenBike] = useState<BikeInstance | null>(null);
   const [chosenBikeModel, setChosenBikeModel] = useState<BikeModel | null>(
     null,
@@ -59,6 +75,13 @@ const RentBikePage = () => {
     return <Redirect to="/login" />;
   }
   const userCity = user.city;
+
+  // Any date edit invalidates the server quote, so it can never be shown
+  // against a range it was not priced for.
+  const handleDatesChange = (newDates: { start: string; end: string }) => {
+    setDates(newDates);
+    setQuote(null);
+  };
 
   // Step 1 - dates
   const handleBikeSearch = async (
@@ -80,8 +103,8 @@ const RentBikePage = () => {
       return;
     }
 
-    // Inclusive, timezone-safe day count
-    const diffDays = getInclusiveDays(dates.start, dates.end);
+    // Exclusive-end, timezone-safe day count (matches the backend)
+    const diffDays = getRentalDays(dates.start, dates.end);
 
     if (diffDays < MIN_RENTAL_DAYS) {
       setError(`Minimum rental period is ${MIN_RENTAL_DAYS} days.`);
@@ -118,21 +141,25 @@ const RentBikePage = () => {
         throw new Error("Failed to fetch available bikes");
       }
 
-      const data = await response.json();
+      // { quote, models } — the quote is priced server-side for these dates.
+      const data: AvailabilityResponse = await response.json();
 
-      const mappedCatalog: BikeModel[] = data.map((apiBike: ApiBike) => ({
-        id: apiBike.bookableInstanceId,
-        name: apiBike.modelName,
-        category: formatCategory(apiBike.modelCategory),
-        description: apiBike.modelDescription,
-        stats: {
-          speed: apiBike.modelSpeed,
-          range: apiBike.modelRange,
-          capacity: apiBike.modelCapacity,
-        },
-      }));
+      const mappedCatalog: BikeModel[] = data.models.map(
+        (apiBike: AvailableBikeModel) => ({
+          id: apiBike.bookableInstanceId,
+          name: apiBike.modelName,
+          category: formatCategory(apiBike.modelCategory),
+          description: apiBike.modelDescription,
+          stats: {
+            speed: apiBike.modelSpeed,
+            range: apiBike.modelRange,
+            capacity: apiBike.modelCapacity,
+          },
+        }),
+      );
 
       setAvailableBikes(mappedCatalog);
+      setQuote(data.quote);
       setStep(WizardStep.BikeSelection);
     } catch (error: unknown) {
       // Ignore errors caused by our intentional abort
@@ -203,7 +230,7 @@ const RentBikePage = () => {
             {step === WizardStep.Dates && (
               <StepDateSelection
                 dates={dates}
-                setDates={setDates}
+                setDates={handleDatesChange}
                 city={userCity}
                 onSubmit={handleBikeSearch}
               />
@@ -222,21 +249,22 @@ const RentBikePage = () => {
               />
             )}
             {/* --- STEP 4: SUMMARY & CONFIRM --- */}
-            {step === WizardStep.Summary && chosenBikeModel && (
+            {step === WizardStep.Summary && chosenBikeModel && quote && (
               <StepSummary
                 setStep={setStep}
                 chosenBikeModel={chosenBikeModel}
                 dates={dates}
+                quote={quote}
                 onConfirm={handleProceedToPayment}
               />
             )}
             {/* --- STEP 5: PAYMENT PROCESS --- */}
-            {step === WizardStep.Payment && chosenBikeModel && (
+            {step === WizardStep.Payment && chosenBikeModel && quote && (
               <StepPayment
                 setStep={setStep}
                 onSubmit={handleFinalPayment}
                 paymentStatus={paymentStatus}
-                price={getDynamicPrice(getRentalDays(dates)).total}
+                price={quote.totalCost}
               />
             )}
           </main>
