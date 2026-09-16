@@ -1,69 +1,70 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import styles from "./UserManagementPage.module.scss";
-import type { User } from "../../../types/User";
+import type { AdminUser } from "../../../types/User";
+import type { PaginationMeta } from "../../../types/Pagination";
+import { EMPTY_META } from "../../../types/Pagination";
+import { fetchPage, readProblemDetail } from "../../../api/pagination";
 import PageTransition from "../../../components/common/PageTransition";
 import toast from "react-hot-toast";
 import { useAppSelector } from "../../../store/hooks";
 import { SUPPORTED_CITIES, type City } from "../../../types/Fleet";
 
+const PAGE_SIZE = 10;
+
+/**
+ * Fields the admin PATCH endpoint accepts. Every key is optional because the
+ * request is a partial update: only genuinely changed fields are sent, so an
+ * untouched field is left alone server-side rather than rewritten.
+ */
 interface UserUpdatePayloadByAdmin {
   fullName?: string;
   phone?: string;
-  city?: City;
   email?: string;
+  city?: City;
 }
 
-// Pure fetch function using environment variables and safe JSON parsing
-const fetchUsersFromApi = async (
-  token: string,
-): Promise<User[] | undefined> => {
-  try {
-    const apiUrl = import.meta.env.VITE_API_URL;
-    const response = await fetch(`${apiUrl}/api/v1/admin/users`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-
-    const contentType = response.headers.get("content-type") || "";
-    if (!response.ok || !contentType.includes("application/json")) {
-      return undefined;
-    }
-
-    const data = await response.json();
-    return data.data;
-  } catch (error) {
-    console.error("Failed to fetch users:", error);
-    return undefined;
-  }
-};
-
 const UserManagement = () => {
-  const [users, setUsers] = useState<User[]>([]);
+  const [users, setUsers] = useState<AdminUser[]>([]);
+  const [meta, setMeta] = useState<PaginationMeta>(EMPTY_META);
+  const [page, setPage] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
+
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [editingUser, setEditingUser] = useState<AdminUser | null>(null);
   const [isBlockModalOpen, setIsBlockModalOpen] = useState(false);
-  const [userToBlock, setUserToBlock] = useState<User | null>(null);
+  const [userToBlock, setUserToBlock] = useState<AdminUser | null>(null);
 
   const jwtToken = useAppSelector((state) => state.auth.token);
   const currentUserId = useAppSelector((state) => state.auth.user?.id);
   const apiUrl = import.meta.env.VITE_API_URL;
 
-  useEffect(() => {
+  // Reads one page and keeps `meta`, so the admin can reach every account
+  // rather than only the first pageful.
+  const loadUsers = useCallback(async () => {
     if (!jwtToken) return;
 
-    let ignore = false;
+    try {
+      const result = await fetchPage<AdminUser>(
+        "/api/v1/admin/users",
+        jwtToken,
+        { page, size: PAGE_SIZE },
+      );
+      setUsers(result.data);
+      setMeta(result.meta);
+    } catch (error) {
+      console.error("Failed to fetch users:", error);
+      toast.error(
+        error instanceof Error ? error.message : "Failed to load users.",
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  }, [jwtToken, page]);
 
-    fetchUsersFromApi(jwtToken).then((freshUsers) => {
-      if (!ignore && freshUsers) {
-        setUsers(freshUsers);
-      }
-    });
-
-    return () => {
-      ignore = true;
-    };
-  }, [jwtToken]);
+  useEffect(() => {
+    setIsLoading(true);
+    loadUsers();
+  }, [loadUsers]);
 
   const handleBlockClick = (userId: string) => {
     if (userId === currentUserId) {
@@ -110,7 +111,7 @@ const UserManagement = () => {
     }
 
     const newStatus = currentStatus === "ACTIVE" ? "BLOCKED" : "ACTIVE";
-    const updatedUsers: User[] = users.map((u) =>
+    const updatedUsers: AdminUser[] = users.map((u) =>
       u.id === userId ? { ...u, status: newStatus } : u,
     );
 
@@ -131,7 +132,7 @@ const UserManagement = () => {
     setUserToBlock(null);
   };
 
-  const openEditModal = (user: User) => {
+  const openEditModal = (user: AdminUser) => {
     setEditingUser({ ...user });
     setIsModalOpen(true);
   };
@@ -168,7 +169,9 @@ const UserManagement = () => {
     if (originalUser.phone !== editingUser.phone) {
       changedPayload.phone = editingUser.phone;
     }
-    if (originalUser.city !== editingUser.city) {
+    // Guarded on a truthy city so that, while the API still omits it, an
+    // untouched selector cannot post `undefined` over a real value.
+    if (editingUser.city && originalUser.city !== editingUser.city) {
       changedPayload.city = editingUser.city;
     }
     if (originalUser.email !== editingUser.email) {
@@ -191,13 +194,9 @@ const UserManagement = () => {
         );
 
         if (!response.ok) {
-          const contentType = response.headers.get("content-type") || "";
-          if (contentType.includes("application/json")) {
-            const errorData = await response.json();
-            toast.error(errorData.detail || "Failed to update profile.");
-          } else {
-            toast.error("Server error during update.");
-          }
+          toast.error(
+            await readProblemDetail(response, "Failed to update profile."),
+          );
           return;
         }
       } catch (error) {
@@ -223,18 +222,13 @@ const UserManagement = () => {
         );
 
         if (!responseRole.ok) {
-          const contentType = responseRole.headers.get("content-type") || "";
-          if (contentType.includes("application/json")) {
-            const errorData = await responseRole.json();
-            toast.error(errorData.detail || "Failed to update role.");
-          } else {
-            toast.error("Server error during role update.");
-          }
+          toast.error(
+            await readProblemDetail(responseRole, "Failed to update role."),
+          );
 
-          const freshUsers = await fetchUsersFromApi(jwtToken);
-          if (freshUsers) {
-            setUsers(freshUsers);
-          }
+          // The profile PATCH may already have succeeded, so pull the server's
+          // version rather than leaving a half-applied edit on screen.
+          await loadUsers();
           return;
         }
       } catch (error) {
@@ -310,7 +304,7 @@ const UserManagement = () => {
                   </td>
                   <td data-label="Joined">
                     <span className={styles.dateText}>
-                      {new Date(user.joinedDate).toLocaleDateString()}
+                      {new Date(user.createdAt).toLocaleDateString()}
                     </span>
                   </td>
 
@@ -338,6 +332,35 @@ const UserManagement = () => {
             </tbody>
           </table>
         </div>
+
+        {/* PAGINATION */}
+        {meta.totalPages > 1 && (
+          <nav className={styles.pagination} aria-label="User pages">
+            <button
+              className={styles.pageBtn}
+              onClick={() => setPage((current) => current - 1)}
+              disabled={!meta.hasPrevious || isLoading}
+            >
+              ← Previous
+            </button>
+
+            <span className={styles.pageInfo} aria-live="polite">
+              Page {meta.currentPage + 1} of {meta.totalPages}
+              <span className={styles.pageTotal}>
+                {" "}
+                ({meta.totalElements} users)
+              </span>
+            </span>
+
+            <button
+              className={styles.pageBtn}
+              onClick={() => setPage((current) => current + 1)}
+              disabled={!meta.hasNext || isLoading}
+            >
+              Next →
+            </button>
+          </nav>
+        )}
 
         {/* EDIT MODAL */}
         {isModalOpen && editingUser && (
@@ -421,11 +444,11 @@ const UserManagement = () => {
                         onChange={(e) =>
                           setEditingUser({
                             ...editingUser,
-                            role: e.target.value as "ADMIN" | "USER",
+                            role: e.target.value as "ADMIN" | "CLIENT",
                           })
                         }
                       >
-                        <option value="USER">Client</option>
+                        <option value="CLIENT">Client</option>
                         <option value="ADMIN">Administrator</option>
                       </select>
                     )}
@@ -435,7 +458,10 @@ const UserManagement = () => {
                     <label htmlFor="modal-city">City</label>
                     <select
                       id="modal-city"
-                      value={editingUser.city}
+                      // Falls back to the placeholder below while the API still
+                      // omits `city`, so an unknown value never silently
+                      // displays as the first option in the list.
+                      value={editingUser.city ?? ""}
                       onChange={(e) =>
                         setEditingUser({
                           ...editingUser,
@@ -443,6 +469,11 @@ const UserManagement = () => {
                         })
                       }
                     >
+                      {!editingUser.city && (
+                        <option value="" disabled>
+                          Select a city…
+                        </option>
+                      )}
                       {SUPPORTED_CITIES.map((city) => (
                         <option key={city} value={city}>
                           {city.charAt(0) + city.slice(1).toLowerCase()}
