@@ -27,10 +27,11 @@ export const Navbar = () => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const logoutHandle = () => {
+  const logoutHandle = async () => {
     setIsMenuOpen(false);
     navigate("/");
-    dispatch(performLogout());
+    // Awaited so the toast follows the actual revocation round trip.
+    await dispatch(performLogout());
     toast.success("Logged out successfully!");
   };
 
