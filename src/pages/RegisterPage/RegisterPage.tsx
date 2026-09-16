@@ -137,7 +137,7 @@ const RegisterPage = () => {
                   type="tel"
                   id="phone"
                   name="phone"
-                  placeholder="+48 000 000 000"
+                  placeholder="+48123456789"
                   autoComplete="tel"
                   required
                   onChange={handleChange}
