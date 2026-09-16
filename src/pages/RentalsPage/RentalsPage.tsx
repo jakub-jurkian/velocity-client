@@ -1,12 +1,17 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { parseISO, format, startOfDay, isBefore } from "date-fns";
 import toast from "react-hot-toast";
 import { useAppSelector } from "../../store/hooks";
 import type { Reservation } from "../../types/Reservation";
+import type { PaginationMeta } from "../../types/Pagination";
+import { EMPTY_META } from "../../types/Pagination";
+import { fetchAllPages, fetchPage, readProblemDetail } from "../../api/pagination";
 import PageTransition from "../../components/common/PageTransition";
 import PageLoader from "../../components/common/PageLoader";
 import { downloadReservationsCSV } from "../../utils/exportHelper";
 import styles from "./RentalsPage.module.scss";
+
+const PAGE_SIZE = 10;
 
 // Formatter Utilities
 const formatCurrency = (amount: number) =>
@@ -22,7 +27,10 @@ const formatDate = (dateStr: string) => {
 const RentalsPage = () => {
   const jwtToken = useAppSelector((state) => state.auth.token);
   const [reservations, setReservations] = useState<Reservation[]>([]);
+  const [meta, setMeta] = useState<PaginationMeta>(EMPTY_META);
+  const [page, setPage] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
+  const [isExporting, setIsExporting] = useState(false);
 
   // --- Modal State ---
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -30,51 +38,55 @@ const RentalsPage = () => {
   const [isCancelling, setIsCancelling] = useState(false); // Prevents double-clicks
 
   // --- Data Fetching ---
-  const fetchReservations = async () => {
+  // One page at a time. The API caps a page at 50 rows, so reading `data` and
+  // ignoring `meta` used to hide every reservation past the first page.
+  const fetchReservations = useCallback(async () => {
+    if (!jwtToken) return;
+
     try {
-      if (!jwtToken) return;
-
-      const apiUrl = import.meta.env.VITE_API_URL;
-      const response = await fetch(`${apiUrl}/api/v1/reservations/my`, {
-        headers: { Authorization: `Bearer ${jwtToken}` },
-      });
-
-      // Success Path
-      if (response.ok) {
-        const rawData = await response.json();
-        setReservations(rawData.data);
-        return;
-      }
-
-      // Error Path: Safe Parsing for Spring Boot ProblemDetail
-      const contentType = response.headers.get("content-type") || "";
-      const isJson = contentType.includes("application/problem+json") || 
-                     contentType.includes("application/json");
-
-      if (isJson) {
-        const problemDetail = await response.json();
-        toast.error(problemDetail.detail || "Failed to load reservations.");
-        throw new Error(problemDetail.title || "API Error");
-      } else {
-        throw new Error(`Server error with status: ${response.status}`);
-      }
-
+      const result = await fetchPage<Reservation>(
+        "/api/v1/reservations/my",
+        jwtToken,
+        { page, size: PAGE_SIZE },
+      );
+      setReservations(result.data);
+      setMeta(result.meta);
     } catch (error) {
       console.error("Fetch reservations error:", error);
-      // Fallback toast if the error wasn't handled by the Spring ProblemDetail block
-      if (error instanceof Error && !error.message.includes("API Error")) {
-         toast.error("An unexpected error occurred while loading your reservations.");
-      }
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "An unexpected error occurred while loading your reservations.",
+      );
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [jwtToken, page]);
 
   useEffect(() => {
     setIsLoading(true);
     fetchReservations();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [jwtToken]);
+  }, [fetchReservations]);
+
+  // The CSV is a full export, so it walks every page rather than dumping
+  // whichever one happens to be on screen.
+  const handleExport = async () => {
+    if (!jwtToken) return;
+
+    try {
+      setIsExporting(true);
+      const all = await fetchAllPages<Reservation>(
+        "/api/v1/reservations/my",
+        jwtToken,
+      );
+      downloadReservationsCSV(all);
+    } catch (error) {
+      console.error("Export failed:", error);
+      toast.error("Could not export your history. Please try again.");
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   // --- Cancellation Logic ---
   const handleCancelClick = (reservationId: string) => {
@@ -98,17 +110,12 @@ const RentalsPage = () => {
       );
 
       if (!response.ok) {
-        // Safe parsing for Cancellation errors as well
-        const contentType = response.headers.get("content-type") || "";
-        const isJson = contentType.includes("application/problem+json") || 
-                       contentType.includes("application/json");
-
-        if (isJson) {
-          const problemDetail = await response.json();
-          throw new Error(problemDetail.detail || "Failed to cancel.");
-        } else {
-          throw new Error("Failed to cancel reservation. It might be too late.");
-        }
+        throw new Error(
+          await readProblemDetail(
+            response,
+            "Failed to cancel reservation. It might be too late.",
+          ),
+        );
       }
 
       toast.success("Reservation cancelled successfully!");
@@ -146,7 +153,9 @@ const RentalsPage = () => {
   // --- Renders ---
   if (isLoading) return <PageLoader />;
 
-  if (!reservations.length) {
+  // Judged on the server-side total, not the current page, so an empty page
+  // never masquerades as an empty history.
+  if (meta.totalElements === 0) {
     return (
       <div className={styles.emptyState}>
         <div className={styles.icon}>📜</div>
@@ -164,9 +173,10 @@ const RentalsPage = () => {
           <p>Your past and upcoming journeys.</p>
           <button
             className={styles.exportBtn}
-            onClick={() => downloadReservationsCSV(reservations)}
+            onClick={handleExport}
+            disabled={isExporting}
           >
-            Export CSV
+            {isExporting ? "Preparing…" : "Export CSV"}
           </button>
         </header>
 
@@ -223,6 +233,35 @@ const RentalsPage = () => {
             </article>
           ))}
         </div>
+
+        {/* --- PAGINATION --- */}
+        {meta.totalPages > 1 && (
+          <nav className={styles.pagination} aria-label="Reservation pages">
+            <button
+              className={styles.pageBtn}
+              onClick={() => setPage((current) => current - 1)}
+              disabled={!meta.hasPrevious || isLoading}
+            >
+              ← Previous
+            </button>
+
+            <span className={styles.pageInfo} aria-live="polite">
+              Page {meta.currentPage + 1} of {meta.totalPages}
+              <span className={styles.pageTotal}>
+                {" "}
+                ({meta.totalElements} reservations)
+              </span>
+            </span>
+
+            <button
+              className={styles.pageBtn}
+              onClick={() => setPage((current) => current + 1)}
+              disabled={!meta.hasNext || isLoading}
+            >
+              Next →
+            </button>
+          </nav>
+        )}
 
         {/* --- CONFIRMATION MODAL --- */}
         {isModalOpen && (
