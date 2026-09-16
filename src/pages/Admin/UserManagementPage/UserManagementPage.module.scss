@@ -543,3 +543,47 @@
     color: white;
   }
 }
+
+// --- PAGINATION ---
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-top: 2rem;
+}
+
+.pageBtn {
+  padding: 0.6rem 1.2rem;
+
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: v.$color-text-muted;
+  border-radius: v.$radius-md;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: v.$transition-base;
+
+  &:hover:not(:disabled) {
+    border-color: v.$color-primary;
+    color: v.$color-primary;
+  }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+}
+
+.pageInfo {
+  color: v.$color-text-main;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.pageTotal {
+  color: v.$color-text-muted;
+  font-weight: 400;
+}
