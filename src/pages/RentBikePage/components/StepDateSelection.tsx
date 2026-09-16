@@ -3,6 +3,7 @@ import { format, addDays, parseISO, isAfter } from "date-fns";
 import styles from "../RentBikePage.module.scss";
 import type { City } from "../../../types/Fleet";
 
+const MIN_RENTAL_DAYS = 3;
 const MAX_RENTAL_DAYS = 21;
 
 interface Props {
@@ -23,12 +24,21 @@ export default function StepDateSelection({
   // Safely get local date as YYYY-MM-DD
   const today = format(new Date(), "yyyy-MM-dd");
 
+  // The end date is exclusive server-side (days = end - start), so a 21-day
+  // rental ends on start + 21 and a 3-day rental ends on start + 3.
   const maxEndDate = useMemo(() => {
     if (!dates.start) return undefined;
-    
+
     // Use date-fns to safely add days ignoring timezone shifts
-    const maxDate = addDays(parseISO(dates.start), MAX_RENTAL_DAYS - 1);
+    const maxDate = addDays(parseISO(dates.start), MAX_RENTAL_DAYS);
     return format(maxDate, "yyyy-MM-dd");
+  }, [dates.start]);
+
+  const minEndDate = useMemo(() => {
+    if (!dates.start) return undefined;
+
+    const minDate = addDays(parseISO(dates.start), MIN_RENTAL_DAYS);
+    return format(minDate, "yyyy-MM-dd");
   }, [dates.start]);
 
   const handleDateChange = (field: "start" | "end", value: string) => {
@@ -49,7 +59,9 @@ export default function StepDateSelection({
   return (
     <div className={styles.stepContainer}>
       <div className={styles.locationBanner}>
-        <span className={styles.pinIcon} aria-hidden="true">📍</span>
+        <span className={styles.pinIcon} aria-hidden="true">
+          📍
+        </span>
         <div className={styles.bannerText}>
           <span className={styles.label}>Browsing fleet in</span>
           <span className={styles.city}>{city}</span>
@@ -82,7 +94,7 @@ export default function StepDateSelection({
             type="date"
             value={dates.end}
             onChange={(e) => handleDateChange("end", e.target.value)}
-            min={dates.start || today}
+            min={minEndDate || today}
             max={maxEndDate}
             disabled={!dates.start}
             className={styles.input}
@@ -90,6 +102,7 @@ export default function StepDateSelection({
           />
           {dates.start && (
             <span className={styles.helperText}>
+              Min return date: {minEndDate} <br />
               Max return date: {maxEndDate}
             </span>
           )}
