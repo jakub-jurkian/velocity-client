@@ -1,6 +1,5 @@
-import { Routes, Route, Outlet, useLocation } from "react-router-dom";
+import { Routes, Route, Outlet } from "react-router-dom";
 import toast, { Toaster } from "react-hot-toast";
-import { AnimatePresence } from "framer-motion";
 
 import LandingPage from "./pages/LandingPage/LandingPage";
 import LoginPage from "./pages/LoginPage/LoginPage";
@@ -21,7 +20,7 @@ import ScrollToTop from "./components/common/ScrollToTop";
 import RentalsPage from "./pages/RentalsPage/RentalsPage";
 import UnauthorizedPage from "./pages/UnauthorizedPage/UnauthorizedPage";
 import UserManagementPage from "./pages/Admin/UserManagementPage/UserManagementPage";
-import CalendarPage from "./pages/Admin/CalendarPage/CalendarPage";
+import BikeManagementPage from "./pages/Admin/BikeManagementPage/BikeManagementPage";
 import PanelPage from "./pages/Admin/PanelPage/PanelPage";
 import AdminLayout from "./pages/Admin/AdminLayout/AdminLayout";
 import Redirect from "./components/common/Redirect";
@@ -33,7 +32,6 @@ import { useAppSelector } from "./store/hooks";
 import PageLoader from "./components/common/PageLoader";
 
 const App = () => {
-  const location = useLocation();
   const dispatch = useDispatch();
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const jwtToken = useAppSelector((state) => state.auth.token);
@@ -107,8 +105,21 @@ const App = () => {
             toastOptions={toastConfig}
           />
 
-          <AnimatePresence mode="wait">
-            <Routes location={location} key={location.pathname}>
+          {/*
+            No AnimatePresence here on purpose. It previously wrapped <Routes>
+            with key={location.pathname}, which keyed the entire tree including
+            MainLayout, so every navigation tore down and rebuilt the navbar,
+            footer and background orbs along with the page. With mode="wait" the
+            outgoing route also fully unmounted before the incoming one mounted,
+            leaving a ~300ms window with almost no content: the document
+            collapsed, the scrollbar vanished, and the layout jumped sideways
+            and back.
+
+            Each page still wraps itself in <PageTransition>, so it fades in on
+            mount. What is gone is the exit animation, which is exactly what
+            required the empty gap.
+          */}
+          <Routes>
               {/* Public routes */}
               <Route element={<MainLayout />}>
                 <Route path="/" element={<LandingPage />} />
@@ -155,10 +166,9 @@ const App = () => {
 
                 <Route path="panel" element={<PanelPage />} />
                 <Route path="users" element={<UserManagementPage />} />
-                <Route path="calendar" element={<CalendarPage />} />
+                <Route path="bikes" element={<BikeManagementPage />} />
               </Route>
             </Routes>
-          </AnimatePresence>
         </>
       )}
     </>

@@ -41,6 +41,10 @@
   padding-bottom: 4rem;
   flex: 1; // Pushes footer down
   padding: 1.5rem;
+
+  // Holds the document's height open while one route animates out and the next
+  // has not yet mounted, so the footer does not slide up and back down.
+  min-height: 60vh;
 }
 
 .glowOrbRight {

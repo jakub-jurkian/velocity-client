@@ -4,6 +4,11 @@ import { useAppDispatch, useAppSelector } from "../../store/hooks";
 import { updateUser } from "../../store/slices/authSlice";
 import PageTransition from "../../components/common/PageTransition";
 import { SUPPORTED_CITIES, type City } from "../../types/Fleet";
+import {
+  extractFieldErrors,
+  validateMinLength,
+  validatePhone,
+} from "../../utils/validators";
 import styles from "./ProfilePage.module.scss";
 
 interface UserUpdatePayload {
@@ -26,21 +31,73 @@ const MyProfilePage = () => {
     email: user?.email || "",
   });
 
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  /**
+   * Seeds the form from the current user at the moment editing starts.
+   *
+   * The initial useState above runs on the first render, and on a hard refresh
+   * /auth/me has not resolved yet, so it captures an empty user and the inputs
+   * would open blank. Reading `user` here instead means the form always starts
+   * from whatever is on screen, with no effect syncing two copies of the state.
+   */
+  const handleStartEditing = () => {
+    if (!user) return;
+    setFormData({
+      fullName: user.fullName,
+      phone: user.phone,
+      city: user.city,
+      email: user.email,
+    });
+    setErrors({});
+    setIsEditing(true);
+  };
+
   // Check permissions
   const isAdmin = user?.role === "ADMIN";
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
   ) => {
+    const { name, value } = e.target;
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value,
+      [name]: value,
     });
+    // Clear the field's error as soon as the user edits it.
+    setErrors((prev) => {
+      if (!prev[name]) return prev;
+      const next = { ...prev };
+      delete next[name];
+      return next;
+    });
+  };
+
+  /**
+   * Mirrors the entity rules the API enforces, so a two-character name is
+   * refused here instead of round-tripping for a 400.
+   */
+  const validateForm = (): Record<string, string> => {
+    const found: Record<string, string> = {};
+
+    const fullNameError = validateMinLength(formData.fullName, 2, "Full name");
+    if (fullNameError) found.fullName = fullNameError;
+
+    const phoneError = validatePhone(formData.phone);
+    if (phoneError) found.phone = phoneError;
+
+    return found;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
+
+    const validationErrors = validateForm();
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
+      return;
+    }
 
     // Check if any field has actually changed
     const changedPayload: UserUpdatePayload = {};
@@ -80,6 +137,21 @@ const MyProfilePage = () => {
 
         if (isJson) {
           const errorData = await response.json();
+
+          // `detail` on a validation failure is only the generic summary; the
+          // per-field messages live in `invalidFields`. A 409 is a duplicate
+          // phone, which belongs on that input.
+          const fieldErrors = extractFieldErrors(errorData);
+
+          if (response.status === 409) {
+            fieldErrors.phone = errorData.detail;
+          }
+
+          if (Object.keys(fieldErrors).length > 0) {
+            setErrors(fieldErrors);
+            return;
+          }
+
           toast.error(errorData.detail || "Failed to update profile.");
         } else {
           toast.error("Server error. Please try again later.");
@@ -88,7 +160,8 @@ const MyProfilePage = () => {
       }
 
       // Update Redux state
-      dispatch(updateUser(changedPayload)); 
+      dispatch(updateUser(changedPayload));
+      setErrors({});
       setIsEditing(false);
       toast.success("Profile updated successfully!");
     } catch (error) {
@@ -109,6 +182,7 @@ const MyProfilePage = () => {
         email: user.email,
       });
     }
+    setErrors({});
     setIsEditing(false);
   };
 
@@ -133,7 +207,7 @@ const MyProfilePage = () => {
               {!isEditing && (
                 <button
                   className={styles.editBtn}
-                  onClick={() => setIsEditing(true)}
+                  onClick={handleStartEditing}
                 >
                   Edit Details
                 </button>
@@ -144,15 +218,25 @@ const MyProfilePage = () => {
               <div className={styles.inputGroup}>
                 <label htmlFor="fullName">Full Name</label>
                 {isEditing ? (
-                  <input
-                    id="fullName"
-                    type="text"
-                    name="fullName"
-                    value={formData.fullName}
-                    onChange={handleInputChange}
-                    className={styles.input}
-                    required
-                  />
+                  <>
+                    <input
+                      id="fullName"
+                      type="text"
+                      name="fullName"
+                      value={formData.fullName}
+                      onChange={handleInputChange}
+                      className={`${styles.input} ${
+                        errors.fullName ? styles.errorInput : ""
+                      }`}
+                      aria-invalid={!!errors.fullName}
+                      required
+                    />
+                    {errors.fullName && (
+                      <span className={styles.errorText}>
+                        {errors.fullName}
+                      </span>
+                    )}
+                  </>
                 ) : (
                   <div className={styles.valueDisplay}>{user.fullName}</div>
                 )}
@@ -161,15 +245,23 @@ const MyProfilePage = () => {
               <div className={styles.inputGroup}>
                 <label htmlFor="phone">Phone Number</label>
                 {isEditing ? (
-                  <input
-                    id="phone"
-                    type="tel"
-                    name="phone"
-                    value={formData.phone}
-                    onChange={handleInputChange}
-                    className={styles.input}
-                    required
-                  />
+                  <>
+                    <input
+                      id="phone"
+                      type="tel"
+                      name="phone"
+                      value={formData.phone}
+                      onChange={handleInputChange}
+                      className={`${styles.input} ${
+                        errors.phone ? styles.errorInput : ""
+                      }`}
+                      aria-invalid={!!errors.phone}
+                      required
+                    />
+                    {errors.phone && (
+                      <span className={styles.errorText}>{errors.phone}</span>
+                    )}
+                  </>
                 ) : (
                   <div className={styles.valueDisplay}>{user.phone}</div>
                 )}

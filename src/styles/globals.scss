@@ -28,6 +28,14 @@
   --radius-main: #{v.$radius-md};
 }
 
+// Reserve the scrollbar gutter permanently. Without this, a short page (or the
+// gap mid page-transition, when the old route has unmounted and the new one has
+// not mounted) removes the vertical scrollbar, the viewport widens by its width,
+// and the whole layout jumps sideways — then back again a frame later.
+html {
+  scrollbar-gutter: stable;
+}
+
 // Global Body Styles
 body {
   font-family: #{v.$font-main}, sans-serif;
