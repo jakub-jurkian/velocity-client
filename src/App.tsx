@@ -1,5 +1,6 @@
-import { Routes, Route, Outlet } from "react-router-dom";
+import { Routes, Route, Outlet, useLocation } from "react-router-dom";
 import toast, { Toaster } from "react-hot-toast";
+import { AnimatePresence } from "framer-motion";
 
 import LandingPage from "./pages/LandingPage/LandingPage";
 import LoginPage from "./pages/LoginPage/LoginPage";
@@ -32,6 +33,7 @@ import { useAppSelector } from "./store/hooks";
 import PageLoader from "./components/common/PageLoader";
 
 const App = () => {
+  const location = useLocation();
   const dispatch = useDispatch();
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const jwtToken = useAppSelector((state) => state.auth.token);
@@ -106,20 +108,17 @@ const App = () => {
           />
 
           {/*
-            No AnimatePresence here on purpose. It previously wrapped <Routes>
-            with key={location.pathname}, which keyed the entire tree including
-            MainLayout, so every navigation tore down and rebuilt the navbar,
-            footer and background orbs along with the page. With mode="wait" the
-            outgoing route also fully unmounted before the incoming one mounted,
-            leaving a ~300ms window with almost no content: the document
-            collapsed, the scrollbar vanished, and the layout jumped sideways
-            and back.
+            mode="wait" keeps the deliberate beat between pages: the outgoing
+            route fades out before the incoming one fades in.
 
-            Each page still wraps itself in <PageTransition>, so it fades in on
-            mount. What is gone is the exit animation, which is exactly what
-            required the empty gap.
+            That gap used to make the layout jump, because the document briefly
+            emptied and the scrollbar vanished with it. The fix lives in CSS now
+            rather than here: `scrollbar-gutter: stable` on html reserves the
+            gutter permanently, and .mainContent carries a min-height so the
+            document cannot collapse while the swap is in flight.
           */}
-          <Routes>
+          <AnimatePresence mode="wait">
+            <Routes location={location} key={location.pathname}>
               {/* Public routes */}
               <Route element={<MainLayout />}>
                 <Route path="/" element={<LandingPage />} />
@@ -169,6 +168,7 @@ const App = () => {
                 <Route path="bikes" element={<BikeManagementPage />} />
               </Route>
             </Routes>
+          </AnimatePresence>
         </>
       )}
     </>
