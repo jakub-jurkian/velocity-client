@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { differenceInCalendarDays, parseISO } from "date-fns";
+import { differenceInCalendarDays, format, parseISO } from "date-fns";
 import toast from "react-hot-toast";
 import { useAppSelector } from "../../store/hooks";
 import type {
@@ -98,6 +98,14 @@ const RentBikePage = () => {
     // Compare strings (YYYY-MM-DD) safely
     if (dates.end < dates.start) {
       setError("End date cannot be before start date.");
+      return;
+    }
+
+    // Mirrors @Future on ReservationBookRequest.startDate. The picker's `min`
+    // is only a hint, and a typed date can bypass it, so re-check here rather
+    // than letting the user reach the summary before the API refuses.
+    if (dates.start <= format(new Date(), "yyyy-MM-dd")) {
+      setError("Bookings must start from tomorrow onwards.");
       return;
     }
 
