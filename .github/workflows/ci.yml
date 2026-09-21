@@ -34,3 +34,10 @@ jobs:
       # fails here without needing a separate job.
       - name: Build
         run: npm run build
+        env:
+          # The build refuses to run without this, so CI has to supply one.
+          # A .invalid host (RFC 2606, guaranteed never to resolve) rather than
+          # the real API: this job only type-checks and bundles, it never serves
+          # the output, and a placeholder that cannot resolve makes it obvious
+          # the artifact is not deployable.
+          VITE_API_URL: https://ci.invalid
