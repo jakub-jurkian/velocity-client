@@ -205,6 +205,28 @@ const RentalsPage = () => {
                   </span>
                 </div>
 
+                {/*
+                  Shown only when someone else ended the booking. A
+                  self-cancellation carries no reason, so this cannot fire on
+                  a booking the rider cancelled themselves — which is the
+                  whole point of the distinction.
+                */}
+                {res.status === "CANCELLED" && res.cancellationReason && (
+                  <div className={styles.cancellationNotice} role="status">
+                    <span className={styles.noticeTitle}>
+                      Cancelled by VeloCity
+                    </span>
+                    <p className={styles.noticeBody}>
+                      {res.cancellationReason}. You have not been charged for
+                      this booking. Contact{" "}
+                      <a href="mailto:support@velocity.com">
+                        support@velocity.com
+                      </a>{" "}
+                      if you need help arranging a replacement bike.
+                    </p>
+                  </div>
+                )}
+
                 <div className={`${styles.row} ${styles.idRow}`}>
                   <span className={styles.label}>Reservation ID</span>
                   <span className={styles.mono}>{res.id}</span>

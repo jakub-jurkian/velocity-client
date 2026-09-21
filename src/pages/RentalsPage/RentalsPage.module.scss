@@ -352,3 +352,36 @@
   color: v.$color-text-muted;
   font-weight: 400;
 }
+
+// --- ADMIN CANCELLATION NOTICE ---
+
+// Only rendered on a booking cancelled by staff, never on a self-cancellation.
+// Amber rather than red: this is an explanation, not an error the rider caused.
+.cancellationNotice {
+  margin: 0.75rem 0;
+  padding: 0.85rem 1rem;
+  border-radius: 8px;
+  border-left: 4px solid v.$warning;
+  background: rgba(v.$warning, 0.1);
+}
+
+.noticeTitle {
+  display: block;
+  font-weight: 700;
+  font-size: 0.85rem;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: v.$warning;
+  margin-bottom: 0.35rem;
+}
+
+.noticeBody {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.5;
+
+  a {
+    color: v.$warning;
+    text-decoration: underline;
+  }
+}
