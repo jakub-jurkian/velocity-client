@@ -22,7 +22,7 @@ const LoginPage = () => {
       const emailError = validateEmail(vals.email);
       if (emailError) errs.email = emailError;
 
-      const passwordError = validateMinLength(vals.password, 6, "Password");
+      const passwordError = validateMinLength(vals.password, 8, "Password");
       if (passwordError) errs.password = passwordError;
 
       return errs;
