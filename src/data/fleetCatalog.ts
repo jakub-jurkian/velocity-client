@@ -1,24 +1,7 @@
 import type { BikeModel } from "../types/Fleet";
 
-/**
- * Marketing catalogue for the public fleet page.
- *
- * This is static on purpose. `/fleet` is a public marketing
- * route and the API exposes no unauthenticated bike-model endpoint: the only
- * source of model data is GET /api/v1/reservations/availability, which requires
- * a bearer token plus a date range and a city.
- *
- * The specs below are kept in lockstep with the `bike_models` rows in
- * db/changelog/dev/999-dev-seed.xml so the marketing page cannot contradict
- * what a signed-in user is offered during booking:
- *
- *   Sprint Courier S1   AGILITY       45 km/h   80 km   40 kg
- *   Endurance Pro 2.0   DUAL_BATTERY  35 km/h  100 km   60 kg
- *   Cargo King XL       HEAVY_DUTY    25 km/h   60 km  100 kg
- *
- * `imageEmoji` has no backend counterpart and is presentation only.
- *
- */
+// Marketing catalogue for the public fleet page.
+
 export const FLEET_CATALOG: BikeModel[] = [
   {
     id: "s1",

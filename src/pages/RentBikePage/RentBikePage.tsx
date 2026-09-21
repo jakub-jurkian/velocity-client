@@ -26,7 +26,7 @@ import { WizardStep } from "../../types/Wizard";
  * Sep 10 -> Sep 15 is 5 days. parseISO keeps 'YYYY-MM-DD' timezone-safe.
  *
  * Used only to pre-validate the 3..21 day window before calling the API.
- * It is deliberately NOT used to price anything — the server returns the quote.
+ * It is deliberately NOT used to price anything, the server returns the quote.
  */
 const getRentalDays = (start: string, end: string) => {
   return differenceInCalendarDays(parseISO(end), parseISO(start));
@@ -61,10 +61,9 @@ const RentBikePage = () => {
     null,
   );
 
-  // 1. Initialize our custom hook
   const { executeCheckout, isSubmitting } = useCheckout(jwtToken);
 
-  // 2. Create a ref to store the current AbortController
+  // Create a ref to store the current AbortController
   const abortControllerRef = useRef<AbortController | null>(null);
 
   // If Redux hasn't loaded the user yet (e.g., hard refresh),

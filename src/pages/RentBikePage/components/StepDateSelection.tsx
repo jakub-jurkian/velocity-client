@@ -21,16 +21,6 @@ export default function StepDateSelection({
 }: Props) {
   const [error, setError] = useState("");
 
-  /**
-   * Earliest bookable start date, mirroring `@Future` on
-   * ReservationBookRequest.startDate: tomorrow, never today.
-   *
-   * A same-day rental is unbookable by design. Pricing is whole-day with no
-   * time component, so a booking made in the evening would charge a full day
-   * for a few hours. It is also uncancellable: the domain refuses a cancel
-   * once the current date is no longer before the start date, which is true
-   * from the moment a same-day booking exists.
-   */
   const earliestStartDate = useMemo(
     () => format(addDays(new Date(), 1), "yyyy-MM-dd"),
     [],
@@ -58,7 +48,7 @@ export default function StepDateSelection({
 
     const newDates = { ...dates, [field]: value };
 
-    // UX Fix: If start date moves past end date, clear the end date
+    // If start date moves past end date, clear the end date
     if (field === "start" && newDates.end) {
       if (isAfter(parseISO(value), parseISO(newDates.end))) {
         newDates.end = "";
