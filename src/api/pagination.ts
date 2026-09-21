@@ -2,11 +2,7 @@ import type { PaginatedResponse } from "../types/Pagination";
 
 /**
  * Shared access to the API's paginated list endpoints.
- *
- * Centralised because three pages previously issued their own unpaged fetch and
- * each dropped `meta`, so every one of them silently showed only the first page.
  */
-
 /** Matches `spring.data.web.pageable.max-page-size` in application.yml. */
 export const MAX_PAGE_SIZE = 50;
 
@@ -24,7 +20,7 @@ export class ApiError extends Error {
 
 /**
  * Pulls the human-readable message out of an RFC 7807 ProblemDetail body,
- * falling back when the server returned HTML or an empty body instead.
+ * falling back when the server returned an empty body instead.
  */
 export const readProblemDetail = async (
   response: Response,
@@ -93,8 +89,7 @@ export const fetchPage = async <T>(
  * true aggregate rather than a screenful (for example counting active rentals).
  *
  * Uses the largest page the server permits to keep the round trips down, and
- * follows `meta.hasNext` rather than guessing a total. The page cap is a
- * circuit breaker: a malformed `meta` must not spin forever.
+ * follows `meta.hasNext` rather than guessing a total.
  */
 export const fetchAllPages = async <T>(
   path: string,
