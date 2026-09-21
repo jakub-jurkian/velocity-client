@@ -20,17 +20,30 @@ import PublicOnlyRoute from "./components/Auth/PublicOnlyRoute";
 import ScrollToTop from "./components/common/ScrollToTop";
 import RentalsPage from "./pages/RentalsPage/RentalsPage";
 import UnauthorizedPage from "./pages/UnauthorizedPage/UnauthorizedPage";
-import UserManagementPage from "./pages/Admin/UserManagementPage/UserManagementPage";
-import BikeManagementPage from "./pages/Admin/BikeManagementPage/BikeManagementPage";
-import PanelPage from "./pages/Admin/PanelPage/PanelPage";
-import AdminLayout from "./pages/Admin/AdminLayout/AdminLayout";
 import Redirect from "./components/common/Redirect";
 import { toastConfig } from "./utils/toastConfig";
-import { useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { loginSuccess, logout } from "./store/slices/authSlice";
 import { useDispatch } from "react-redux";
 import { useAppSelector } from "./store/hooks";
 import PageLoader from "./components/common/PageLoader";
+
+/*
+  The admin area is split out of the main bundle. Only administrators ever
+  reach it, but every visitor was downloading it — including Recharts, which
+  is used by exactly one chart page and is the heaviest thing in the tree.
+
+  A single Suspense boundary on the parent route covers the layout and all
+  three pages, since a boundary catches any descendant that suspends.
+*/
+const AdminLayout = lazy(() => import("./pages/Admin/AdminLayout/AdminLayout"));
+const PanelPage = lazy(() => import("./pages/Admin/PanelPage/PanelPage"));
+const UserManagementPage = lazy(
+  () => import("./pages/Admin/UserManagementPage/UserManagementPage"),
+);
+const BikeManagementPage = lazy(
+  () => import("./pages/Admin/BikeManagementPage/BikeManagementPage"),
+);
 
 const App = () => {
   const location = useLocation();
@@ -157,7 +170,15 @@ const App = () => {
                 path="/admin"
                 element={
                   <ProtectedRoute allowedRoles={["ADMIN"]}>
-                    <AdminLayout />
+                    {/*
+                      One boundary on the parent covers the layout and every
+                      page beneath it: a suspending descendant is caught by the
+                      nearest Suspense ancestor, and the children render into
+                      this layout's Outlet.
+                    */}
+                    <Suspense fallback={<PageLoader />}>
+                      <AdminLayout />
+                    </Suspense>
                   </ProtectedRoute>
                 }
               >
