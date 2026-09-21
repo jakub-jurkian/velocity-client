@@ -1,0 +1,36 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          # Vite 7 requires 20.19+ or 22.12+; pinning the LTS line keeps CI
+          # from drifting onto a version the build does not support.
+          node-version: '22'
+          cache: 'npm'
+
+      # `ci`, not `install`: installs exactly what package-lock.json pins and
+      # fails if the two have drifted, rather than quietly resolving something
+      # newer than what was tested locally.
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      # Also the type check: `build` runs `tsc -b` before Vite, so a type error
+      # fails here without needing a separate job.
+      - name: Build
+        run: npm run build
