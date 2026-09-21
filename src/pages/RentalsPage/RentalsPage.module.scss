@@ -69,6 +69,13 @@
   position: relative;
   transition: transform 0.2s;
 
+  // The grid stretches every card to the tallest in its row. Without a column
+  // layout here the children stack from the top and the surplus height falls
+  // out as dead space under the footer, which is what a card carrying a
+  // cancellation notice does to its shorter neighbours.
+  display: flex;
+  flex-direction: column;
+
   &:hover {
     transform: translateY(-3px);
     border-color: rgba(255, 255, 255, 0.2);
@@ -107,6 +114,9 @@
 
 .cardContent {
   padding: 1.5rem;
+  // Absorbs the stretch, so the footer sits on the card's bottom edge instead
+  // of floating wherever the content happens to end.
+  flex: 1;
 }
 
 .row {
@@ -358,7 +368,8 @@
 // Only rendered on a booking cancelled by staff, never on a self-cancellation.
 // Amber rather than red: this is an explanation, not an error the rider caused.
 .cancellationNotice {
-  margin: 0.75rem 0;
+  // Matches the .row rhythm below it, since it now leads the card content.
+  margin: 0 0 1.25rem;
   padding: 0.85rem 1rem;
   border-radius: 8px;
   border-left: 4px solid v.$warning;

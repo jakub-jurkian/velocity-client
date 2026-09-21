@@ -191,25 +191,15 @@ const RentalsPage = () => {
               </div>
 
               <div className={styles.cardContent}>
-                <div className={styles.row}>
-                  <span className={styles.label}>Bike</span>
-                  <span className={styles.valueHighlight}>
-                    {res.bike.modelName}
-                  </span>
-                </div>
-
-                <div className={styles.row}>
-                  <span className={styles.label}>Dates</span>
-                  <span className={styles.value}>
-                    {formatDate(res.startDate)} - {formatDate(res.endDate)}
-                  </span>
-                </div>
-
                 {/*
-                  Shown only when someone else ended the booking. A
-                  self-cancellation carries no reason, so this cannot fire on
-                  a booking the rider cancelled themselves — which is the
-                  whole point of the distinction.
+                  Sits directly under the status badge it explains, ahead of the
+                  booking details. Dropping it between two label/value rows
+                  broke their rhythm and buried the one thing the rider needs
+                  to read on a cancelled card.
+
+                  Shown only when someone else ended the booking: a
+                  self-cancellation carries no reason, so this cannot fire on a
+                  booking the rider cancelled themselves.
                 */}
                 {res.status === "CANCELLED" && res.cancellationReason && (
                   <div className={styles.cancellationNotice} role="status">
@@ -226,6 +216,20 @@ const RentalsPage = () => {
                     </p>
                   </div>
                 )}
+
+                <div className={styles.row}>
+                  <span className={styles.label}>Bike</span>
+                  <span className={styles.valueHighlight}>
+                    {res.bike.modelName}
+                  </span>
+                </div>
+
+                <div className={styles.row}>
+                  <span className={styles.label}>Dates</span>
+                  <span className={styles.value}>
+                    {formatDate(res.startDate)} - {formatDate(res.endDate)}
+                  </span>
+                </div>
 
                 <div className={`${styles.row} ${styles.idRow}`}>
                   <span className={styles.label}>Reservation ID</span>
