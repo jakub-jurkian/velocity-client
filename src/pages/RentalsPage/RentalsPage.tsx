@@ -24,6 +24,17 @@ const formatDate = (dateStr: string) => {
   return format(parseISO(dateStr), "MMM d, yyyy");
 };
 
+/**
+ * Maps a status onto its lowercase modifier class.
+ *
+ * The status arrives uppercase from the API while the stylesheet declares
+ * `.confirmed`, `.cancelled` and friends, so indexing the stylesheet with the
+ * raw status returned undefined and the card silently lost its colour — both
+ * the left border and the badge tint.
+ */
+const statusClassName = (status: Reservation["status"]) =>
+  styles[status.toLowerCase()] ?? "";
+
 const RentalsPage = () => {
   const jwtToken = useAppSelector((state) => state.auth.token);
   const [reservations, setReservations] = useState<Reservation[]>([]);
@@ -184,7 +195,7 @@ const RentalsPage = () => {
           {reservations.map((res) => (
             <article
               key={res.id}
-              className={`${styles.card} ${styles[res.status]}`}
+              className={`${styles.card} ${statusClassName(res.status)}`}
             >
               <div className={styles.statusBadge}>
                 {res.status.charAt(0) + res.status.slice(1).toLowerCase()}
