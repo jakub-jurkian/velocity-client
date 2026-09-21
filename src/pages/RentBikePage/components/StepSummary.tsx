@@ -10,7 +10,9 @@ interface Props {
   dates: { start: string; end: string };
   /** Server-priced quote. Every figure below is rendered, never recomputed. */
   quote: RentalQuote;
-  onConfirm: () => void;
+  onConfirm: (e: React.FormEvent) => void;
+  /** True while the booking round trip is in flight. */
+  isSubmitting: boolean;
 }
 
 export default function StepSummary({
@@ -19,6 +21,7 @@ export default function StepSummary({
   dates,
   onConfirm,
   quote,
+  isSubmitting,
 }: Props) {
   const hasDiscount = quote.discountPercentage > 0;
 
@@ -37,6 +40,9 @@ export default function StepSummary({
       <button
         onClick={() => setStep(WizardStep.BikeSelection)} // Removed magic number
         className={styles.backBtn}
+        // Stepping back mid-request would leave a booking in flight with no
+        // screen left to report its outcome.
+        disabled={isSubmitting}
       >
         ← Back to Bikes
       </button>
@@ -113,8 +119,20 @@ export default function StepSummary({
         </div>
       </div>
 
-      <button className={styles.confirmBtn} onClick={onConfirm}>
-        Confirm & Pay
+      <button
+        className={styles.confirmBtn}
+        onClick={onConfirm}
+        disabled={isSubmitting}
+        aria-busy={isSubmitting}
+      >
+        {isSubmitting ? (
+          <>
+            <span className={styles.btnSpinner} aria-hidden="true" />
+            <span>Booking…</span>
+          </>
+        ) : (
+          "Confirm Booking"
+        )}
       </button>
     </div>
   );

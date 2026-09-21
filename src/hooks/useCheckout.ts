@@ -1,11 +1,15 @@
 import { useState } from "react";
 import toast from "react-hot-toast";
-import { processPayment } from "../utils/paymentHelper";
 
 export const useCheckout = (jwtToken: string | null) => {
-  const [paymentStatus, setPaymentStatus] = useState<
-    "idle" | "processing" | "success" | "error"
-  >("idle");
+  /**
+   * True while the two-call booking round trip is in flight: POST
+   * /reservations to create the PENDING row, then POST .../confirm to drive
+   * it to CONFIRMED. The summary button reads this to show a spinner and to
+   * refuse a second click, which would otherwise create a duplicate booking
+   * that only the database exclusion constraint would stop.
+   */
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const executeCheckout = async (
     bikeInstanceId: string,
@@ -14,12 +18,10 @@ export const useCheckout = (jwtToken: string | null) => {
     onSuccess: () => void,
     onConflict: () => void, // Callback to kick user back to Step 2
   ) => {
-    setPaymentStatus("processing");
+    setIsSubmitting(true);
     const apiUrl = import.meta.env.VITE_API_URL;
 
     try {
-      await processPayment();
-
       // Create Reservation
       const response = await fetch(`${apiUrl}/api/v1/reservations`, {
         method: "POST",
@@ -35,7 +37,6 @@ export const useCheckout = (jwtToken: string | null) => {
           toast.error(
             "Concurrent booking conflict: This bike was just reserved. Please select another.",
           );
-          setPaymentStatus("idle");
           onConflict();
           return; // Exit early
         }
@@ -58,15 +59,18 @@ export const useCheckout = (jwtToken: string | null) => {
         throw new Error("Finalizing the reservation failed.");
       }
 
-      setPaymentStatus("success");
       toast.success("Reservation booked successfully!");
       onSuccess();
     } catch (error: unknown) {
       console.error("Checkout failed:", error);
       toast.error("An unexpected error occurred during checkout.");
-      setPaymentStatus("error");
+    } finally {
+      // Every exit path clears the flag, including the early return on a 409.
+      // Leaving it set would strand the button in a permanent spinner after a
+      // conflict, with no way back other than a reload.
+      setIsSubmitting(false);
     }
   };
 
-  return { paymentStatus, setPaymentStatus, executeCheckout };
+  return { isSubmitting, executeCheckout };
 };

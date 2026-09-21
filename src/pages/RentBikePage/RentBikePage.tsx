@@ -14,7 +14,6 @@ import StepDateSelection from "./components/StepDateSelection";
 import StepLoading from "./components/StepLoading";
 import StepBikeSelection from "./components/StepBikeSelection";
 import StepSummary from "./components/StepSummary";
-import StepPayment from "./components/StepPayment";
 import PageTransition from "../../components/common/PageTransition";
 import styles from "./RentBikePage.module.scss";
 import { useCheckout } from "../../hooks/useCheckout";
@@ -63,8 +62,7 @@ const RentBikePage = () => {
   );
 
   // 1. Initialize our custom hook
-  const { paymentStatus, setPaymentStatus, executeCheckout } =
-    useCheckout(jwtToken);
+  const { executeCheckout, isSubmitting } = useCheckout(jwtToken);
 
   // 2. Create a ref to store the current AbortController
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -193,12 +191,7 @@ const RentBikePage = () => {
     setStep(WizardStep.Summary);
   };
 
-  const handleProceedToPayment = () => {
-    setPaymentStatus("idle"); // Reset payment state
-    setStep(WizardStep.Payment);
-  };
-
-  const handleFinalPayment = async (e: React.FormEvent) => {
+  const handleFinalConfirmation = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!chosenBike) return;
 
@@ -255,16 +248,8 @@ const RentBikePage = () => {
                 chosenBikeModel={chosenBikeModel}
                 dates={dates}
                 quote={quote}
-                onConfirm={handleProceedToPayment}
-              />
-            )}
-            {/* --- STEP 5: PAYMENT PROCESS --- */}
-            {step === WizardStep.Payment && chosenBikeModel && quote && (
-              <StepPayment
-                setStep={setStep}
-                onSubmit={handleFinalPayment}
-                paymentStatus={paymentStatus}
-                price={quote.totalCost}
+                onConfirm={handleFinalConfirmation}
+                isSubmitting={isSubmitting}
               />
             )}
           </main>
