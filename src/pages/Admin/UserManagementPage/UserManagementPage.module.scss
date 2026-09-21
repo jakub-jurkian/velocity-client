@@ -516,6 +516,20 @@
   }
 }
 
+.readOnly {
+  padding: 0.6rem 1rem;
+  background: v.$color-bg-card;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #b1b1b1;
+  border-radius: v.$radius-md;
+  width: 100%;
+
+  @media (min-width: v.$tablet) {
+    width: auto;
+    min-width: 140px;
+  }
+}
+
 .secondaryBtn {
   background: transparent;
   color: v.$color-text-muted;

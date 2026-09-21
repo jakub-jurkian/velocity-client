@@ -27,10 +27,6 @@ export interface User {
  * Kept separate from {@link User} because the two projections differ: the admin
  * view carries `status`, the self profile does not. Collapsing them into one
  * shape is what previously rendered "Invalid Date" in the admin table.
- *
- * `city` is optional only for the transition: the PATCH endpoint has always
- * accepted it, but `AdminUserResponse` does not return it yet. Once the backend
- * adds it, drop the `?` here and the fallback in the edit modal becomes dead.
  */
 export interface AdminUser {
   id: string;
@@ -39,6 +35,6 @@ export interface AdminUser {
   phone: string;
   role: UserRole;
   status: UserStatus;
-  city?: City;
+  city: City;
   createdAt: string;
 }

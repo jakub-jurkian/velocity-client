@@ -169,9 +169,7 @@ const UserManagement = () => {
     if (originalUser.phone !== editingUser.phone) {
       changedPayload.phone = editingUser.phone;
     }
-    // Guarded on a truthy city so that, while the API still omits it, an
-    // untouched selector cannot post `undefined` over a real value.
-    if (editingUser.city && originalUser.city !== editingUser.city) {
+    if (originalUser.city !== editingUser.city) {
       changedPayload.city = editingUser.city;
     }
     if (originalUser.email !== editingUser.email) {
@@ -428,7 +426,7 @@ const UserManagement = () => {
                     <label htmlFor="modal-role">Role</label>
                     {editingUser.id === currentUserId ? (
                       <div
-                        className={`${styles.valueDisplay} ${styles.readOnly}`}
+                        className={styles.readOnly}
                       >
                         {editingUser.role === "ADMIN"
                           ? "Administrator"
@@ -458,10 +456,7 @@ const UserManagement = () => {
                     <label htmlFor="modal-city">City</label>
                     <select
                       id="modal-city"
-                      // Falls back to the placeholder below while the API still
-                      // omits `city`, so an unknown value never silently
-                      // displays as the first option in the list.
-                      value={editingUser.city ?? ""}
+                      value={editingUser.city}
                       onChange={(e) =>
                         setEditingUser({
                           ...editingUser,
@@ -469,11 +464,6 @@ const UserManagement = () => {
                         })
                       }
                     >
-                      {!editingUser.city && (
-                        <option value="" disabled>
-                          Select a city…
-                        </option>
-                      )}
                       {SUPPORTED_CITIES.map((city) => (
                         <option key={city} value={city}>
                           {city.charAt(0) + city.slice(1).toLowerCase()}
