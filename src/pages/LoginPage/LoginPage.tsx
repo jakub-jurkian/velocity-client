@@ -3,6 +3,7 @@ import toast from "react-hot-toast";
 import { useAppDispatch } from "../../store/hooks";
 import { useForm } from "../../hooks/useForm";
 import { validateEmail, validateMinLength } from "../../utils/validators";
+import { readProblemDetail } from "../../api/pagination";
 import PageTransition from "../../components/common/PageTransition";
 import styles from "./LoginPage.module.scss";
 import { performLogin } from "../../store/slices/authSlice";
@@ -38,13 +39,29 @@ const LoginPage = () => {
           body: JSON.stringify(requestData),
         });
 
-        // Handle standard HTTP errors safely
         if (!loginResponse.ok) {
+          // Only a 401 means the credentials were wrong. Everything else is
+          // the server or the network failing, and saying "invalid email or
+          // password" there sends the user off resetting a password that was
+          // never the problem.
           if (loginResponse.status === 401) {
-            const errorData = await loginResponse.json();
-            toast.error(errorData.detail || "Unauthorized");
+            toast.error(
+              await readProblemDetail(
+                loginResponse,
+                "Incorrect email or password.",
+              ),
+            );
+          } else if (loginResponse.status >= 500) {
+            toast.error(
+              "The server is not responding right now. Please try again shortly.",
+            );
           } else {
-            toast.error("Invalid email or password");
+            toast.error(
+              await readProblemDetail(
+                loginResponse,
+                `Sign-in failed (${loginResponse.status}). Please try again.`,
+              ),
+            );
           }
           return;
         }
