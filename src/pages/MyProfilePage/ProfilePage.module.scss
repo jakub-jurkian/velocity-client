@@ -254,3 +254,19 @@
   pointer-events: none;
   font-size: 12px;
 }
+
+// Field-level validation feedback, matching the register form's treatment.
+.errorText {
+  color: v.$danger;
+  font-size: 0.85rem;
+  margin-top: 0.25rem;
+  font-weight: 700;
+}
+
+.errorInput {
+  border-color: v.$danger !important;
+
+  &:focus {
+    box-shadow: 0 0 0 3px rgba(v.$danger, 0.25) !important;
+  }
+}

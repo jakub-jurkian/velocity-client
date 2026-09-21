@@ -2,8 +2,10 @@ import toast from "react-hot-toast";
 import { Link, useNavigate } from "react-router-dom";
 import { useForm } from "../../hooks/useForm";
 import {
+  extractFieldErrors,
   validateEmail,
   validateMinLength,
+  validatePassword,
   validatePhone,
 } from "../../utils/validators";
 import PageTransition from "../../components/common/PageTransition";
@@ -13,7 +15,7 @@ import styles from "./RegisterPage.module.scss";
 const RegisterPage = () => {
   const navigate = useNavigate();
 
-  const { values, errors, isSubmitting, handleChange, handleSubmit } = useForm({
+  const { values, errors, isSubmitting, handleChange, handleSubmit, setErrors } = useForm({
     initialValues: {
       fullName: "",
       phone: "",
@@ -35,7 +37,7 @@ const RegisterPage = () => {
       const emailError = validateEmail(vals.email);
       if (emailError) errs.email = emailError;
 
-      const passwordError = validateMinLength(vals.password, 8, "Password");
+      const passwordError = validatePassword(vals.password);
       if (passwordError) errs.password = passwordError;
 
       if (vals.password !== vals.confirmPassword) {
@@ -74,6 +76,25 @@ const RegisterPage = () => {
 
           if (isJson) {
             const errorData = await response.json();
+
+            // A 400 from @Valid carries per-field messages in `invalidFields`;
+            // a 409 is a duplicate email or phone. Both belong on the input
+            // that caused them, not in a toast the user has to map back to a
+            // field themselves.
+            const fieldErrors = extractFieldErrors(errorData);
+
+            if (response.status === 409) {
+              const field = /phone/i.test(errorData.detail ?? "")
+                ? "phone"
+                : "email";
+              fieldErrors[field] = errorData.detail;
+            }
+
+            if (Object.keys(fieldErrors).length > 0) {
+              setErrors(fieldErrors);
+              return;
+            }
+
             toast.error(errorData.detail || "Registration failed. Please check your inputs.");
           } else {
             toast.error("Server error. Please try again later.");

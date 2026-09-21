@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { differenceInCalendarDays, parseISO } from "date-fns";
+import { differenceInCalendarDays, format, parseISO } from "date-fns";
 import toast from "react-hot-toast";
 import { useAppSelector } from "../../store/hooks";
 import type {
@@ -14,7 +14,6 @@ import StepDateSelection from "./components/StepDateSelection";
 import StepLoading from "./components/StepLoading";
 import StepBikeSelection from "./components/StepBikeSelection";
 import StepSummary from "./components/StepSummary";
-import StepPayment from "./components/StepPayment";
 import PageTransition from "../../components/common/PageTransition";
 import styles from "./RentBikePage.module.scss";
 import { useCheckout } from "../../hooks/useCheckout";
@@ -63,8 +62,7 @@ const RentBikePage = () => {
   );
 
   // 1. Initialize our custom hook
-  const { paymentStatus, setPaymentStatus, executeCheckout } =
-    useCheckout(jwtToken);
+  const { executeCheckout, isSubmitting } = useCheckout(jwtToken);
 
   // 2. Create a ref to store the current AbortController
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -100,6 +98,14 @@ const RentBikePage = () => {
     // Compare strings (YYYY-MM-DD) safely
     if (dates.end < dates.start) {
       setError("End date cannot be before start date.");
+      return;
+    }
+
+    // Mirrors @Future on ReservationBookRequest.startDate. The picker's `min`
+    // is only a hint, and a typed date can bypass it, so re-check here rather
+    // than letting the user reach the summary before the API refuses.
+    if (dates.start <= format(new Date(), "yyyy-MM-dd")) {
+      setError("Bookings must start from tomorrow onwards.");
       return;
     }
 
@@ -193,12 +199,7 @@ const RentBikePage = () => {
     setStep(WizardStep.Summary);
   };
 
-  const handleProceedToPayment = () => {
-    setPaymentStatus("idle"); // Reset payment state
-    setStep(WizardStep.Payment);
-  };
-
-  const handleFinalPayment = async (e: React.FormEvent) => {
+  const handleFinalConfirmation = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!chosenBike) return;
 
@@ -255,16 +256,8 @@ const RentBikePage = () => {
                 chosenBikeModel={chosenBikeModel}
                 dates={dates}
                 quote={quote}
-                onConfirm={handleProceedToPayment}
-              />
-            )}
-            {/* --- STEP 5: PAYMENT PROCESS --- */}
-            {step === WizardStep.Payment && chosenBikeModel && quote && (
-              <StepPayment
-                setStep={setStep}
-                onSubmit={handleFinalPayment}
-                paymentStatus={paymentStatus}
-                price={quote.totalCost}
+                onConfirm={handleFinalConfirmation}
+                isSubmitting={isSubmitting}
               />
             )}
           </main>

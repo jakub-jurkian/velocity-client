@@ -54,18 +54,18 @@
   cursor: pointer;
   transition: opacity 0.2s;
   white-space: nowrap;
-  align-self: flex-start; // Prevent full width on mobile
 
-  &:hover {
+  &:hover:not(:disabled) {
     opacity: 0.9;
   }
 
-  @media (min-width: v.$tablet) {
-    align-self: center;
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
   }
 }
 
-// --- TOOLBAR (SEARCH & FILTER) ---
+// --- TOOLBAR (FILTER) ---
 .toolbar {
   display: flex;
   flex-direction: column;
@@ -74,40 +74,6 @@
 
   @media (min-width: v.$tablet) {
     flex-direction: row;
-  }
-}
-
-.searchWrapper {
-  position: relative;
-  flex: 1;
-  max-width: 100%;
-
-  @media (min-width: v.$tablet) {
-    max-width: 400px;
-  }
-
-  input {
-    width: 100%;
-    padding: 0.75rem 1rem 0.75rem 2.5rem;
-    background: v.$color-bg-card;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: v.$radius-md;
-    color: #fff;
-    font-size: 0.9rem;
-
-    &:focus {
-      border-color: v.$color-primary;
-      outline: none;
-    }
-  }
-
-  .searchIcon {
-    position: absolute;
-    left: 0.8rem;
-    top: 50%;
-    transform: translateY(-50%);
-    opacity: 0.5;
-    font-size: 0.9rem;
   }
 }
 
@@ -122,7 +88,7 @@
 
   @media (min-width: v.$tablet) {
     width: auto;
-    min-width: 140px;
+    min-width: 180px;
   }
 }
 
@@ -136,9 +102,9 @@
     border-radius: v.$radius-lg;
     box-shadow: v.$shadow-sm;
 
-    overflow-x: auto; // Allows horizontal scroll if content is too wide
-    overflow-y: hidden; // Prevents vertical scroll glitches
-    -webkit-overflow-scrolling: touch; // Smooth scrolling on touch devices
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
   }
 }
 
@@ -147,8 +113,9 @@
   border-collapse: collapse;
 
   @media (min-width: v.$desktop) {
-    min-width: 900px; // Forces the table to be at least this wide, triggering the scrollbar if needed
+    min-width: 700px;
   }
+
   // MOBILE VIEW (Card Layout)
   thead {
     display: none;
@@ -168,12 +135,12 @@
     display: flex;
     flex-direction: column;
     gap: 0.8rem;
+  }
 
-    &.emptyRow {
-      text-align: center;
-      color: v.$color-text-muted;
-      padding: 3rem;
-    }
+  .emptyRow {
+    text-align: center;
+    color: v.$color-text-muted;
+    padding: 3rem 1rem;
   }
 
   td {
@@ -183,7 +150,6 @@
     font-size: 0.95rem;
     color: v.$color-text-main;
 
-    // The Label Trick
     &[data-label]::before {
       content: attr(data-label);
       color: v.$color-text-muted;
@@ -227,13 +193,14 @@
       &:last-child {
         border-bottom: none;
       }
+    }
 
-      &.emptyRow {
-        display: table-row;
-        td {
-          display: table-cell;
-          text-align: center;
-        }
+    .emptyRow {
+      display: table-row;
+
+      td {
+        display: table-cell;
+        text-align: center;
       }
     }
 
@@ -250,72 +217,9 @@
 }
 
 // --- CELL STYLES ---
-.primaryCell {
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  padding-bottom: 1rem;
-  margin-bottom: 0.5rem;
-
-  @media (min-width: v.$desktop) {
-    border-bottom: none;
-    padding-bottom: 0;
-    margin-bottom: 0;
-    padding: 1rem 1.5rem;
-  }
-}
-
-.userCell {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  min-width: 0;
-
-  .avatar {
-    width: 36px;
-    height: 36px;
-    flex: 0 0 36px;
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: 700;
-    color: v.$color-primary;
-  }
-
-  .userInfo {
-    display: flex;
-    flex-direction: column;
-    min-width: 0;
-
-    .name {
-      font-weight: 600;
-      color: v.$color-text-main;
-      overflow-wrap: anywhere;
-    }
-    .email {
-      font-size: 0.8rem;
-      color: v.$color-text-muted;
-      overflow-wrap: anywhere;
-    }
-  }
-}
-
-.roleTag {
-  padding: 4px 10px;
-  border-radius: 99px;
-  font-size: 0.75rem;
-  font-weight: 700;
-  text-transform: capitalize;
-
-  &.admin {
-    background: rgba(v.$color-primary, 0.15);
-    color: v.$color-primary;
-    border: 1px solid rgba(v.$color-primary, 0.3);
-  }
-  &.client {
-    background: rgba(255, 255, 255, 0.1);
-    color: v.$color-text-muted;
-  }
+.modelName {
+  font-weight: 600;
+  color: v.$color-text-main;
 }
 
 .statusDot {
@@ -334,19 +238,27 @@
     background: currentColor;
   }
 
+  // ACTIVE: in service, same green used for active users elsewhere.
   &.active {
     color: v.$success;
   }
-  &.blocked {
+  // MAINTENANCE: temporarily out of service, but expected back.
+  &.maintenance {
+    color: v.$warning;
+  }
+  // LOST: unaccounted for; needs attention before it can be trusted again.
+  &.lost {
     color: v.$danger;
+  }
+  // RETIRED: permanently decommissioned, no distinct alert color needed.
+  &.retired {
+    color: v.$color-text-muted;
   }
 }
 
 .actionsCell {
   margin-top: 0.5rem;
   justify-content: flex-end;
-  flex-wrap: wrap;
-  gap: 0.5rem;
 
   @media (min-width: v.$desktop) {
     margin-top: 0;
@@ -355,7 +267,6 @@
   }
 }
 
-// --- BUTTON VARIANTS ---
 .actionBtn {
   padding: 0.4rem 0.8rem;
   background: transparent;
@@ -365,33 +276,10 @@
   font-size: 0.85rem;
   cursor: pointer;
   transition: all 0.2s;
-  margin-left: 0;
-
-  & + & {
-    margin-left: 0.5rem;
-  }
 
   &:hover {
-    border-color: rgba(255, 255, 255, 0.5);
+    border-color: v.$color-primary;
     background: rgba(255, 255, 255, 0.05);
-  }
-
-  &.danger {
-    color: v.$danger;
-    border-color: rgba(v.$danger, 0.5);
-    &:hover {
-      background: rgba(v.$danger, 0.1);
-      border-color: v.$danger;
-    }
-  }
-
-  &.success {
-    color: v.$success;
-    border-color: rgba(v.$success, 0.5);
-    &:hover {
-      background: rgba(v.$success, 0.1);
-      border-color: v.$success;
-    }
   }
 }
 
@@ -400,40 +288,36 @@
 }
 
 // --- MODAL STYLES ---
-
 .modalOverlay {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.85); // Darker backdrop
+  background: rgba(0, 0, 0, 0.85);
   backdrop-filter: blur(4px);
   display: flex;
   justify-content: center;
   align-items: center;
   z-index: 2000;
-
-  // Padding ensures the modal never touches screen edges on mobile
   padding: 1.5rem;
 }
 
 .modal {
   background: v.$color-bg-card;
-  padding: 1.5rem; // Compact padding for mobile
+  padding: 1.5rem;
   border-radius: v.$radius-lg;
   border: 1px solid rgba(255, 255, 255, 0.1);
   box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
   animation: slideIn 0.2s ease-out;
 
-  // Sizing Logic
   width: 100%;
-  max-width: 500px;
-  max-height: 90vh; // Never exceed viewport height
-  overflow-y: auto; // Scroll inside if content is tall
+  max-width: 440px;
+  max-height: 90vh;
+  overflow-y: auto;
 
   h2 {
-    margin-bottom: 1.5rem;
+    margin-bottom: 0.5rem;
     color: v.$color-text-main;
     font-size: 1.4rem;
   }
@@ -441,6 +325,12 @@
   @media (min-width: v.$tablet) {
     padding: 2rem;
   }
+}
+
+.modalSubtitle {
+  color: v.$color-text-muted;
+  font-size: 0.9rem;
+  margin-bottom: 1.5rem;
 }
 
 @keyframes slideIn {
@@ -464,7 +354,6 @@
     font-size: 0.9rem;
   }
 
-  input,
   select {
     width: 100%;
     padding: 0.8rem;
@@ -472,29 +361,30 @@
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: v.$radius-md;
     color: #fff;
-    font-size: 1rem; // Prevents zoom on iPhone
+    font-size: 1rem;
 
     &:focus {
       outline: none;
       border-color: v.$color-primary;
       box-shadow: 0 0 0 2px rgba(v.$color-primary, 0.2);
     }
+
+    &:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
   }
 }
 
-// Mobile-First Grid System for Form Rows
-.formRow {
-  display: grid;
-  grid-template-columns: 1fr; // Default: Stacked
-  margin-bottom: 1rem;
-
-  @media (min-width: v.$tablet) {
-    grid-template-columns: 1fr 1fr; // Tablet+: Side by side
-
-    .formGroup {
-      margin-bottom: 0; // Let grid handle gap
-    }
-  }
+// The current-status readout in the modal: styled as an inert field so it
+// reads as informational, not as another control the admin can edit.
+.valueDisplay {
+  padding: 0.8rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: v.$radius-md;
+  color: v.$color-text-main;
+  font-size: 1rem;
 }
 
 .modalActions {
@@ -502,32 +392,6 @@
   gap: 1rem;
   margin-top: 2rem;
   justify-content: flex-end;
-}
-
-@media (max-width: v.$mobile) {
-  .modalActions {
-    gap: 0.75rem;
-
-    button {
-      min-width: 0;
-      padding: 0.6rem 0.75rem;
-      line-height: 1.2;
-    }
-  }
-}
-
-.readOnly {
-  padding: 0.6rem 1rem;
-  background: v.$color-bg-card;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: #b1b1b1;
-  border-radius: v.$radius-md;
-  width: 100%;
-
-  @media (min-width: v.$tablet) {
-    width: auto;
-    min-width: 140px;
-  }
 }
 
 .secondaryBtn {
@@ -538,23 +402,13 @@
   padding: 0.6rem 1.2rem;
   font-weight: 500;
 
-  &:hover {
+  &:hover:not(:disabled) {
     color: v.$color-text-main;
   }
-}
 
-.dangerBtn {
-  background: rgba(v.$danger, 0.15);
-  color: v.$danger;
-  border: 1px solid rgba(v.$danger, 0.5);
-  border-radius: v.$radius-sm;
-  cursor: pointer;
-  padding: 0.6rem 1.2rem;
-  font-weight: 600;
-
-  &:hover {
-    background: v.$danger;
-    color: white;
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
   }
 }
 
@@ -600,4 +454,66 @@
 .pageTotal {
   color: v.$color-text-muted;
   font-weight: 400;
+}
+
+// --- CONFLICT CONFIRMATION (step two of a status change) ---
+
+// Visually distinct from the ordinary status modal: this one voids other
+// people's bookings, so it should not look like the step before it.
+.dangerModal {
+  border-color: rgba(v.$danger, 0.5);
+}
+
+.conflictList {
+  list-style: none;
+  margin: 0.5rem 0 1.5rem;
+  padding: 0;
+  max-height: 16rem;
+  overflow-y: auto;
+  border: 1px solid rgba(v.$danger, 0.25);
+  border-radius: 8px;
+}
+
+.conflictRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 1rem;
+  padding: 0.65rem 0.85rem;
+  font-size: 0.9rem;
+
+  & + & {
+    border-top: 1px solid rgba(v.$danger, 0.15);
+  }
+}
+
+.conflictEmail {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.conflictDates {
+  color: v.$color-text-muted;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.dangerBtn {
+  background: v.$danger;
+  color: #fff;
+  border: none;
+  padding: 0.6rem 1.1rem;
+  border-radius: 8px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: filter 0.2s ease;
+
+  &:hover:not(:disabled) {
+    filter: brightness(1.1);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
 }

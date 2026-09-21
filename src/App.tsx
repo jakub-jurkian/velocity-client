@@ -21,7 +21,7 @@ import ScrollToTop from "./components/common/ScrollToTop";
 import RentalsPage from "./pages/RentalsPage/RentalsPage";
 import UnauthorizedPage from "./pages/UnauthorizedPage/UnauthorizedPage";
 import UserManagementPage from "./pages/Admin/UserManagementPage/UserManagementPage";
-import CalendarPage from "./pages/Admin/CalendarPage/CalendarPage";
+import BikeManagementPage from "./pages/Admin/BikeManagementPage/BikeManagementPage";
 import PanelPage from "./pages/Admin/PanelPage/PanelPage";
 import AdminLayout from "./pages/Admin/AdminLayout/AdminLayout";
 import Redirect from "./components/common/Redirect";
@@ -107,6 +107,16 @@ const App = () => {
             toastOptions={toastConfig}
           />
 
+          {/*
+            mode="wait" keeps the deliberate beat between pages: the outgoing
+            route fades out before the incoming one fades in.
+
+            That gap used to make the layout jump, because the document briefly
+            emptied and the scrollbar vanished with it. The fix lives in CSS now
+            rather than here: `scrollbar-gutter: stable` on html reserves the
+            gutter permanently, and .mainContent carries a min-height so the
+            document cannot collapse while the swap is in flight.
+          */}
           <AnimatePresence mode="wait">
             <Routes location={location} key={location.pathname}>
               {/* Public routes */}
@@ -155,7 +165,7 @@ const App = () => {
 
                 <Route path="panel" element={<PanelPage />} />
                 <Route path="users" element={<UserManagementPage />} />
-                <Route path="calendar" element={<CalendarPage />} />
+                <Route path="bikes" element={<BikeManagementPage />} />
               </Route>
             </Routes>
           </AnimatePresence>

@@ -29,9 +29,10 @@ export const Navbar = () => {
 
   const logoutHandle = async () => {
     setIsMenuOpen(false);
-    navigate("/");
     // Awaited so the toast follows the actual revocation round trip.
     await dispatch(performLogout());
+    navigate("/");
+
     toast.success("Logged out successfully!");
   };
 
@@ -59,7 +60,7 @@ export const Navbar = () => {
         <span aria-hidden="true" />
       </button>
 
-      <nav 
+      <nav
         className={`${styles.navLinks} ${isMenuOpen ? styles.open : ""}`}
         aria-label="Main Navigation"
       >
@@ -78,7 +79,11 @@ export const Navbar = () => {
         ) : (
           <>
             {isAdmin && (
-              <Link to="/admin" className={styles.adminBadge} onClick={closeMenu}>
+              <Link
+                to="/admin"
+                className={styles.adminBadge}
+                onClick={closeMenu}
+              >
                 Admin Panel
               </Link>
             )}
@@ -86,7 +91,7 @@ export const Navbar = () => {
             <Link to="/dashboard" onClick={closeMenu}>
               Dashboard
             </Link>
-            
+
             <div className={styles.userInfo}>
               <span
                 className={styles.userName}

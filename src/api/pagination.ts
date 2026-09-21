@@ -49,17 +49,29 @@ interface PageOptions {
   page?: number;
   size?: number;
   signal?: AbortSignal;
+  /**
+   * Extra query parameters (e.g. a status filter). Empty-string values are
+   * skipped so an "All" filter option can map to "" without sending
+   * `status=` to the server.
+   */
+  params?: Record<string, string>;
 }
 
 /** Fetches a single page of a list endpoint. */
 export const fetchPage = async <T>(
   path: string,
   token: string,
-  { page = 0, size = DEFAULT_PAGE_SIZE, signal }: PageOptions = {},
+  { page = 0, size = DEFAULT_PAGE_SIZE, signal, params }: PageOptions = {},
 ): Promise<PaginatedResponse<T>> => {
   const url = new URL(`${import.meta.env.VITE_API_URL}${path}`);
   url.searchParams.set("page", String(page));
   url.searchParams.set("size", String(Math.min(size, MAX_PAGE_SIZE)));
+
+  if (params) {
+    for (const [key, value] of Object.entries(params)) {
+      if (value) url.searchParams.set(key, value);
+    }
+  }
 
   const response = await fetch(url, {
     headers: { Authorization: `Bearer ${token}` },

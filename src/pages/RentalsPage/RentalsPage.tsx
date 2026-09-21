@@ -24,6 +24,17 @@ const formatDate = (dateStr: string) => {
   return format(parseISO(dateStr), "MMM d, yyyy");
 };
 
+/**
+ * Maps a status onto its lowercase modifier class.
+ *
+ * The status arrives uppercase from the API while the stylesheet declares
+ * `.confirmed`, `.cancelled` and friends, so indexing the stylesheet with the
+ * raw status returned undefined and the card silently lost its colour — both
+ * the left border and the badge tint.
+ */
+const statusClassName = (status: Reservation["status"]) =>
+  styles[status.toLowerCase()] ?? "";
+
 const RentalsPage = () => {
   const jwtToken = useAppSelector((state) => state.auth.token);
   const [reservations, setReservations] = useState<Reservation[]>([]);
@@ -184,13 +195,39 @@ const RentalsPage = () => {
           {reservations.map((res) => (
             <article
               key={res.id}
-              className={`${styles.card} ${styles[res.status]}`}
+              className={`${styles.card} ${statusClassName(res.status)}`}
             >
               <div className={styles.statusBadge}>
                 {res.status.charAt(0) + res.status.slice(1).toLowerCase()}
               </div>
 
               <div className={styles.cardContent}>
+                {/*
+                  Sits directly under the status badge it explains, ahead of the
+                  booking details. Dropping it between two label/value rows
+                  broke their rhythm and buried the one thing the rider needs
+                  to read on a cancelled card.
+
+                  Shown only when someone else ended the booking: a
+                  self-cancellation carries no reason, so this cannot fire on a
+                  booking the rider cancelled themselves.
+                */}
+                {res.status === "CANCELLED" && res.cancellationReason && (
+                  <div className={styles.cancellationNotice} role="status">
+                    <span className={styles.noticeTitle}>
+                      Cancelled by VeloCity
+                    </span>
+                    <p className={styles.noticeBody}>
+                      {res.cancellationReason}. You have not been charged for
+                      this booking. Contact{" "}
+                      <a href="mailto:support@velocity.com">
+                        support@velocity.com
+                      </a>{" "}
+                      if you need help arranging a replacement bike.
+                    </p>
+                  </div>
+                )}
+
                 <div className={styles.row}>
                   <span className={styles.label}>Bike</span>
                   <span className={styles.valueHighlight}>

@@ -13,7 +13,7 @@ const AdminLayout = () => {
   const navLinks = [
     { to: "/admin/panel", label: "Dashboard" },
     { to: "/admin/users", label: "Users" },
-    { to: "/admin/calendar", label: "Calendar" },
+    { to: "/admin/bikes", label: "Bikes" },
   ];
 
   const handleLogout = () => {

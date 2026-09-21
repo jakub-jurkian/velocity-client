@@ -9,7 +9,7 @@ import type { BikeModel } from "../types/Fleet";
  * a bearer token plus a date range and a city.
  *
  * The specs below are kept in lockstep with the `bike_models` rows in
- * db/changelog/dev/006-dev-seed.xml so the marketing page cannot contradict
+ * db/changelog/dev/999-dev-seed.xml so the marketing page cannot contradict
  * what a signed-in user is offered during booking:
  *
  *   Sprint Courier S1   AGILITY       45 km/h   80 km   40 kg

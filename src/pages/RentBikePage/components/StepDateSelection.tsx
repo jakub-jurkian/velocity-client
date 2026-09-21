@@ -21,8 +21,20 @@ export default function StepDateSelection({
 }: Props) {
   const [error, setError] = useState("");
 
-  // Safely get local date as YYYY-MM-DD
-  const today = format(new Date(), "yyyy-MM-dd");
+  /**
+   * Earliest bookable start date, mirroring `@Future` on
+   * ReservationBookRequest.startDate: tomorrow, never today.
+   *
+   * A same-day rental is unbookable by design. Pricing is whole-day with no
+   * time component, so a booking made in the evening would charge a full day
+   * for a few hours. It is also uncancellable: the domain refuses a cancel
+   * once the current date is no longer before the start date, which is true
+   * from the moment a same-day booking exists.
+   */
+  const earliestStartDate = useMemo(
+    () => format(addDays(new Date(), 1), "yyyy-MM-dd"),
+    [],
+  );
 
   // The end date is exclusive server-side (days = end - start), so a 21-day
   // rental ends on start + 21 and a 3-day rental ends on start + 3.
@@ -70,7 +82,8 @@ export default function StepDateSelection({
 
       <h1>When do you need it?</h1>
       <p className={styles.subtitle}>
-        Select your rental dates (3-{MAX_RENTAL_DAYS} days).
+        Select your rental dates ({MIN_RENTAL_DAYS}-{MAX_RENTAL_DAYS} days).
+        Bookings start from tomorrow.
       </p>
 
       <form onSubmit={(e) => onSubmit(e, setError)} className={styles.dateForm}>
@@ -81,7 +94,7 @@ export default function StepDateSelection({
             type="date"
             value={dates.start}
             onChange={(e) => handleDateChange("start", e.target.value)}
-            min={today}
+            min={earliestStartDate}
             className={styles.input}
             required
           />
@@ -94,7 +107,9 @@ export default function StepDateSelection({
             type="date"
             value={dates.end}
             onChange={(e) => handleDateChange("end", e.target.value)}
-            min={minEndDate || today}
+            // No fallback needed: minEndDate is always set once a start date
+            // exists, and the field is disabled until then.
+            min={minEndDate}
             max={maxEndDate}
             disabled={!dates.start}
             className={styles.input}

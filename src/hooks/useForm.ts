@@ -64,5 +64,8 @@ export const useForm = <T extends Record<string, string | number | boolean>>({
     setIsSubmitting(false);
   };
 
-  return { values, errors, isSubmitting, handleChange, handleSubmit };
+  // setErrors is exposed so a submit handler can attach a server-side failure
+  // to the field it belongs to. Without it a 409 on email has nowhere to go
+  // but a toast, which leaves the offending input unmarked.
+  return { values, errors, isSubmitting, handleChange, handleSubmit, setErrors };
 };
