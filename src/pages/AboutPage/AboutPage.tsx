@@ -10,19 +10,16 @@ const stats = [
 
 const values = [
   {
-    icon: "🌱",
     title: "Sustainability First",
     description:
       "Every bike is charged using 100% renewable energy sources. We recycle 95% of our battery components.",
   },
   {
-    icon: "🚀",
     title: "Radical Speed",
     description:
       "No traffic jams. No parking hunting. Our fleet is optimized for the quickest point-A to point-B travel.",
   },
   {
-    icon: "🛡️",
     title: "Safety by Design",
     description:
       "GPS tracking, automatic collision detection, and regular maintenance checks ensure you ride safe.",
@@ -43,7 +40,7 @@ const AboutPage = () => {
           <p className={styles.lead}>
             We are VeloCity. We believe the future of urban transport is silent,
             clean, and incredibly fast. Our mission is to replace 100,000 car
-            trips with e-bike rides by 2027.
+            trips with e-bike rides by 2030.
           </p>
         </section>
 
@@ -63,9 +60,7 @@ const AboutPage = () => {
           <div className={styles.valueRow}>
             {values.map((value) => (
               <article key={value.title} className={styles.valueItem}>
-                <h3>
-                  <span aria-hidden="true">{value.icon}</span> {value.title}
-                </h3>
+                <h3>{value.title}</h3>
                 <p>{value.description}</p>
               </article>
             ))}

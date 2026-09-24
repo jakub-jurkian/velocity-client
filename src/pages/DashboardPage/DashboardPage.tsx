@@ -176,7 +176,7 @@ const DashboardPage = () => {
 
           <article className={styles.statCard}>
             <h3>Your Impact</h3>
-            <div className={styles.statValue}>128 km</div>
+            <div className={styles.statValue}>0 km</div>
             <p className={styles.statLabel}>Total distance ridden</p>
           </article>
         </section>

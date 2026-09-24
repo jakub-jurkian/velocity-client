@@ -130,7 +130,7 @@ const RegisterPage = () => {
               Join the Fleet
             </h1>
             <p className={styles.subtitle}>
-              Create your courier account and start earning today.
+              Create an account and start riding.
             </p>
           </header>
 
