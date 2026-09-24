@@ -1,25 +1,23 @@
 // Backgrounds
-$color-bg-main:   #050505; // Pure Black
-$color-bg-card:   #121212; // Material Dark Grey (Surface)
+$color-bg-main: #050505; // Pure Black
+$color-bg-card: #121212; // Material Dark Grey (Surface)
 
 // Brand Colors
-$color-primary:   #00F0FF; // Buttons, Links
-$color-secondary: #7000FF; // Secondary buttons, Icons
-$color-accent:    #FF0099; // Badges, Alerts, "Sale"
+$color-primary: #00f0ff; // Buttons, Links
+$color-secondary: #7000ff; // Secondary buttons, Icons
+$color-on-primary: #000; // Text on a primary fill
 
 // Text
-$color-text-main: #FFFFFF;
-$color-text-dim:  #94A3B8; 
-$color-text-muted: $color-text-dim; // alias for legacy references
+$color-text-main: #ffffff;
+$color-text-muted: #94a3b8;
 
-// Neutrals (Backgrounds, text, borders - Slate)
-$gray-50: #f8fafc; // App background
-$gray-100: #f1f5f9; // Card/Section background
-$gray-200: #e2e8f0; // Borders
-$gray-300: #cbd5e1;
-$gray-500: #64748b; // Secondary / Muted text
-$gray-700: #334155; // Main body text
-$gray-900: #0f172a; // Headings
+// Lines and overlays: white at low alpha, so they read on any dark surface.
+$border-subtle: rgba(255, 255, 255, 0.05);
+$border: rgba(255, 255, 255, 0.1);
+$border-strong: rgba(255, 255, 255, 0.2);
+$surface-raised: rgba(255, 255, 255, 0.03);
+$surface-hover: rgba(255, 255, 255, 0.05);
+$surface-sunken: rgba(0, 0, 0, 0.2);
 
 // Reservation statuses & Feedback
 $success: #10b981; // Confirmed / Available
@@ -29,12 +27,19 @@ $info: #3b82f6;
 
 // Design Tokens
 $font-main: "Inter", sans-serif;
+$font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 $radius-sm: 4px;
 $radius-md: 8px; // Standard for cards and inputs
 $radius-lg: 12px; // For modals
+$radius-pill: 99px;
 $shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
 $shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+$shadow-lg: 0 20px 50px rgba(0, 0, 0, 0.5);
 $transition-base: all 0.2s ease-in-out;
+
+// Stacking
+$z-nav: 1000;
+$z-modal: 2000;
 
 // Breakpoints (RWD)
 $mobile: 640px;

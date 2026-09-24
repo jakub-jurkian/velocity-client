@@ -1,4 +1,4 @@
-@use "./variables" as v;
+@use "styles/theme" as v;
 
 // Export variables so TypeScript can read the Hex codes for Icons
 :export {
@@ -14,7 +14,7 @@
   color: v.$color-text-main !important;
   font-family: v.$font-main !important;
 
-  border: 1px solid rgba(v.$gray-200, 0.1) !important;
+  border: 1px solid v.$border !important;
   border-radius: v.$radius-md !important;
   box-shadow: v.$shadow-md !important;
 

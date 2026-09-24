@@ -1,3 +1,4 @@
+import { fileURLToPath } from "node:url";
 import { defineConfig, loadEnv } from "vite";
 import react from "@vitejs/plugin-react-swc";
 
@@ -29,5 +30,12 @@ export default defineConfig(({ mode, command }) => {
 
   return {
     plugins: [react()],
+    css: {
+      preprocessorOptions: {
+        // Lets every stylesheet `@use "styles/theme"` instead of counting
+        // `../` segments back to src.
+        scss: { loadPaths: [fileURLToPath(new URL("./src", import.meta.url))] },
+      },
+    },
   };
 });
