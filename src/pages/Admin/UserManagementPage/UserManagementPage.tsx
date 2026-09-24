@@ -351,14 +351,32 @@ const UserManagement = () => {
                     </button>
 
                     <button
-                      className={`${styles.actionBtn} ${
+                      className={`${styles.actionBtn} ${styles.statusToggle} ${
                         user.status === "ACTIVE"
                           ? styles.danger
                           : styles.success
                       }`}
                       onClick={() => handleBlockClick(user.id!)}
                     >
-                      {user.status === "ACTIVE" ? "Block" : "Unblock"}
+                      {/*
+                        Both labels are always rendered in the same grid cell, so
+                        the button is as wide as "Unblock" on every row and the
+                        Edit buttons line up in one column.
+                      */}
+                      <span
+                        className={
+                          user.status === "ACTIVE" ? undefined : styles.inactive
+                        }
+                      >
+                        Block
+                      </span>
+                      <span
+                        className={
+                          user.status === "ACTIVE" ? styles.inactive : undefined
+                        }
+                      >
+                        Unblock
+                      </span>
                     </button>
                   </td>
                 </tr>

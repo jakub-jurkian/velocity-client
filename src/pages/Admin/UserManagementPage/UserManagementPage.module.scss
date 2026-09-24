@@ -307,7 +307,34 @@
   }
 }
 
+// One width for both role badges: "Administrator", the longer label, is ~6.75em
+// at the badge's 0.75rem (~5.1rem), plus padding and border. In rem rather than
+// em so the other mobile values can share it at their own font sizes.
+$value-width: calc(5.2rem + 22px);
+
+// On mobile cards role, status, joined date and the block/unblock button stack
+// at the right edge. Giving each the badge's width with centred content puts
+// them all on one vertical centre line. Desktop keeps its natural widths.
+@mixin mobile-value-box {
+  min-width: $value-width;
+  justify-content: center;
+  text-align: center;
+
+  @media (min-width: v.$desktop) {
+    min-width: 0;
+    justify-content: flex-start;
+    text-align: left;
+  }
+}
+
 .roleTag {
+  display: inline-block;
+  // Equal widths on every screen, matching the status pills on the Bikes page.
+  min-width: $value-width;
+  text-align: center;
+  // Transparent by default so Client and Administrator are the same height;
+  // only the admin variant colours it.
+  border: 1px solid transparent;
   padding: 4px 10px;
   border-radius: 99px;
   font-size: 0.75rem;
@@ -325,7 +352,13 @@
   }
 }
 
+.dateText {
+  display: inline-block;
+  @include mobile-value-box;
+}
+
 .statusDot {
+  @include mobile-value-box;
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -398,6 +431,26 @@
     &:hover {
       background: rgba(v.$success, 0.1);
       border-color: v.$success;
+    }
+  }
+
+  &.statusToggle {
+    display: inline-grid;
+    justify-items: center;
+
+    // Mobile only: as wide as the values above it, so it shares their centre
+    // line. Desktop keeps the "Unblock"-sized width that lines up Edit.
+    @media (max-width: calc(#{v.$desktop} - 1px)) {
+      min-width: $value-width;
+    }
+
+    > span {
+      grid-area: 1 / 1;
+    }
+
+    // Holds its width but drops out of the accessible name.
+    .inactive {
+      visibility: hidden;
     }
   }
 }
