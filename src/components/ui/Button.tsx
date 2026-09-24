@@ -5,7 +5,7 @@ import BusyLabel from "./BusyLabel";
 import styles from "./Button.module.scss";
 
 interface StyleProps {
-  variant?: "primary" | "secondary" | "outline" | "ghost" | "danger" | "success";
+  variant?: "primary" | "accent" | "secondary" | "outline" | "ghost" | "danger" | "success";
   // Large primary buttons are a page's main call to action and get the glow.
   size?: "sm" | "md" | "lg";
   block?: boolean;

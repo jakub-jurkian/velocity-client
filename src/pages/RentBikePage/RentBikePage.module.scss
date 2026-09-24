@@ -86,8 +86,8 @@
   flex-direction: column;
   gap: 2px;
   padding: 0.6rem 0.8rem;
-  background: rgba(v.$color-primary, 0.05);
-  border: 1px solid rgba(v.$color-primary, 0.15);
+  background: rgba(v.$color-secondary, 0.08);
+  border: 1px solid rgba(v.$color-secondary-light, 0.45);
   border-radius: v.$radius-md;
 }
 
@@ -99,7 +99,7 @@
 }
 
 .boundDate {
-  color: v.$color-primary;
+  color: v.$color-secondary-light;
   font-size: 0.95rem;
   font-weight: 600;
 }

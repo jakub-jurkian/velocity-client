@@ -1,3 +1,5 @@
+@use "sass:color";
+
 // Backgrounds
 $color-bg-main: #050505; // Pure Black
 $color-bg-card: #121212; // Material Dark Grey (Surface)
@@ -6,6 +8,8 @@ $color-bg-card: #121212; // Material Dark Grey (Surface)
 $color-primary: #00f0ff; // Buttons, Links
 $color-secondary: #7000ff; // Secondary buttons, Icons
 $color-on-primary: #000; // Text on a primary fill
+// The secondary purple is too dark to read as text on the dark surfaces.
+$color-secondary-light: color.adjust($color-secondary, $lightness: 20%);
 
 // Text
 $color-text-main: #ffffff;

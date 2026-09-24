@@ -13,7 +13,8 @@ interface Props {
   actions?: ReactNode;
   children?: ReactNode;
   size?: "sm" | "md";
-  tone?: "danger";
+  // Edge colour: "danger" for destructive steps, "primary" to mark an admin.
+  tone?: "danger" | "primary";
   role?: "dialog" | "alertdialog";
 }
 

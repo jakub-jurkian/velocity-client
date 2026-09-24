@@ -60,7 +60,7 @@ export default function StepSummary({
               <span className={styles.oldRate}>{formatCurrency(quote.baseDailyRate)}</span>
             )}
             {formatCurrency(quote.effectiveDailyRate)}
-            {hasDiscount && <Badge tone="primary">-{quote.discountPercentage}%</Badge>}
+            {hasDiscount && <Badge tone="accent">-{quote.discountPercentage}%</Badge>}
           </span>
         </DetailRow>
         <Divider />

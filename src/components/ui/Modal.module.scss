@@ -49,6 +49,10 @@
   border-color: rgba(v.$danger, 0.5);
 }
 
+.primary {
+  border-color: v.$color-primary;
+}
+
 .title {
   margin-bottom: 1rem;
   font-size: 1.5rem;

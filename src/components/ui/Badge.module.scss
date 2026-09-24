@@ -19,6 +19,12 @@
   @include v.tint(v.$color-primary);
 }
 
+.accent {
+  color: #fff;
+  background: v.$color-secondary;
+  border-color: v.$color-secondary;
+}
+
 .success {
   @include v.tint(v.$success);
 }

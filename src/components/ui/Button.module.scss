@@ -1,3 +1,4 @@
+@use "sass:color";
 @use "styles/theme" as v;
 
 // Coloured text and edge only; a faint wash of the same colour on hover.
@@ -74,6 +75,19 @@
     &:active:not(:disabled) {
       transform: translateY(0);
     }
+  }
+}
+
+// The brand purple, e.g. "Book" on a bike card.
+.accent {
+  color: #fff;
+  background: v.$color-secondary;
+  border-color: v.$color-secondary;
+
+  &:hover:not(:disabled) {
+    color: #fff;
+    background: color.adjust(v.$color-secondary, $lightness: 10%);
+    box-shadow: 0 0 15px rgba(v.$color-secondary, 0.4);
   }
 }
 

@@ -44,7 +44,11 @@ export default function StepBikeSelection({ bikes, city, onBack, onBook }: Props
               model={bike}
               compact
               action={
-                <Button onClick={() => onBook(bike)} aria-label={`Book ${bike.name}`}>
+                <Button
+                  variant="accent"
+                  onClick={() => onBook(bike)}
+                  aria-label={`Book ${bike.name}`}
+                >
                   Book
                 </Button>
               }

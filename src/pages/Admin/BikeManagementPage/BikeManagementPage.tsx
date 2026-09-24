@@ -266,7 +266,13 @@ const BikeManagement = () => {
           }
         >
           <div className={styles.fields}>
-            <ReadOnlyField label="Current Status">{humanize(editingBike.status)}</ReadOnlyField>
+            {/* In its pill's colour, so the state being left reads at a glance. */}
+            <ReadOnlyField
+              label="Current Status"
+              className={cx(styles.currentStatus, styles[STATUS_TONE[editingBike.status]])}
+            >
+              {humanize(editingBike.status)}
+            </ReadOnlyField>
             <SelectField
               id="modal-bike-status"
               label="New Status"

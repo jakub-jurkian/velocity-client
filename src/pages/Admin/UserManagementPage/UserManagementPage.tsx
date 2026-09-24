@@ -207,6 +207,8 @@ const UserManagement = () => {
         <Modal
           title="Edit User"
           size="md"
+          // Cyan edge while the user holds (or is being given) the admin role.
+          tone={editingUser.role === "ADMIN" ? "primary" : undefined}
           onClose={() => setEditingUser(null)}
           locked={isSaving}
           actions={

@@ -71,6 +71,16 @@
   font-size: 0.95em;
 }
 
+// Two classes, so the tone outweighs the read-only box's own border.
+.currentStatus {
+  @each $tone, $color in (success: v.$success, warning: v.$warning, danger: v.$danger, neutral: v.$color-text-muted) {
+    &.#{$tone} {
+      color: $color;
+      border-color: rgba($color, 0.5);
+    }
+  }
+}
+
 .fields {
   display: flex;
   flex-direction: column;
