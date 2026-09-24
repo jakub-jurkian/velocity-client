@@ -1,6 +1,6 @@
 @use "../../../styles/variables" as v;
 
-// --- LAYOUT CONTAINER ---
+// LAYOUT CONTAINER
 .container {
   padding: 1rem;
   width: 100%;
@@ -12,7 +12,7 @@
   }
 }
 
-// --- HEADER SECTION ---
+// HEADER SECTION
 .pageHeader {
   display: flex;
   flex-direction: column;
@@ -65,7 +65,7 @@
   }
 }
 
-// --- TOOLBAR (FILTER) ---
+// TOOLBAR (FILTER)
 .toolbar {
   display: flex;
   flex-direction: column;
@@ -92,7 +92,7 @@
   }
 }
 
-// --- RESPONSIVE TABLE ---
+// RESPONSIVE TABLE
 .tableContainer {
   width: 100%;
 
@@ -216,7 +216,7 @@
   }
 }
 
-// --- CELL STYLES ---
+// CELL STYLES
 .modelName {
   font-weight: 600;
   color: v.$color-text-main;
@@ -287,7 +287,7 @@
   text-align: right;
 }
 
-// --- MODAL STYLES ---
+// MODAL STYLES
 .modalOverlay {
   position: fixed;
   top: 0;
@@ -412,7 +412,7 @@
   }
 }
 
-// --- PAGINATION ---
+// PAGINATION
 .pagination {
   display: flex;
   align-items: center;
@@ -456,7 +456,7 @@
   font-weight: 400;
 }
 
-// --- CONFLICT CONFIRMATION (step two of a status change) ---
+// CONFLICT CONFIRMATION (step two of a status change)
 
 // Visually distinct from the ordinary status modal: this one voids other
 // people's bookings, so it should not look like the step before it.

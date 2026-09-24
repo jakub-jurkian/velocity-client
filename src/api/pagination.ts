@@ -1,9 +1,7 @@
 import type { PaginatedResponse } from "../types/Pagination";
 
-/**
- * Shared access to the API's paginated list endpoints.
- */
-/** Matches `spring.data.web.pageable.max-page-size` in application.yml. */
+// Shared access to the API's paginated list endpoints.
+// Matches `spring.data.web.pageable.max-page-size` in application.yml.
 export const MAX_PAGE_SIZE = 50;
 
 export const DEFAULT_PAGE_SIZE = 10;
@@ -18,10 +16,8 @@ export class ApiError extends Error {
   }
 }
 
-/**
- * Pulls the human-readable message out of an RFC 7807 ProblemDetail body,
- * falling back when the server returned an empty body instead.
- */
+// Pulls the human-readable message out of an RFC 7807 ProblemDetail body,
+// falling back when the server returned an empty body instead.
 export const readProblemDetail = async (
   response: Response,
   fallback: string,
@@ -45,15 +41,13 @@ interface PageOptions {
   page?: number;
   size?: number;
   signal?: AbortSignal;
-  /**
-   * Extra query parameters (e.g. a status filter). Empty-string values are
-   * skipped so an "All" filter option can map to "" without sending
-   * `status=` to the server.
-   */
+  //  Extra query parameters (e.g. a status filter). Empty-string values are
+  //  skipped so an "All" filter option can map to "" without sending
+  //  'status=` to the server.
   params?: Record<string, string>;
 }
 
-/** Fetches a single page of a list endpoint. */
+// Fetches a single page of a list endpoint.
 export const fetchPage = async <T>(
   path: string,
   token: string,
@@ -84,13 +78,10 @@ export const fetchPage = async <T>(
   return (await response.json()) as PaginatedResponse<T>;
 };
 
-/**
- * Walks every page and returns the flattened result, for the cases that need a
- * true aggregate rather than a screenful (for example counting active rentals).
- *
- * Uses the largest page the server permits to keep the round trips down, and
- * follows `meta.hasNext` rather than guessing a total.
- */
+//  Walks every page and returns the flattened result, for the cases that need a
+//  true aggregate rather than a screenful (for example counting active rentals).
+//  Uses the largest page the server permits to keep the round trips down, and
+//  follows `meta.hasNext` rather than guessing a total.-
 export const fetchAllPages = async <T>(
   path: string,
   token: string,

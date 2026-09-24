@@ -21,7 +21,7 @@
   left: 0;
   width: 100%;
   height: 100%;
-  overflow: hidden; // <--- The Fix: Clips ONLY the orbs
+  overflow: hidden;
   z-index: 0;
   pointer-events: none; // Clicks pass through to the content
 }

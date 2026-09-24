@@ -11,11 +11,10 @@ import { SUPPORTED_CITIES, type City } from "../../../types/Fleet";
 
 const PAGE_SIZE = 10;
 
-/**
- * Fields the admin PATCH endpoint accepts. Every key is optional because the
- * request is a partial update: only genuinely changed fields are sent, so an
- * untouched field is left alone server-side rather than rewritten.
- */
+// Fields the admin PATCH endpoint accepts. Every key is optional because the
+// request is a partial update: only genuinely changed fields are sent, so an
+// untouched field is left alone server-side rather than rewritten.
+
 interface UserUpdatePayloadByAdmin {
   fullName?: string;
   phone?: string;
@@ -425,9 +424,7 @@ const UserManagement = () => {
                   <div className={styles.formGroup}>
                     <label htmlFor="modal-role">Role</label>
                     {editingUser.id === currentUserId ? (
-                      <div
-                        className={styles.readOnly}
-                      >
+                      <div className={styles.readOnly}>
                         {editingUser.role === "ADMIN"
                           ? "Administrator"
                           : "Client"}

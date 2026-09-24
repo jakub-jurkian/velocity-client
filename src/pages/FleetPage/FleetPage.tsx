@@ -3,7 +3,6 @@ import { FLEET_CATALOG as bikeModels } from "../../data/fleetCatalog";
 import styles from "./FleetPage.module.scss";
 
 const FleetPage = () => {
-
   return (
     <PageTransition>
       <div className={styles.fleetPage}>

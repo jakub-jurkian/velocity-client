@@ -8,10 +8,10 @@ interface Props {
   setStep: (step: WizardStep) => void;
   chosenBikeModel: BikeModel;
   dates: { start: string; end: string };
-  /** Server-priced quote. Every figure below is rendered, never recomputed. */
+  // Server-priced quote. Every figure below is rendered, never recomputed.
   quote: RentalQuote;
   onConfirm: (e: React.FormEvent) => void;
-  /** True while the booking round trip is in flight. */
+  // True while the booking round trip is in flight.
   isSubmitting: boolean;
 }
 
@@ -84,7 +84,7 @@ export default function StepSummary({
 
         <div className={styles.divider}></div>
 
-        {/* --- DETAILED PRICING BREAKDOWN --- */}
+        {/* DETAILED PRICING BREAKDOWN */}
         <div className={`${styles.summaryRow} ${styles.alignCenter}`}>
           <span className={styles.label}>Daily Rate</span>
 

@@ -226,7 +226,7 @@
   }
 }
 
-// --- MODAL STYLES ---
+// MODAL STYLE
 .modalOverlay {
   position: fixed;
   top: 0;
@@ -327,7 +327,7 @@
   }
 }
 
-// --- PAGINATION ---
+// PAGINATION
 .pagination {
   display: flex;
   align-items: center;
@@ -371,7 +371,7 @@
   font-weight: 400;
 }
 
-// --- ADMIN CANCELLATION NOTICE ---
+// ADMIN CANCELLATION NOTICE
 
 // Only rendered on a booking cancelled by staff, never on a self-cancellation.
 // Amber rather than red: this is an explanation, not an error the rider caused.

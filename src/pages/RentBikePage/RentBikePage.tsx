@@ -20,14 +20,13 @@ import { useCheckout } from "../../hooks/useCheckout";
 import Redirect from "../../components/common/Redirect";
 import { WizardStep } from "../../types/Wizard";
 
-/**
- * Rental length using the backend's exclusive-end convention, matching
- * ChronoUnit.DAYS.between(startDate, endDate) in ReservationService.
- * Sep 10 -> Sep 15 is 5 days. parseISO keeps 'YYYY-MM-DD' timezone-safe.
- *
- * Used only to pre-validate the 3..21 day window before calling the API.
- * It is deliberately NOT used to price anything, the server returns the quote.
- */
+//  Rental length using the backend's exclusive-end convention, matching
+//  ChronoUnit.DAYS.between(startDate, endDate) in ReservationService.
+//  Sep 10 -> Sep 15 is 5 days. parseISO keeps 'YYYY-MM-DD' timezone-safe.
+ 
+//  Used only to pre-validate the 3..21 day window before calling the API.
+//  It is deliberately NOT used to price anything, the server returns the quote.
+
 const getRentalDays = (start: string, end: string) => {
   return differenceInCalendarDays(parseISO(end), parseISO(start));
 };
@@ -226,7 +225,7 @@ const RentBikePage = () => {
           </header>
 
           <main className={styles.wizardContent}>
-            {/* --- STEP 1: DATE SELECTION --- */}
+            {/* STEP 1: DATE SELECTION */}
             {step === WizardStep.Dates && (
               <StepDateSelection
                 dates={dates}
@@ -236,10 +235,10 @@ const RentBikePage = () => {
               />
             )}
 
-            {/* --- STEP 2: LOADING --- */}
+            {/* STEP 2: LOADING */}
             {step === WizardStep.Loading && <StepLoading city={userCity} />}
 
-            {/* --- STEP 3: RESULTS --- */}
+            {/* STEP 3: RESULTS */}
             {step === WizardStep.BikeSelection && (
               <StepBikeSelection
                 availableBikes={availableBikes}
@@ -248,7 +247,7 @@ const RentBikePage = () => {
                 city={userCity}
               />
             )}
-            {/* --- STEP 4: SUMMARY & CONFIRM --- */}
+            {/* STEP 4: SUMMARY & CONFIRM */}
             {step === WizardStep.Summary && chosenBikeModel && quote && (
               <StepSummary
                 setStep={setStep}

@@ -1,6 +1,6 @@
 @use "../../styles/variables" as v;
 
-// --- LAYOUT ---
+// LAYOUT
 .registerContainer {
   min-height: 100vh;
   width: 100%;
@@ -30,7 +30,7 @@
   pointer-events: none;
 }
 
-// --- CARD ---
+// CARD
 .registerCard {
   width: 100%;
   max-width: 600px;
@@ -48,7 +48,7 @@
   }
 }
 
-// --- HEADER ---
+// HEADER
 .header {
   text-align: center;
   margin-bottom: 2rem;
@@ -75,7 +75,7 @@
   }
 }
 
-// --- FORM LAYOUT ---
+// FORM LAYOUT
 .form {
   display: flex;
   flex-direction: column;
@@ -191,7 +191,7 @@
   cursor: pointer;
 }
 
-// --- FOOTER ---
+// FOOTER
 .cardFooter {
   margin-top: 2rem;
   text-align: center;

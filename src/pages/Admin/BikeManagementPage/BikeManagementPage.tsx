@@ -19,7 +19,7 @@ const PAGE_SIZE = 10;
 const formatStatus = (status: BikeInstanceStatus) =>
   status.charAt(0) + status.slice(1).toLowerCase();
 
-/** Maps a status onto the lowercase modifier class defined in the stylesheet. */
+// Maps a status onto the lowercase modifier class defined in the stylesheet.
 const statusClassName = (status: BikeInstanceStatus) =>
   styles[status.toLowerCase()] ?? "";
 
@@ -27,16 +27,12 @@ const BikeManagement = () => {
   const [bikes, setBikes] = useState<AdminBike[]>([]);
   const [meta, setMeta] = useState<PaginationMeta>(EMPTY_META);
   const [page, setPage] = useState(0);
-  const [statusFilter, setStatusFilter] = useState<BikeInstanceStatus | "">(
-    "",
-  );
+  const [statusFilter, setStatusFilter] = useState<BikeInstanceStatus | "">("");
   const [isLoading, setIsLoading] = useState(true);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingBike, setEditingBike] = useState<AdminBike | null>(null);
-  const [targetStatus, setTargetStatus] = useState<BikeInstanceStatus | "">(
-    "",
-  );
+  const [targetStatus, setTargetStatus] = useState<BikeInstanceStatus | "">("");
   const [isSaving, setIsSaving] = useState(false);
 
   // Populated when the server refuses a status change because live bookings
@@ -120,22 +116,21 @@ const BikeManagement = () => {
     setConflicts(null);
   };
 
-  /** Steps back from the conflict list to the status picker. */
+  // Steps back from the conflict list to the status picker.
   const dismissConflicts = () => {
     if (isSaving) return;
     setConflicts(null);
   };
 
-  /**
-   * Sends the status change, optionally forcing it.
-   *
-   * One function for both steps on purpose. The retry has to carry the same
-   * bike, status and version as the attempt that produced the conflict list;
-   * a second hand-written fetch is where those drift apart.
-   *
-   * The version stays valid across the retry because a refusal changes
-   * nothing server-side — the 409 is raised before the bike is touched.
-   */
+  // Sends the status change, optionally forcing it.
+
+  // One function for both steps on purpose. The retry has to carry the same
+  // bike, status and version as the attempt that produced the conflict list;
+  // a second hand-written fetch is where those drift apart.
+
+  // The version stays valid across the retry because a refusal changes
+  // nothing server-side — the 409 is raised before the bike is touched.
+
   const submitStatusChange = async (force: boolean) => {
     if (!editingBike || !jwtToken || !targetStatus) return;
 
@@ -383,7 +378,7 @@ const BikeManagement = () => {
         )}
 
         {/*
-          CONFLICT CONFIRMATION — step two.
+          CONFLICT CONFIRMATION - step two.
 
           Rendered only after the server has refused the change, so the list is
           the server's own answer rather than something the client guessed at.

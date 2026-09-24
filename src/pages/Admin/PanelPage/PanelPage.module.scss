@@ -45,7 +45,7 @@
   }
 }
 
-// === CARD BASE STYLE ===
+// CARD BASE STYLE
 .card {
   background: v.$color-bg-card;
   border-radius: v.$radius-lg;
@@ -69,7 +69,7 @@
   }
 }
 
-// === KPI GRID SYSTEM ===
+// KPI GRID SYSTEM
 .kpiGrid {
   display: grid;
   // Mobile: 1 column
@@ -112,7 +112,7 @@
   }
 }
 
-// === CHARTS GRID SYSTEM ===
+// CHARTS GRID SYSTEM
 .chartsGrid {
   display: grid;
   grid-template-columns: 1fr;

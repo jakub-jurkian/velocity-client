@@ -28,14 +28,12 @@ import { useDispatch } from "react-redux";
 import { useAppSelector } from "./store/hooks";
 import PageLoader from "./components/common/PageLoader";
 
-/*
-  The admin area is split out of the main bundle. Only administrators ever
-  reach it, but every visitor was downloading it — including Recharts, which
-  is used by exactly one chart page and is the heaviest thing in the tree.
+// The admin area is split out of the main bundle. Only administrators ever
+// reach it, but every visitor was downloading it — including Recharts, which
+// is used by exactly one chart page and is the heaviest thing in the tree.
 
-  A single Suspense boundary on the parent route covers the layout and all
-  three pages, since a boundary catches any descendant that suspends.
-*/
+// A single Suspense boundary on the parent route covers the layout and all
+// three pages, since a boundary catches any descendant that suspends.
 const AdminLayout = lazy(() => import("./pages/Admin/AdminLayout/AdminLayout"));
 const PanelPage = lazy(() => import("./pages/Admin/PanelPage/PanelPage"));
 const UserManagementPage = lazy(

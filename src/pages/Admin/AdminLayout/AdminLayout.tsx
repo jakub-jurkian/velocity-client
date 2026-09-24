@@ -29,7 +29,7 @@ const AdminLayout = () => {
 
   return (
     <div className={styles.adminContainer}>
-      {/* === TOP NAVIGATION BAR === */}
+      {/* TOP NAVIGATION BAR */}
       <nav className={styles.topNav} aria-label="Admin Navigation">
         
         {/* LEFT: Mobile Toggle + Brand */}
@@ -75,7 +75,7 @@ const AdminLayout = () => {
         </div>
       </nav>
 
-      {/* === MOBILE DRAWER === */}
+      {/* MOBILE DRAWER */}
       <div className={`${styles.mobileDrawer} ${isMobileOpen ? styles.open : ""}`}>
         {navLinks.map((link) => (
           <NavLink
@@ -106,7 +106,7 @@ const AdminLayout = () => {
         </div>
       </div>
 
-      {/* === MAIN CONTENT === */}
+      {/* MAIN CONTENT */}
       <main className={styles.mainContent}>
         <Outlet />
       </main>

@@ -1,6 +1,6 @@
 @use "../../../styles/variables" as v;
 
-// --- LAYOUT CONTAINER ---
+// LAYOUT CONTAINER
 .container {
   padding: 1rem;
   width: 100%;
@@ -12,7 +12,7 @@
   }
 }
 
-// --- HEADER SECTION ---
+// HEADER SECTION
 .pageHeader {
   display: flex;
   flex-direction: column;
@@ -65,7 +65,7 @@
   }
 }
 
-// --- TOOLBAR (SEARCH & FILTER) ---
+// TOOLBAR (SEARCH & FILTER)
 .toolbar {
   display: flex;
   flex-direction: column;
@@ -126,7 +126,7 @@
   }
 }
 
-// --- RESPONSIVE TABLE ---
+// RESPONSIVE TABLE
 .tableContainer {
   width: 100%;
 
@@ -249,7 +249,7 @@
   }
 }
 
-// --- CELL STYLES ---
+// CELL STYLES
 .primaryCell {
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   padding-bottom: 1rem;
@@ -355,7 +355,7 @@
   }
 }
 
-// --- BUTTON VARIANTS ---
+// BUTTON VARIANTS
 .actionBtn {
   padding: 0.4rem 0.8rem;
   background: transparent;
@@ -399,8 +399,7 @@
   text-align: right;
 }
 
-// --- MODAL STYLES ---
-
+// MODAL STYLES
 .modalOverlay {
   position: fixed;
   top: 0;
@@ -558,7 +557,7 @@
   }
 }
 
-// --- PAGINATION ---
+// PAGINATION
 .pagination {
   display: flex;
   align-items: center;

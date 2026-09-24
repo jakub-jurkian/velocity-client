@@ -1,7 +1,7 @@
 @use "sass:color";
 @use "../../styles/variables" as v;
 
-// --- MAIN LAYOUT ---
+// MAIN LAYOUT
 .container {
   min-height: 100vh;
   background-color: v.$color-bg-main;
@@ -71,7 +71,7 @@
   }
 }
 
-// --- STEP 1: DATE SELECTION ---
+// STEP 1: DATE SELECTION
 
 // The "You are here" Banner
 .locationBanner {
@@ -204,7 +204,7 @@
   }
 }
 
-// --- STEP 2: LOADING ---
+// STEP 2: LOADING
 .loadingContainer {
   display: flex;
   flex-direction: column;
@@ -233,7 +233,7 @@
   }
 }
 
-// --- STEP 3: RESULTS ---
+// STEP 3: RESULTS
 .backBtn {
   color: v.$color-text-muted;
   margin-bottom: 1.5rem;
@@ -356,7 +356,7 @@
   }
 }
 
-// --- STEP 4: CONFIRMATION & SUMMARY ---
+// STEP 4: CONFIRMATION & SUMMARY
 
 .summaryCard {
   background: rgba(255, 255, 255, 0.03); // Subtle glass effect
@@ -549,7 +549,7 @@
   }
 }
 
-// --- ANIMATIONS ---
+// ANIMATIONS
 @keyframes spin {
   0% {
     transform: rotate(0deg);

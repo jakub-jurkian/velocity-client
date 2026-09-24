@@ -1,8 +1,6 @@
 @use "../../../styles/variables" as v;
 
-// =========================================
-// 1. MAIN CONTAINER
-// =========================================
+// MAIN CONTAINER
 .adminContainer {
   display: flex;
   flex-direction: column;
@@ -11,9 +9,7 @@
   color: v.$color-text-main;
 }
 
-// =========================================
-// 2. TOP NAVIGATION BAR
-// =========================================
+// TOP NAVIGATION BAR
 .topNav {
   position: fixed;
   top: 0;
@@ -38,9 +34,7 @@
   }
 }
 
-// =========================================
-// 3. BRANDING
-// =========================================
+// BRANDING
 .brand {
   font-size: 1.5rem;
   font-weight: 800;
@@ -55,9 +49,7 @@
   }
 }
 
-// =========================================
-// 4. DESKTOP MENU (Horizontal)
-// =========================================
+// DESKTOP MENU (Horizontal)
 .desktopMenu {
   display: flex;
   align-items: center;
@@ -101,15 +93,13 @@
   }
 }
 
-// =========================================
-// 5. USER ACTIONS (Top Right)
-// =========================================
+// USER ACTIONS (Top Right)
 .userSection {
   display: flex;
   align-items: center;
   gap: 1rem;
 
-  // ✅ HIDE ON MOBILE (Moved to Drawer)
+  // HIDE ON MOBILE (Moved to Drawer)
   @media (max-width: v.$tablet) {
     display: none;
   }
@@ -159,9 +149,7 @@
   }
 }
 
-// =========================================
-// 6. MOBILE DRAWER ELEMENTS
-// =========================================
+// MOBILE DRAWER ELEMENTS
 .mobileToggle {
   display: none;
   background: none;
@@ -261,9 +249,7 @@
   gap: 1rem;
 }
 
-// =========================================
-// 7. MAIN CONTENT AREA
-// =========================================
+// MAIN CONTENT AREA
 .mainContent {
   width: 100%;
   max-width: 1400px;
