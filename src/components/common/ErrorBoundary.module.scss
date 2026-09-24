@@ -1,84 +1,35 @@
 @use "styles/theme" as v;
 
 .container {
-  min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
+  min-height: 100vh;
   padding: 1.5rem;
-  background: v.$color-bg-main;
-  color: v.$color-text-main;
 }
 
 .card {
-  max-width: 460px;
+  @include v.card;
   width: 100%;
-  text-align: center;
+  max-width: 460px;
   padding: 2.5rem 2rem;
-  background: v.$color-bg-card;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: v.$radius-lg;
-}
-
-.logo {
-  font-size: 1.25rem;
-  font-weight: 800;
-  letter-spacing: -0.02em;
-  margin-bottom: 1.5rem;
-}
-
-.highlight {
-  color: v.$color-primary;
+  border-color: v.$border;
+  text-align: center;
 }
 
 .title {
+  margin: 1.5rem 0 0.75rem;
   font-size: 1.5rem;
-  font-weight: 700;
-  margin-bottom: 0.75rem;
 }
 
 .body {
-  color: v.$color-text-muted;
-  line-height: 1.6;
   margin-bottom: 1.75rem;
+  color: v.$color-text-muted;
 }
 
 .actions {
   display: flex;
-  gap: 0.75rem;
-  justify-content: center;
   flex-wrap: wrap;
-}
-
-.primaryBtn,
-.secondaryBtn {
-  padding: 0.65rem 1.25rem;
-  border-radius: v.$radius-md;
-  font-size: 0.9rem;
-  font-weight: 600;
-  font-family: inherit;
-  cursor: pointer;
-  transition: v.$transition-base;
-}
-
-.primaryBtn {
-  background: v.$color-primary;
-  color: v.$color-bg-main;
-  border: 1px solid v.$color-primary;
-
-  &:hover {
-    filter: brightness(1.1);
-    color: v.$color-bg-main;
-  }
-}
-
-.secondaryBtn {
-  background: transparent;
-  color: v.$color-text-muted;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-
-  &:hover {
-    border-color: v.$color-primary;
-    color: v.$color-primary;
-  }
+  justify-content: center;
+  gap: 0.75rem;
 }

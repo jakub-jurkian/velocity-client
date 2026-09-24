@@ -1,4 +1,6 @@
 import { Component, type ErrorInfo, type ReactNode } from "react";
+import Button from "../ui/Button";
+import Logo from "../ui/Logo";
 import styles from "./ErrorBoundary.module.scss";
 
 interface Props {
@@ -44,25 +46,17 @@ class ErrorBoundary extends Component<Props, State> {
     return (
       <main className={styles.container} role="alert">
         <div className={styles.card}>
-          <div className={styles.logo}>
-            Velo<span className={styles.highlight}>City</span>
-          </div>
+          <Logo size="sm" />
           <h1 className={styles.title}>Something went wrong</h1>
           <p className={styles.body}>
             This page hit an unexpected error. Reloading usually clears it — if
             it keeps happening, please let us know.
           </p>
           <div className={styles.actions}>
-            <a className={styles.primaryBtn} href="/">
-              Back to home
-            </a>
-            <button
-              type="button"
-              className={styles.secondaryBtn}
-              onClick={() => window.location.reload()}
-            >
+            <Button href="/">Back to home</Button>
+            <Button variant="secondary" onClick={() => window.location.reload()}>
               Reload page
-            </button>
+            </Button>
           </div>
         </div>
       </main>

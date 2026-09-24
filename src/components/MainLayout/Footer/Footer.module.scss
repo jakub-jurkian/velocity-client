@@ -3,7 +3,7 @@
 .footer {
   margin-top: 4rem;
   padding-top: 2rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.1); // Subtle divider
+  border-top: 1px solid v.$border; // Subtle divider
   text-align: center;
 
   .footerLinks {

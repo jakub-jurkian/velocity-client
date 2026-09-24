@@ -1,5 +1,6 @@
 import PageTransition from "../../components/common/PageTransition";
-import LandingBtn from "../../components/LandingBtn/LandingBtn";
+import Button from "../../components/ui/Button";
+import IconCard from "../../components/ui/IconCard";
 import styles from "./LandingPage.module.scss";
 
 const stats = [
@@ -26,61 +27,52 @@ const features = [
   },
 ];
 
-const LandingPage = () => {
-  return (
-    <PageTransition>
-      <div className={styles.landingPage}>
-        <section className={styles.heroSection}>
-          <div className={styles.heroContent}>
-            <h1 className={styles.heroTitle}>
-              OWN THE <span className={styles.gradientText}>RIDE</span>. <br />
-              OWN YOUR <span className={styles.gradientText}>SHIFT</span>.
-            </h1>
-            <p className={styles.heroSubtitle}>
-              The premium e-bike fleet for professional couriers.
-              <br />
-              Unlimited battery swaps. Zero maintenance. 100% Profit.
-            </p>
+const LandingPage = () => (
+  <PageTransition>
+    <section className={styles.hero}>
+      <h1 className={styles.heroTitle}>
+        OWN THE <span className={styles.gradientText}>RIDE</span>. <br />
+        OWN YOUR <span className={styles.gradientText}>SHIFT</span>.
+      </h1>
+      <p className={styles.heroSubtitle}>
+        The premium e-bike fleet for professional couriers.
+        <br />
+        Unlimited battery swaps. Zero maintenance. 100% Profit.
+      </p>
 
-            <div className={styles.ctaGroup}>
-              <LandingBtn primary />
-              <LandingBtn primary={false} to="/fleet">
-                View Fleet
-              </LandingBtn>
-            </div>
-          </div>
-        </section>
-
-        <section className={styles.statsBar}>
-          {stats.map((stat, index) => (
-            <div key={stat.label}>
-              {index > 0 && <div className={styles.divider}></div>}
-              <div className={styles.statItem}>
-                <h3>{stat.value}</h3>
-                <p>{stat.label}</p>
-              </div>
-            </div>
-          ))}
-        </section>
-
-        <section className={styles.featuresSection}>
-          <h2 className={styles.sectionTitle}>
-            Built for <span className={styles.highlight}>Delivery</span>
-          </h2>
-
-          <div className={styles.grid}>
-            {features.map((feature) => (
-              <div key={feature.title} className={styles.card}>
-                <div className={styles.icon} aria-hidden="true">{feature.icon}</div>
-                <h3>{feature.title}</h3>
-                <p>{feature.description}</p>
-              </div>
-            ))}
-          </div>
-        </section>
+      <div className={styles.ctaGroup}>
+        <Button to="/rent-bike" size="lg">
+          Start Riding
+        </Button>
+        <Button to="/fleet" variant="secondary" size="lg">
+          View Fleet
+        </Button>
       </div>
-    </PageTransition>
-  );
-};
+    </section>
+
+    <section className={styles.statsBar}>
+      {stats.map((stat) => (
+        <div key={stat.label} className={styles.statItem}>
+          <h3>{stat.value}</h3>
+          <p>{stat.label}</p>
+        </div>
+      ))}
+    </section>
+
+    <section className={styles.features}>
+      <h2 className={styles.sectionTitle}>
+        Built for <span className={styles.highlight}>Delivery</span>
+      </h2>
+
+      <div className={styles.grid}>
+        {features.map((feature) => (
+          <IconCard key={feature.title} icon={feature.icon} title={feature.title}>
+            {feature.description}
+          </IconCard>
+        ))}
+      </div>
+    </section>
+  </PageTransition>
+);
 
 export default LandingPage;
