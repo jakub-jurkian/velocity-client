@@ -149,7 +149,7 @@ const DashboardPage = () => {
           )}
         </section>
 
-        {/* --- Stats Grid --- */}
+        {/* Stats Grid */}
         <section className={styles.statsGrid} aria-label="User Statistics">
           <article className={styles.statCard}>
             <h3>Rentals</h3>
@@ -176,12 +176,12 @@ const DashboardPage = () => {
 
           <article className={styles.statCard}>
             <h3>Your Impact</h3>
-            <div className={styles.statValue}>128 km</div>
+            <div className={styles.statValue}>0 km</div>
             <p className={styles.statLabel}>Total distance ridden</p>
           </article>
         </section>
 
-        {/* --- Actions Grid --- */}
+        {/* Actions Grid */}
         <h2 className={styles.sectionTitle}>Quick Actions</h2>
         <section className={styles.actionsGrid} aria-label="Quick Actions">
           <Link

@@ -69,17 +69,14 @@ const authSlice = createSlice({
 export const { loginSuccess, loginFailure, logout, updateUser } =
   authSlice.actions;
 
-/**
- * Thunk for Logging Out.
- *
- * Revokes the token server-side before dropping it locally. Without the API
- * call the JWT stays valid for its full lifetime, so "Log Out" only hid the
- * session from this browser while the token remained usable elsewhere.
- *
- * The local session is cleared even if the request fails. A user who clicked
- * log out must end up logged out of this browser regardless of the network,
- * so revocation is best-effort and clearing is unconditional.
- */
+//  Thunk for Logging Out.
+//  Revokes the token server-side before dropping it locally. Without the API
+//  call the JWT stays valid for its full lifetime, so "Log Out" only hid the
+//  session from this browser while the token remained usable elsewhere.
+//  The local session is cleared even if the request fails. A user who clicked
+//  log out must end up logged out of this browser regardless of the network,
+//  so revocation is best-effort and clearing is unconditional.
+
 export const performLogout =
   () => async (dispatch: AppDispatch, getState: () => RootState) => {
     const { token } = getState().auth;
@@ -95,7 +92,10 @@ export const performLogout =
           keepalive: true,
         });
       } catch (error) {
-        console.error("Token revocation failed; clearing local session.", error);
+        console.error(
+          "Token revocation failed; clearing local session.",
+          error,
+        );
       }
     }
 

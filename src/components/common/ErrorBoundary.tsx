@@ -9,22 +9,21 @@ interface State {
   hasError: boolean;
 }
 
-/**
- * Catches render-time errors anywhere below it and shows a recoverable screen
- * instead of letting React unmount the whole tree to a blank page.
- *
- * A class, because `componentDidCatch` has no hook equivalent — this is the one
- * React feature that still requires one.
- *
- * Mounted outside the store and the router so it also covers a failure in
- * either, which means the fallback cannot navigate with `useNavigate`. It uses
- * a plain anchor instead, and the resulting full page load is the better
- * recovery anyway: whatever state caused the crash is discarded with it.
- *
- * Note it does NOT catch errors thrown inside event handlers or async code —
- * React only routes render, lifecycle and constructor errors here. The `fetch`
- * calls across the app keep their own try/catch for that reason.
- */
+// Catches render-time errors anywhere below it and shows a recoverable screen
+// instead of letting React unmount the whole tree to a blank page.
+
+// A class, because `componentDidCatch` has no hook equivalent — this is the one
+// React feature that still requires one.
+
+// Mounted outside the store and the router so it also covers a failure in
+// either, which means the fallback cannot navigate with `useNavigate`. It uses
+// a plain anchor instead, and the resulting full page load is the better
+// recovery anyway: whatever state caused the crash is discarded with it.
+
+// Note it does NOT catch errors thrown inside event handlers or async code —
+// React only routes render, lifecycle and constructor errors here. The `fetch`
+// calls across the app keep their own try/catch for that reason.
+
 class ErrorBoundary extends Component<Props, State> {
   state: State = { hasError: false };
 

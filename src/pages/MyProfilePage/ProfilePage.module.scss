@@ -1,6 +1,6 @@
 @use "../../styles/variables" as v;
 
-// --- PROFILE CARD (Glassmorphism) ---
+// PROFILE CARD (Glassmorphism)
 .profileCard {
   background: v.$color-bg-card;
   border: 1px solid rgba(255, 255, 255, 0.05);
@@ -18,7 +18,7 @@
   }
 }
 
-// --- LEFT COLUMN: AVATAR ---
+// LEFT COLUMN: AVATAR
 .profileHeader {
   background: rgba(0, 0, 0, 0.2); // Slightly darker side
   padding: 3rem 2rem;
@@ -84,7 +84,7 @@
   }
 }
 
-// --- RIGHT COLUMN: DETAILS ---
+// RIGHT COLUMN: DETAILS
 .profileDetails {
   padding: 2rem;
   flex: 1;
@@ -128,7 +128,7 @@
   }
 }
 
-// --- FORM STYLES ---
+// FORM STYLES
 .formGrid {
   display: flex;
   flex-direction: column;
@@ -146,7 +146,7 @@
     font-weight: 500;
   }
 
-  // --- VIEW MODE ---
+  // VIEW MODE
   .valueDisplay {
     font-size: 1.1rem;
     color: v.$color-text-main;
@@ -166,7 +166,7 @@
     }
   }
 
-  // --- EDIT MODE (Input) ---
+  // EDIT MODE (Input)
   .input {
     background-color: rgba(0, 0, 0, 0.3);
     border: 1px solid rgba(255, 255, 255, 0.1);
@@ -185,7 +185,7 @@
   }
 }
 
-// --- ACTION BUTTONS ---
+// ACTION BUTTONS
 .actionButtons {
   display: flex;
   gap: 0.5rem;
@@ -204,7 +204,7 @@
     color: #000;
     box-shadow: 0 0 15px rgba(v.$color-primary, 0.2);
 
-    &:hover {
+    &:hover:not(:disabled) {
       transform: translateY(-2px);
       box-shadow: 0 0 20px rgba(v.$color-primary, 0.4);
     }
@@ -215,13 +215,18 @@
     border: 1px solid rgba(255, 255, 255, 0.2);
     color: v.$color-text-main;
 
-    &:hover {
+    &:hover:not(:disabled) {
       background: rgba(255, 255, 255, 0.05);
+    }
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
     }
   }
 }
 
-// --- SELECT CONTROL ---
+// SELECT CONTROL
 .selectControl {
   position: relative;
 }

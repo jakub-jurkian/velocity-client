@@ -2,11 +2,13 @@ import { useState } from "react";
 import { Outlet, NavLink, useNavigate, Link } from "react-router-dom";
 import toast from "react-hot-toast";
 import { useAppDispatch } from "../../../store/hooks";
-import { logout } from "../../../store/slices/authSlice"; // Note: Ensure this matches your auth slice action name
+import { performLogout } from "../../../store/slices/authSlice";
+import BusyLabel from "../../../components/common/BusyLabel";
 import styles from "./AdminLayout.module.scss";
 
 const AdminLayout = () => {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
 
@@ -16,9 +18,12 @@ const AdminLayout = () => {
     { to: "/admin/bikes", label: "Bikes" },
   ];
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    setIsLoggingOut(true);
+    // performLogout, not the bare logout action: it also revokes the token
+    // server-side and clears it from storage, so a reload stays logged out.
+    await dispatch(performLogout());
     setIsMobileOpen(false); // Close drawer on logout
-    dispatch(logout());
     navigate("/");
     toast.success("Logged out successfully!");
   };
@@ -29,7 +34,7 @@ const AdminLayout = () => {
 
   return (
     <div className={styles.adminContainer}>
-      {/* === TOP NAVIGATION BAR === */}
+      {/* TOP NAVIGATION BAR */}
       <nav className={styles.topNav} aria-label="Admin Navigation">
         
         {/* LEFT: Mobile Toggle + Brand */}
@@ -69,13 +74,20 @@ const AdminLayout = () => {
             <span>Client View</span>
           </Link>
 
-          <button className={styles.logoutBtn} onClick={handleLogout}>
-            <span>Logout</span>
+          <button
+            className={styles.logoutBtn}
+            onClick={handleLogout}
+            disabled={isLoggingOut}
+            aria-busy={isLoggingOut}
+          >
+            <BusyLabel busy={isLoggingOut} busyText="Logging out">
+              <span>Logout</span>
+            </BusyLabel>
           </button>
         </div>
       </nav>
 
-      {/* === MOBILE DRAWER === */}
+      {/* MOBILE DRAWER */}
       <div className={`${styles.mobileDrawer} ${isMobileOpen ? styles.open : ""}`}>
         {navLinks.map((link) => (
           <NavLink
@@ -100,13 +112,20 @@ const AdminLayout = () => {
              Client View
           </Link>
           
-          <button className={styles.mobileLogout} onClick={handleLogout}>
-             Logout
+          <button
+            className={styles.mobileLogout}
+            onClick={handleLogout}
+            disabled={isLoggingOut}
+            aria-busy={isLoggingOut}
+          >
+            <BusyLabel busy={isLoggingOut} busyText="Logging out">
+              Logout
+            </BusyLabel>
           </button>
         </div>
       </div>
 
-      {/* === MAIN CONTENT === */}
+      {/* MAIN CONTENT */}
       <main className={styles.mainContent}>
         <Outlet />
       </main>

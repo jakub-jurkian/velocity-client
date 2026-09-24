@@ -11,15 +11,38 @@ import type { PaginationMeta } from "../../../types/Pagination";
 import { EMPTY_META } from "../../../types/Pagination";
 import { fetchPage, readProblemDetail } from "../../../api/pagination";
 import PageTransition from "../../../components/common/PageTransition";
+import { scrollToTop } from "../../../utils/scroll";
+import BusyLabel from "../../../components/common/BusyLabel";
 import toast from "react-hot-toast";
 import { useAppSelector } from "../../../store/hooks";
+import { findCatalogModel } from "../../../data/fleetCatalog";
 
 const PAGE_SIZE = 10;
+
+// The endpoint has no default order, and Postgres is free to return rows in a
+// different order after an update — so without this a bike could jump to
+// another page right after its status changed. Grouping by city then model
+// also makes the list scannable; the id is the tiebreaker that makes the order
+// fully deterministic.
+const SORT = "city,bikeModel.name,id,asc";
+
+// Tail of the UUID: enough to tell two identical-looking bikes apart. The tail
+// rather than the head because seeded ids share their leading blocks per batch
+// (11111111-1111-4111-8111-000000000001, ...002) and differ only at the end;
+// a random UUID is just as distinctive at either end.
+
+const shortId = (id: string) => `#${id.slice(-8)}`;
+
+// Icon and category from the catalogue, with a neutral fallback for new models.
+const modelDetails = (modelName: string) => {
+  const model = findCatalogModel(modelName);
+  return { icon: model?.imageEmoji ?? "🚲", category: model?.category };
+};
 
 const formatStatus = (status: BikeInstanceStatus) =>
   status.charAt(0) + status.slice(1).toLowerCase();
 
-/** Maps a status onto the lowercase modifier class defined in the stylesheet. */
+// Maps a status onto the lowercase modifier class defined in the stylesheet.
 const statusClassName = (status: BikeInstanceStatus) =>
   styles[status.toLowerCase()] ?? "";
 
@@ -27,16 +50,12 @@ const BikeManagement = () => {
   const [bikes, setBikes] = useState<AdminBike[]>([]);
   const [meta, setMeta] = useState<PaginationMeta>(EMPTY_META);
   const [page, setPage] = useState(0);
-  const [statusFilter, setStatusFilter] = useState<BikeInstanceStatus | "">(
-    "",
-  );
+  const [statusFilter, setStatusFilter] = useState<BikeInstanceStatus | "">("");
   const [isLoading, setIsLoading] = useState(true);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingBike, setEditingBike] = useState<AdminBike | null>(null);
-  const [targetStatus, setTargetStatus] = useState<BikeInstanceStatus | "">(
-    "",
-  );
+  const [targetStatus, setTargetStatus] = useState<BikeInstanceStatus | "">("");
   const [isSaving, setIsSaving] = useState(false);
 
   // Populated when the server refuses a status change because live bookings
@@ -56,7 +75,11 @@ const BikeManagement = () => {
       const result = await fetchPage<AdminBike>(
         "/api/v1/admin/bikes",
         jwtToken,
-        { page, size: PAGE_SIZE, params: { status: statusFilter } },
+        {
+          page,
+          size: PAGE_SIZE,
+          params: { status: statusFilter, sort: SORT },
+        },
       );
       setBikes(result.data);
       setMeta(result.meta);
@@ -98,8 +121,9 @@ const BikeManagement = () => {
   // Changing the filter must jump back to page 0: staying on, say, page 3
   // while switching filters can land on a page beyond the new, smaller
   // result set and render an empty table that is not actually empty.
-  const handleFilterChange = (value: string) => {
-    setStatusFilter(value as BikeInstanceStatus | "");
+  const handleFilterChange = (value: BikeInstanceStatus | "") => {
+    if (value === statusFilter) return;
+    setStatusFilter(value);
     setPage(0);
   };
 
@@ -120,22 +144,21 @@ const BikeManagement = () => {
     setConflicts(null);
   };
 
-  /** Steps back from the conflict list to the status picker. */
+  // Steps back from the conflict list to the status picker.
   const dismissConflicts = () => {
     if (isSaving) return;
     setConflicts(null);
   };
 
-  /**
-   * Sends the status change, optionally forcing it.
-   *
-   * One function for both steps on purpose. The retry has to carry the same
-   * bike, status and version as the attempt that produced the conflict list;
-   * a second hand-written fetch is where those drift apart.
-   *
-   * The version stays valid across the retry because a refusal changes
-   * nothing server-side — the 409 is raised before the bike is touched.
-   */
+  // Sends the status change, optionally forcing it.
+
+  // One function for both steps on purpose. The retry has to carry the same
+  // bike, status and version as the attempt that produced the conflict list;
+  // a second hand-written fetch is where those drift apart.
+
+  // The version stays valid across the retry because a refusal changes
+  // nothing server-side — the 409 is raised before the bike is touched.
+
   const submitStatusChange = async (force: boolean) => {
     if (!editingBike || !jwtToken || !targetStatus) return;
 
@@ -222,6 +245,11 @@ const BikeManagement = () => {
   const confirmStatusChange = () => submitStatusChange(false);
   const forceStatusChange = () => submitStatusChange(true);
 
+  const goToPage = (step: 1 | -1) => {
+    setPage((current) => current + step);
+    scrollToTop();
+  };
+
   return (
     <PageTransition>
       <main className={styles.container}>
@@ -232,20 +260,24 @@ const BikeManagement = () => {
           </div>
         </header>
 
-        <div className={styles.toolbar}>
-          <select
-            className={styles.select}
-            value={statusFilter}
-            onChange={(e) => handleFilterChange(e.target.value)}
-            aria-label="Filter by status"
-          >
-            <option value="">All Statuses</option>
-            {BIKE_STATUSES.map((status) => (
-              <option key={status} value={status}>
-                {formatStatus(status)}
-              </option>
-            ))}
-          </select>
+        <div
+          className={styles.toolbar}
+          role="group"
+          aria-label="Filter by status"
+        >
+          {(["", ...BIKE_STATUSES] as const).map((status) => (
+            <button
+              key={status || "all"}
+              type="button"
+              className={`${styles.filterChip} ${
+                statusFilter === status ? styles.selected : ""
+              }`}
+              aria-pressed={statusFilter === status}
+              onClick={() => handleFilterChange(status)}
+            >
+              {status ? formatStatus(status) : "All"}
+            </button>
+          ))}
         </div>
 
         <div className={styles.tableContainer}>
@@ -265,16 +297,38 @@ const BikeManagement = () => {
                 </tr>
               ) : (
                 bikes.map((bike) => (
-                  <tr key={bike.id}>
-                    <td data-label="Model">
-                      <span className={styles.modelName}>
-                        {bike.bikeModelName}
-                      </span>
+                  <tr
+                    key={bike.id}
+                    className={
+                      bike.status === "RETIRED" ? styles.retiredRow : undefined
+                    }
+                  >
+                    {/* No data-label: on mobile this cell is the card's heading. */}
+                    <td>
+                      <div className={styles.modelCell}>
+                        <span className={styles.modelIcon} aria-hidden="true">
+                          {modelDetails(bike.bikeModelName).icon}
+                        </span>
+                        <span className={styles.modelText}>
+                          <span className={styles.modelName}>
+                            {bike.bikeModelName}
+                          </span>
+                          <span className={styles.modelMeta}>
+                            <code className={styles.bikeId} title={bike.id}>
+                              {shortId(bike.id)}
+                            </code>
+                            {modelDetails(bike.bikeModelName).category &&
+                              ` · ${modelDetails(bike.bikeModelName).category}`}
+                          </span>
+                        </span>
+                      </div>
                     </td>
-                    <td data-label="City">{bike.city}</td>
+                    <td data-label="City">
+                      <span className={styles.cityValue}>{bike.city}</span>
+                    </td>
                     <td data-label="Status">
                       <span
-                        className={`${styles.statusDot} ${statusClassName(bike.status)}`}
+                        className={`${styles.statusPill} ${statusClassName(bike.status)}`}
                       >
                         {formatStatus(bike.status)}
                       </span>
@@ -299,7 +353,7 @@ const BikeManagement = () => {
           <nav className={styles.pagination} aria-label="Bike pages">
             <button
               className={styles.pageBtn}
-              onClick={() => setPage((current) => current - 1)}
+              onClick={() => goToPage(-1)}
               disabled={!meta.hasPrevious || isLoading}
             >
               ← Previous
@@ -315,7 +369,7 @@ const BikeManagement = () => {
 
             <button
               className={styles.pageBtn}
-              onClick={() => setPage((current) => current + 1)}
+              onClick={() => goToPage(1)}
               disabled={!meta.hasNext || isLoading}
             >
               Next →
@@ -332,12 +386,19 @@ const BikeManagement = () => {
             >
               <h2>Change Bike Status</h2>
               <p className={styles.modalSubtitle}>
-                {editingBike.bikeModelName} — {editingBike.city}
+                {modelDetails(editingBike.bikeModelName).icon}{" "}
+                {editingBike.bikeModelName}{" "}
+                <code className={styles.bikeId} title={editingBike.id}>
+                  {shortId(editingBike.id)}
+                </code>{" "}
+                - {editingBike.city}
               </p>
 
               <div className={styles.formGroup}>
                 <label>Current Status</label>
-                <div className={styles.valueDisplay}>
+                <div
+                  className={`${styles.valueDisplay} ${statusClassName(editingBike.status)}`}
+                >
                   {formatStatus(editingBike.status)}
                 </div>
               </div>
@@ -374,8 +435,11 @@ const BikeManagement = () => {
                   className={styles.primaryBtn}
                   onClick={confirmStatusChange}
                   disabled={isSaving || targetStatus === editingBike.status}
+                  aria-busy={isSaving}
                 >
-                  {isSaving ? "Saving…" : "Confirm Change"}
+                  <BusyLabel busy={isSaving} busyText="Saving">
+                    Confirm Change
+                  </BusyLabel>
                 </button>
               </div>
             </div>
@@ -383,7 +447,7 @@ const BikeManagement = () => {
         )}
 
         {/*
-          CONFLICT CONFIRMATION — step two.
+          CONFLICT CONFIRMATION - step two.
 
           Rendered only after the server has refused the change, so the list is
           the server's own answer rather than something the client guessed at.
@@ -440,10 +504,11 @@ const BikeManagement = () => {
                   className={styles.dangerBtn}
                   onClick={forceStatusChange}
                   disabled={isSaving}
+                  aria-busy={isSaving}
                 >
-                  {isSaving
-                    ? "Cancelling…"
-                    : `Cancel ${conflicts.length} and continue`}
+                  <BusyLabel busy={isSaving} busyText="Cancelling bookings">
+                    Cancel {conflicts.length} and continue
+                  </BusyLabel>
                 </button>
               </div>
             </div>

@@ -1,7 +1,7 @@
 // Checks if a value is empty or just whitespace.
 export const validateRequired = (
   value: string,
-  fieldLabel: string
+  fieldLabel: string,
 ): string | undefined => {
   if (!value || value.trim() === "") {
     return `${fieldLabel} is required`;
@@ -25,7 +25,7 @@ export const validateEmail = (email: string): string | undefined => {
 export const validateMinLength = (
   value: string,
   min: number,
-  fieldLabel: string
+  fieldLabel: string,
 ): string | undefined => {
   if (!value) return `${fieldLabel} is required`;
   if (value.length < min) {
@@ -34,16 +34,11 @@ export const validateMinLength = (
   return undefined;
 };
 
-
-/**
- * Mirrors the backend E.164 constraint: `User.PHONE_PATTERN` and the `@Pattern`
- * on the three request records, all of which use `^\+[1-9]\d{7,14}$`.
- *
- * The `+` is required and there are at least 8 digits. The old `\+?` and
- * `\d{1,14}` had no floor, so this accepted "+48" and the API rejected it.
- *
- * Duplicated from the backend with nothing keeping the two in step - change both.
- */
+// Mirrors the backend E.164 constraint: `User.PHONE_PATTERN` and the `@Pattern`
+// on the three request records, all of which use `^\+[1-9]\d{7,14}$`.
+// The `+` is required and there are at least 8 digits. The old `\+?` and
+// `\d{1,14}` had no floor, so this accepted "+48" and the API rejected it.
+// Duplicated from the backend with nothing keeping the two in step - change both.
 const E164_PATTERN = /^\+[1-9]\d{7,14}$/;
 
 export const validatePhone = (phone: string): string | undefined => {
@@ -57,12 +52,9 @@ export const validatePhone = (phone: string): string | undefined => {
   return undefined;
 };
 
-/**
- * Mirrors the `@Pattern` on `UserRegistrationRequest.password`, which is where
- * the rule is actually enforced — this copy only saves the user a round trip.
- *
- * Duplicated from the backend with nothing keeping the two in step - change both.
- */
+// Mirrors the `@Pattern` on `UserRegistrationRequest.password`, which is where
+// the rule is actually enforced — this copy only saves the user a round trip.
+// Duplicated from the backend with nothing keeping the two in step - change both.
 const PASSWORD_PATTERN = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).*$/;
 
 export const PASSWORD_MIN_LENGTH = 8;
@@ -84,14 +76,13 @@ export const validatePassword = (password: string): string | undefined => {
   return undefined;
 };
 
-/**
- * Pulls per-field messages out of an RFC 7807 body. The API returns
- * `invalidFields` on a 400 from `@Valid`; the top-level `detail` is only the
- * generic "Validation failed for one or more fields." summary, so reading
- * `detail` alone throws away everything useful.
- */
+// Pulls per-field messages out of an RFC 7807 body. The API returns
+// `invalidFields` on a 400 from `@Valid`; the top-level `detail` is only the
+// generic "Validation failed for one or more fields." summary, so reading
+// `detail` alone throws away everything useful.
+
 export const extractFieldErrors = (
-  problem: unknown
+  problem: unknown,
 ): Record<string, string> => {
   const fields = (problem as { invalidFields?: Record<string, string[]> })
     ?.invalidFields;
@@ -104,6 +95,6 @@ export const extractFieldErrors = (
       }
       return acc;
     },
-    {}
+    {},
   );
 };

@@ -1,15 +1,12 @@
-import PageTransition from "../../components/common/PageTransition";
-import styles from "./UnauthorizedPage.module.scss";
+import ErrorState from "../../components/common/ErrorState";
 
-const UnauthorizedPage = () => {
-  return (
-    <PageTransition>
-      <div className={styles.unauthorizedContainer}>
-        <h1>403 - Access Denied</h1>
-        <p>You do not have permission to view this page.</p>
-      </div>
-    </PageTransition>
-  );
-};
+const UnauthorizedPage = () => (
+  <ErrorState
+    code="403"
+    icon="🔒"
+    title="This area is staff-only."
+    message="Your account doesn't have access to this page. If you think that's a mistake, contact a VeloCity administrator."
+  />
+);
 
 export default UnauthorizedPage;

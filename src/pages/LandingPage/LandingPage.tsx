@@ -22,7 +22,7 @@ const features = [
   {
     icon: "📱",
     title: "Smart App",
-    description: "Book shifts and unlock bikes via phone.",
+    description: "Book bikes and manage them via phone.",
   },
 ];
 
@@ -33,7 +33,7 @@ const LandingPage = () => {
         <section className={styles.heroSection}>
           <div className={styles.heroContent}>
             <h1 className={styles.heroTitle}>
-              OWN THE <span className={styles.gradientText}>NIGHT</span>. <br />
+              OWN THE <span className={styles.gradientText}>RIDE</span>. <br />
               OWN YOUR <span className={styles.gradientText}>SHIFT</span>.
             </h1>
             <p className={styles.heroSubtitle}>

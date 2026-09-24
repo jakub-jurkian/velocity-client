@@ -1,6 +1,6 @@
 @use "../../styles/variables" as v;
 
-// --- LAYOUT ---
+// LAYOUT
 .loginContainer {
   min-height: 100vh;
   width: 100%;
@@ -30,7 +30,7 @@
   pointer-events: none;
 }
 
-// --- CARD COMPONENT ---
+// CARD COMPONENT
 .loginCard {
   width: 100%;
   max-width: 420px; // Standard login width
@@ -48,7 +48,7 @@
   }
 }
 
-// --- HEADER ---
+// HEADER
 .header {
   text-align: center;
   margin-bottom: 2rem;
@@ -75,7 +75,7 @@
   }
 }
 
-// --- FORM ---
+// FORM
 .form {
   display: flex;
   flex-direction: column;
@@ -117,7 +117,7 @@
   }
 }
 
-// --- FORM FOOTER (Checkbox & Link) ---
+// FORM FOOTER (Checkbox & Link)
 .formFooter {
   display: flex;
   justify-content: space-between;
@@ -149,7 +149,7 @@
   }
 }
 
-// --- SUBMIT BUTTON ---
+// SUBMIT BUTTON
 .submitBtn {
   margin-top: 1rem;
   width: 100%;
@@ -178,7 +178,7 @@
   }
 }
 
-// --- CARD FOOTER ---
+// CARD FOOTER
 .cardFooter {
   margin-top: 2rem;
   text-align: center;

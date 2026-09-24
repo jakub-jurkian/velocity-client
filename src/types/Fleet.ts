@@ -13,6 +13,8 @@ export interface BikeModel {
   };
   // Marketing-only decoration: the API never sends it.
   imageEmoji?: string;
+  // Marketing-only product illustration (bundled asset URL).
+  image?: string;
 }
 
 // The Physical Bike (The real asset)
@@ -31,10 +33,8 @@ export const BIKE_CATEGORIES = [
 
 export type BikeCategory = (typeof BIKE_CATEGORIES)[number];
 
-/**
- * Mirrors the backend `AvailableBikeModel` record.
- * Numeric specs arrive as JSON numbers, not strings.
- */
+// Mirrors the backend `AvailableBikeModel` record.
+// Numeric specs arrive as JSON numbers, not strings.
 export interface AvailableBikeModel {
   bookableInstanceId: string;
   modelName: string;
@@ -45,13 +45,11 @@ export interface AvailableBikeModel {
   modelCapacity: number;
 }
 
-/**
- * Mirrors the backend `AvailabilityResponse` record returned by
- * GET /api/v1/reservations/availability.
- *
- * The quote is priced server-side for the requested date range and is the
- * single source of truth for money — the client never recomputes it.
- */
+// Mirrors the backend `AvailabilityResponse` record returned by
+// GET /api/v1/reservations/availability.
+
+// The quote is priced server-side for the requested date range and is the
+// single source of truth for money — the client never recomputes it.
 export interface AvailabilityResponse {
   quote: RentalQuote;
   models: AvailableBikeModel[];

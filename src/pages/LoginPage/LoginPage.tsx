@@ -5,6 +5,7 @@ import { useForm } from "../../hooks/useForm";
 import { validateEmail, validateMinLength } from "../../utils/validators";
 import { readProblemDetail } from "../../api/pagination";
 import PageTransition from "../../components/common/PageTransition";
+import BusyLabel from "../../components/common/BusyLabel";
 import styles from "./LoginPage.module.scss";
 import { performLogin } from "../../store/slices/authSlice";
 
@@ -173,14 +174,11 @@ const LoginPage = () => {
               type="submit"
               className={styles.submitBtn}
               disabled={isSubmitting} // Controlled by Hook
+              aria-busy={isSubmitting}
             >
-              {isSubmitting ? (
-                <>
-                  <span className="spinner"></span> Verifying...
-                </>
-              ) : (
-                "Log In ➜"
-              )}
+              <BusyLabel busy={isSubmitting} busyText="Logging in">
+                Log In ➜
+              </BusyLabel>
             </button>
           </form>
 

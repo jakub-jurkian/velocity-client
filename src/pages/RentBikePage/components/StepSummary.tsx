@@ -2,16 +2,17 @@ import { format, parseISO } from "date-fns";
 import { WizardStep } from "../../../types/Wizard";
 import type { BikeModel } from "../../../types/Fleet";
 import type { RentalQuote } from "../../../types/Pricing";
+import BusyLabel from "../../../components/common/BusyLabel";
 import styles from "../RentBikePage.module.scss";
 
 interface Props {
   setStep: (step: WizardStep) => void;
   chosenBikeModel: BikeModel;
   dates: { start: string; end: string };
-  /** Server-priced quote. Every figure below is rendered, never recomputed. */
+  // Server-priced quote. Every figure below is rendered, never recomputed.
   quote: RentalQuote;
   onConfirm: (e: React.FormEvent) => void;
-  /** True while the booking round trip is in flight. */
+  // True while the booking round trip is in flight.
   isSubmitting: boolean;
 }
 
@@ -54,14 +55,7 @@ export default function StepSummary({
         {/* Bike Details */}
         <div className={styles.summaryRow}>
           <span className={styles.label}>Bike Model</span>
-          <span className={styles.value}>
-            {chosenBikeModel.name}{" "}
-            {chosenBikeModel.imageEmoji && (
-              <span className={styles.bikeEmoji} aria-hidden="true">
-                {chosenBikeModel.imageEmoji}
-              </span>
-            )}
-          </span>
+          <span className={styles.value}>{chosenBikeModel.name}</span>
         </div>
         <div className={styles.summaryRow}>
           <span className={styles.label}>Category</span>
@@ -84,7 +78,7 @@ export default function StepSummary({
 
         <div className={styles.divider}></div>
 
-        {/* --- DETAILED PRICING BREAKDOWN --- */}
+        {/* DETAILED PRICING BREAKDOWN */}
         <div className={`${styles.summaryRow} ${styles.alignCenter}`}>
           <span className={styles.label}>Daily Rate</span>
 
@@ -125,14 +119,9 @@ export default function StepSummary({
         disabled={isSubmitting}
         aria-busy={isSubmitting}
       >
-        {isSubmitting ? (
-          <>
-            <span className={styles.btnSpinner} aria-hidden="true" />
-            <span>Booking…</span>
-          </>
-        ) : (
-          "Confirm Booking"
-        )}
+        <BusyLabel busy={isSubmitting} busyText="Booking">
+          Confirm Booking
+        </BusyLabel>
       </button>
     </div>
   );

@@ -5,8 +5,14 @@ import { useAppSelector } from "../../store/hooks";
 import type { Reservation } from "../../types/Reservation";
 import type { PaginationMeta } from "../../types/Pagination";
 import { EMPTY_META } from "../../types/Pagination";
-import { fetchAllPages, fetchPage, readProblemDetail } from "../../api/pagination";
+import {
+  fetchAllPages,
+  fetchPage,
+  readProblemDetail,
+} from "../../api/pagination";
 import PageTransition from "../../components/common/PageTransition";
+import { scrollToTop } from "../../utils/scroll";
+import BusyLabel from "../../components/common/BusyLabel";
 import PageLoader from "../../components/common/PageLoader";
 import { downloadReservationsCSV } from "../../utils/exportHelper";
 import styles from "./RentalsPage.module.scss";
@@ -24,14 +30,12 @@ const formatDate = (dateStr: string) => {
   return format(parseISO(dateStr), "MMM d, yyyy");
 };
 
-/**
- * Maps a status onto its lowercase modifier class.
- *
- * The status arrives uppercase from the API while the stylesheet declares
- * `.confirmed`, `.cancelled` and friends, so indexing the stylesheet with the
- * raw status returned undefined and the card silently lost its colour — both
- * the left border and the badge tint.
- */
+//  Maps a status onto its lowercase modifier class.
+
+//  The status arrives uppercase from the API while the stylesheet declares
+//  `.confirmed`, `.cancelled` and friends, so indexing the stylesheet with the
+//  raw status returned undefined and the card silently lost its colour — both
+//  the left border and the badge tint.
 const statusClassName = (status: Reservation["status"]) =>
   styles[status.toLowerCase()] ?? "";
 
@@ -48,7 +52,7 @@ const RentalsPage = () => {
   const [selectedResId, setSelectedResId] = useState<string | null>(null);
   const [isCancelling, setIsCancelling] = useState(false); // Prevents double-clicks
 
-  // --- Data Fetching ---
+  // Data Fetching
   // One page at a time. The API caps a page at 50 rows, so reading `data` and
   // ignoring `meta` used to hide every reservation past the first page.
   const fetchReservations = useCallback(async () => {
@@ -99,7 +103,7 @@ const RentalsPage = () => {
     }
   };
 
-  // --- Cancellation Logic ---
+  // Cancellation Logic
   const handleCancelClick = (reservationId: string) => {
     setSelectedResId(reservationId);
     setIsModalOpen(true);
@@ -117,7 +121,7 @@ const RentalsPage = () => {
         {
           method: "POST",
           headers: { Authorization: `Bearer ${jwtToken}` },
-        }
+        },
       );
 
       if (!response.ok) {
@@ -133,10 +137,10 @@ const RentalsPage = () => {
       setIsModalOpen(false);
       setSelectedResId(null);
       await fetchReservations(); // Refresh the list seamlessly
-
     } catch (error) {
       console.error(error);
-      const errorMessage = error instanceof Error ? error.message : "An error occurred";
+      const errorMessage =
+        error instanceof Error ? error.message : "An error occurred";
       toast.error(errorMessage);
       setIsModalOpen(false); // Close modal on error so they aren't stuck
     } finally {
@@ -150,18 +154,18 @@ const RentalsPage = () => {
     setSelectedResId(null);
   };
 
-  // --- Business Logic ---
+  // Business Logic
   const isCancellable = (res: Reservation) => {
     if (res.status !== "CONFIRMED") return false;
-    
+
     // Strict, timezone-safe date comparison
     const tripDate = startOfDay(parseISO(res.startDate));
     const today = startOfDay(new Date());
-    
-    return isBefore(today, tripDate); 
+
+    return isBefore(today, tripDate);
   };
 
-  // --- Renders ---
+  // Renders
   if (isLoading) return <PageLoader />;
 
   // Judged on the server-side total, not the current page, so an empty page
@@ -176,6 +180,11 @@ const RentalsPage = () => {
     );
   }
 
+  const goToPage = (step: 1 | -1) => {
+    setPage((current) => current + step);
+    scrollToTop();
+  };
+
   return (
     <PageTransition>
       <div className={styles.rentalsPage}>
@@ -186,8 +195,11 @@ const RentalsPage = () => {
             className={styles.exportBtn}
             onClick={handleExport}
             disabled={isExporting}
+            aria-busy={isExporting}
           >
-            {isExporting ? "Preparing…" : "Export CSV"}
+            <BusyLabel busy={isExporting} busyText="Preparing export">
+              Export CSV
+            </BusyLabel>
           </button>
         </header>
 
@@ -271,12 +283,12 @@ const RentalsPage = () => {
           ))}
         </div>
 
-        {/* --- PAGINATION --- */}
+        {/* PAGINATION */}
         {meta.totalPages > 1 && (
           <nav className={styles.pagination} aria-label="Reservation pages">
             <button
               className={styles.pageBtn}
-              onClick={() => setPage((current) => current - 1)}
+              onClick={() => goToPage(-1)}
               disabled={!meta.hasPrevious || isLoading}
             >
               ← Previous
@@ -292,7 +304,7 @@ const RentalsPage = () => {
 
             <button
               className={styles.pageBtn}
-              onClick={() => setPage((current) => current + 1)}
+              onClick={() => goToPage(1)}
               disabled={!meta.hasNext || isLoading}
             >
               Next →
@@ -300,7 +312,7 @@ const RentalsPage = () => {
           </nav>
         )}
 
-        {/* --- CONFIRMATION MODAL --- */}
+        {/* CONFIRMATION MODAL */}
         {isModalOpen && (
           <div className={styles.modalOverlay} onClick={closeModal}>
             <div
@@ -328,8 +340,11 @@ const RentalsPage = () => {
                   className={styles.dangerBtn}
                   onClick={confirmCancel}
                   disabled={isCancelling}
+                  aria-busy={isCancelling}
                 >
-                  {isCancelling ? "Cancelling..." : "Yes, Cancel it"}
+                  <BusyLabel busy={isCancelling} busyText="Cancelling">
+                    Yes, Cancel it
+                  </BusyLabel>
                 </button>
               </div>
             </div>

@@ -11,13 +11,8 @@ interface LandingBtnProps {
 
 export default function LandingBtn({
   primary,
-  to = "/register",
-  // Wrapped decorative emoji in a span with aria-hidden
-  children = (
-    <>
-      Start Riding <span aria-hidden="true">⚡</span>
-    </>
-  ),
+  to = "/rent-bike",
+  children = <>Start Riding</>,
   className = "",
 }: LandingBtnProps) {
   return (

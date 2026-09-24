@@ -2,13 +2,12 @@ import { useState } from "react";
 import toast from "react-hot-toast";
 
 export const useCheckout = (jwtToken: string | null) => {
-  /**
-   * True while the two-call booking round trip is in flight: POST
-   * /reservations to create the PENDING row, then POST .../confirm to drive
-   * it to CONFIRMED. The summary button reads this to show a spinner and to
-   * refuse a second click, which would otherwise create a duplicate booking
-   * that only the database exclusion constraint would stop.
-   */
+  // True while the two-call booking round trip is in flight: POST
+  // /reservations to create the PENDING row, then POST .../confirm to drive
+  // it to CONFIRMED. The summary button reads this to show a spinner and to
+  // refuse a second click, which would otherwise create a duplicate booking
+  // that only the database exclusion constraint would stop.
+
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const executeCheckout = async (

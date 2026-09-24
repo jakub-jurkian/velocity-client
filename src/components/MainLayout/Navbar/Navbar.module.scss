@@ -42,7 +42,7 @@
   }
 }
 
-// --- 1. THE HAMBURGER BUTTON (Mobile Only) ---
+// THE HAMBURGER BUTTON (Mobile Only)
 .burger {
   display: flex; // Visible by default (Mobile)
   flex-direction: column;
@@ -95,13 +95,16 @@
   justify-content: center;
   font-weight: 700;
   color: #fff;
-  box-shadow: 0 0 10px rgba(v.$color-secondary, 0.4);
+  font-size: 0.9rem;
+  letter-spacing: 0.5px;
+  // Neutral shadow: the fill is now per-user (utils/avatar), not brand purple.
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.4);
   border: 2px solid rgba(255, 255, 255, 0.1);
 }
 
-// --- 2. THE NAVIGATION (Mobile First = Drawer) ---
+// THE NAVIGATION (Mobile First = Drawer)
 .navLinks {
-  // A. Mobile Styles (The Default)
+  // Mobile Styles (The Default)
   position: absolute;
   top: 70px; // Starts below header
   left: 0;
@@ -137,7 +140,7 @@
     }
   }
 
-  // --- B. Desktop Override (The Switch) ---
+  // Desktop Override (The Switch)
   @media (min-width: v.$tablet) {
     position: static; // No longer absolute
     width: auto; // Natural width
@@ -159,7 +162,7 @@
     }
   }
 
-  // --- USER INFO STYLING ---
+  // USER INFO STYLING
   .userInfo {
     display: flex;
     flex-direction: column;

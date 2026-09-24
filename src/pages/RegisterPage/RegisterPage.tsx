@@ -9,6 +9,7 @@ import {
   validatePhone,
 } from "../../utils/validators";
 import PageTransition from "../../components/common/PageTransition";
+import BusyLabel from "../../components/common/BusyLabel";
 import { SUPPORTED_CITIES } from "../../types/Fleet"; // 1. Use the central source of truth
 import styles from "./RegisterPage.module.scss";
 
@@ -129,7 +130,7 @@ const RegisterPage = () => {
               Join the Fleet
             </h1>
             <p className={styles.subtitle}>
-              Create your courier account and start earning today.
+              Create an account and start riding.
             </p>
           </header>
 
@@ -268,20 +269,15 @@ const RegisterPage = () => {
               )}
             </div>
 
-            {/* Submit Button with Spinner */}
             <button
               type="submit"
               className={styles.submitBtn}
               disabled={isSubmitting}
+              aria-busy={isSubmitting}
             >
-              {isSubmitting ? (
-                <>
-                  <span className="spinner" aria-hidden="true"></span>
-                  Creating Account...
-                </>
-              ) : (
-                "Create Account ➜"
-              )}
+              <BusyLabel busy={isSubmitting} busyText="Creating account">
+                Create Account ➜
+              </BusyLabel>
             </button>
           </form>
 

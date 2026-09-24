@@ -1,6 +1,6 @@
 @use "../../../styles/variables" as v;
 
-// --- LAYOUT CONTAINER ---
+// LAYOUT CONTAINER
 .container {
   padding: 1rem;
   width: 100%;
@@ -12,7 +12,7 @@
   }
 }
 
-// --- HEADER SECTION ---
+// HEADER SECTION
 .pageHeader {
   display: flex;
   flex-direction: column;
@@ -56,8 +56,13 @@
   white-space: nowrap;
   align-self: flex-start; // Prevent full width on mobile
 
-  &:hover {
+  &:hover:not(:disabled) {
     opacity: 0.9;
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
   }
 
   @media (min-width: v.$tablet) {
@@ -65,7 +70,7 @@
   }
 }
 
-// --- TOOLBAR (SEARCH & FILTER) ---
+// TOOLBAR (SEARCH & FILTER)
 .toolbar {
   display: flex;
   flex-direction: column;
@@ -126,7 +131,7 @@
   }
 }
 
-// --- RESPONSIVE TABLE ---
+// RESPONSIVE TABLE
 .tableContainer {
   width: 100%;
 
@@ -249,7 +254,7 @@
   }
 }
 
-// --- CELL STYLES ---
+// CELL STYLES
 .primaryCell {
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   padding-bottom: 1rem;
@@ -279,7 +284,9 @@
     align-items: center;
     justify-content: center;
     font-weight: 700;
-    color: v.$color-primary;
+    font-size: 0.8rem;
+    letter-spacing: 0.5px;
+    color: #fff;
   }
 
   .userInfo {
@@ -300,7 +307,34 @@
   }
 }
 
+// One width for both role badges: "Administrator", the longer label, is ~6.75em
+// at the badge's 0.75rem (~5.1rem), plus padding and border. In rem rather than
+// em so the other mobile values can share it at their own font sizes.
+$value-width: calc(5.2rem + 22px);
+
+// On mobile cards role, status, joined date and the block/unblock button stack
+// at the right edge. Giving each the badge's width with centred content puts
+// them all on one vertical centre line. Desktop keeps its natural widths.
+@mixin mobile-value-box {
+  min-width: $value-width;
+  justify-content: center;
+  text-align: center;
+
+  @media (min-width: v.$desktop) {
+    min-width: 0;
+    justify-content: flex-start;
+    text-align: left;
+  }
+}
+
 .roleTag {
+  display: inline-block;
+  // Equal widths on every screen, matching the status pills on the Bikes page.
+  min-width: $value-width;
+  text-align: center;
+  // Transparent by default so Client and Administrator are the same height;
+  // only the admin variant colours it.
+  border: 1px solid transparent;
   padding: 4px 10px;
   border-radius: 99px;
   font-size: 0.75rem;
@@ -318,7 +352,13 @@
   }
 }
 
+.dateText {
+  display: inline-block;
+  @include mobile-value-box;
+}
+
 .statusDot {
+  @include mobile-value-box;
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -355,7 +395,7 @@
   }
 }
 
-// --- BUTTON VARIANTS ---
+// BUTTON VARIANTS
 .actionBtn {
   padding: 0.4rem 0.8rem;
   background: transparent;
@@ -393,14 +433,33 @@
       border-color: v.$success;
     }
   }
+
+  &.statusToggle {
+    display: inline-grid;
+    justify-items: center;
+
+    // Mobile only: as wide as the values above it, so it shares their centre
+    // line. Desktop keeps the "Unblock"-sized width that lines up Edit.
+    @media (max-width: calc(#{v.$desktop} - 1px)) {
+      min-width: $value-width;
+    }
+
+    > span {
+      grid-area: 1 / 1;
+    }
+
+    // Holds its width but drops out of the accessible name.
+    .inactive {
+      visibility: hidden;
+    }
+  }
 }
 
 .alignRight {
   text-align: right;
 }
 
-// --- MODAL STYLES ---
-
+// MODAL STYLES
 .modalOverlay {
   position: fixed;
   top: 0;
@@ -538,8 +597,13 @@
   padding: 0.6rem 1.2rem;
   font-weight: 500;
 
-  &:hover {
+  &:hover:not(:disabled) {
     color: v.$color-text-main;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
   }
 }
 
@@ -552,13 +616,18 @@
   padding: 0.6rem 1.2rem;
   font-weight: 600;
 
-  &:hover {
+  &:hover:not(:disabled) {
     background: v.$danger;
     color: white;
   }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
 }
 
-// --- PAGINATION ---
+// PAGINATION
 .pagination {
   display: flex;
   align-items: center;

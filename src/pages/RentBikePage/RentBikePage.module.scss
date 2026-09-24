@@ -1,7 +1,7 @@
 @use "sass:color";
 @use "../../styles/variables" as v;
 
-// --- MAIN LAYOUT ---
+// MAIN LAYOUT
 .container {
   min-height: 100vh;
   background-color: v.$color-bg-main;
@@ -71,7 +71,7 @@
   }
 }
 
-// --- STEP 1: DATE SELECTION ---
+// STEP 1: DATE SELECTION
 
 // The "You are here" Banner
 .locationBanner {
@@ -97,18 +97,6 @@
     justify-content: center;
     border-radius: 50%;
     box-shadow: 0 0 10px rgba(v.$color-primary, 0.1);
-  }
-
-  .bikeEmoji {
-    margin-left: 8px;
-    font-size: 1.2em;
-  }
-
-  .helperText {
-    font-size: "0.8rem";
-    color: "#888";
-    margin-top: "4px";
-    display: "block";
   }
 
   .bannerText {
@@ -204,7 +192,38 @@
   }
 }
 
-// --- STEP 2: LOADING ---
+// The allowed return window, shown once a start date is picked.
+.returnWindow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.returnBound {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 0.6rem 0.8rem;
+  background: rgba(v.$color-primary, 0.05);
+  border: 1px solid rgba(v.$color-primary, 0.15);
+  border-radius: v.$radius-md;
+}
+
+.boundLabel {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: v.$color-text-muted;
+}
+
+.boundDate {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: v.$color-primary;
+}
+
+// STEP 2: LOADING
 .loadingContainer {
   display: flex;
   flex-direction: column;
@@ -233,7 +252,7 @@
   }
 }
 
-// --- STEP 3: RESULTS ---
+// STEP 3: RESULTS
 .backBtn {
   color: v.$color-text-muted;
   margin-bottom: 1.5rem;
@@ -262,67 +281,20 @@
   margin-top: 1rem;
 }
 
-.bikeCard {
-  background: v.$color-bg-card;
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: v.$radius-lg;
-  padding: 1.25rem;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  // align-items: center;
-  transition: all 0.2s ease;
+// Lives inside the shared BikeModelCard's action slot, which handles spacing.
+.bookBtn {
+  background: v.$color-secondary; // Purple/Secondary brand color
+  color: #fff;
+  padding: 0.6rem 1.2rem;
+  border-radius: v.$radius-md;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: background 0.2s;
 
   &:hover {
-    background: color.adjust(v.$color-bg-card, $lightness: 3%);
-    border-color: rgba(v.$color-primary, 0.3);
-    transform: translateY(-2px);
-  }
-
-  .bikeInfo {
-    h3 {
-      margin: 0 0 0.5rem 0;
-      font-size: 1.1rem;
-      color: v.$color-text-main;
-    }
-  }
-
-  .specs {
-    // Default (Desktop): Single row
-    display: flex;
-    flex-wrap: wrap; // Safety for very small screens
-    gap: 1rem;
-    font-size: 0.85rem;
-    color: v.$color-text-muted;
-
-    @media (max-width: 572px) {
-      display: grid;
-      grid-template-columns: 1fr 1fr; // Exactly 2 columns
-    }
-    .spec {
-      background: rgba(255, 255, 255, 0.05);
-      padding: 2px 8px;
-      border-radius: 4px;
-      text-align: center;
-      white-space: nowrap;
-    }
-  }
-
-  .bookBtn {
-    background: v.$color-secondary; // Purple/Secondary brand color
-    color: #fff;
-    padding: 0.6rem 1.2rem;
-    margin-top: 1rem;
-    border-radius: v.$radius-md;
-    font-weight: 600;
-    border: none;
-    cursor: pointer;
-    transition: background 0.2s;
-
-    &:hover {
-      background: color.adjust(v.$color-secondary, $lightness: 10%);
-      box-shadow: 0 0 15px rgba(v.$color-secondary, 0.4);
-    }
+    background: color.adjust(v.$color-secondary, $lightness: 10%);
+    box-shadow: 0 0 15px rgba(v.$color-secondary, 0.4);
   }
 }
 
@@ -356,7 +328,7 @@
   }
 }
 
-// --- STEP 4: CONFIRMATION & SUMMARY ---
+// STEP 4: CONFIRMATION & SUMMARY
 
 .summaryCard {
   background: rgba(255, 255, 255, 0.03); // Subtle glass effect
@@ -438,12 +410,6 @@
   text-transform: uppercase;
   letter-spacing: 1px;
 
-  // Centres the spinner next to its label while booking is in flight.
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.75rem;
-
   &:hover:not(:disabled) {
     transform: translateY(-3px);
     box-shadow: 0 0 30px rgba(v.$color-primary, 0.5);
@@ -463,19 +429,6 @@
     transform: none;
     box-shadow: 0 0 10px rgba(v.$color-primary, 0.2);
   }
-}
-
-// Spinner for .confirmBtn specifically. It cannot reuse .miniSpinner, which
-// is white-on-dark: this button is black text on cyan, so the track and head
-// are inverted to stay legible.
-.btnSpinner {
-  width: 18px;
-  height: 18px;
-  flex: 0 0 18px;
-  border: 3px solid rgba(0, 0, 0, 0.25);
-  border-top-color: #000;
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
 }
 
 .payBtn {
@@ -549,7 +502,7 @@
   }
 }
 
-// --- ANIMATIONS ---
+// ANIMATIONS
 @keyframes spin {
   0% {
     transform: rotate(0deg);
