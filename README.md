@@ -1,4 +1,4 @@
-# VeloCity — Client
+# VeloCity - Client
 
 [![CI Pipeline](https://github.com/jakub-jurkian/velocity-client/actions/workflows/ci.yml/badge.svg)](https://github.com/jakub-jurkian/velocity-client/actions/workflows/ci.yml)
 
@@ -95,13 +95,3 @@ The app runs at http://localhost:5173 and calls the API at `VITE_API_URL` (the e
 `npm run build` stops with an error if `VITE_API_URL` is unset. Vite would otherwise inline the word `undefined` into every API URL and the site would fail in confusing ways.
 
 ---
-
-## Deploying
-
-On Vercel, set `VITE_API_URL` to the API's origin (e.g. `https://api.velocityfleet.dev`). `vercel.json` already rewrites every route to `index.html` for client-side routing. If the API moves to another origin, update `connect-src` in the Content Security Policy there too, or the browser will block the calls.
-
----
-
-## License
-
-MIT
