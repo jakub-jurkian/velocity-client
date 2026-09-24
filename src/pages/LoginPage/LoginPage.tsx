@@ -9,6 +9,7 @@ import type { User } from "../../types/User";
 import AuthLayout from "../../components/AuthLayout/AuthLayout";
 import Button from "../../components/ui/Button";
 import { CheckboxField, Form, TextField } from "../../components/ui/Form";
+import SlowNotice from "../../components/ui/SlowNotice";
 import styles from "./LoginPage.module.scss";
 
 // Only a 401 means the credentials were wrong. Everything else is the server
@@ -95,6 +96,7 @@ const LoginPage = () => {
         <Button type="submit" size="lg" block busy={isSubmitting} busyText="Logging in">
           Log In ➜
         </Button>
+        {isSubmitting && <SlowNotice />}
       </Form>
     </AuthLayout>
   );

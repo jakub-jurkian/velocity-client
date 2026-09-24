@@ -14,6 +14,7 @@ import { CITY_OPTIONS } from "../../data/cities";
 import AuthLayout from "../../components/AuthLayout/AuthLayout";
 import Button from "../../components/ui/Button";
 import { CheckboxField, FieldRow, Form, SelectField, TextField } from "../../components/ui/Form";
+import SlowNotice from "../../components/ui/SlowNotice";
 import styles from "./RegisterPage.module.scss";
 
 const RegisterPage = () => {
@@ -155,6 +156,7 @@ const RegisterPage = () => {
         <Button type="submit" size="lg" block busy={isSubmitting} busyText="Creating account">
           Create Account ➜
         </Button>
+        {isSubmitting && <SlowNotice />}
       </Form>
     </AuthLayout>
   );
