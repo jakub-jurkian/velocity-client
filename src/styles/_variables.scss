@@ -30,7 +30,7 @@ $danger: #ef4444; // Occupied / Collision / Error
 $info: #3b82f6;
 
 // Design Tokens
-$font-main: "Inter", sans-serif;
+$font-main: "Inter Variable", system-ui, sans-serif;
 $font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 $radius-sm: 4px;
 $radius-md: 8px; // Standard for cards and inputs
