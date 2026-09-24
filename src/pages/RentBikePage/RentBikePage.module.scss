@@ -99,13 +99,6 @@
     box-shadow: 0 0 10px rgba(v.$color-primary, 0.1);
   }
 
-  .helperText {
-    font-size: "0.8rem";
-    color: "#888";
-    margin-top: "4px";
-    display: "block";
-  }
-
   .bannerText {
     display: flex;
     flex-direction: column;
@@ -197,6 +190,37 @@
       transform: translateY(0);
     }
   }
+}
+
+// The allowed return window, shown once a start date is picked.
+.returnWindow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.returnBound {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 0.6rem 0.8rem;
+  background: rgba(v.$color-primary, 0.05);
+  border: 1px solid rgba(v.$color-primary, 0.15);
+  border-radius: v.$radius-md;
+}
+
+.boundLabel {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: v.$color-text-muted;
+}
+
+.boundDate {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: v.$color-primary;
 }
 
 // STEP 2: LOADING

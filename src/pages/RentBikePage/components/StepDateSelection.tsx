@@ -105,11 +105,21 @@ export default function StepDateSelection({
             className={styles.input}
             required
           />
-          {dates.start && (
-            <span className={styles.helperText}>
-              Min return date: {minEndDate} <br />
-              Max return date: {maxEndDate}
-            </span>
+          {minEndDate && maxEndDate && (
+            <div className={styles.returnWindow}>
+              <div className={styles.returnBound}>
+                <span className={styles.boundLabel}>Earliest return</span>
+                <span className={styles.boundDate}>
+                  {format(parseISO(minEndDate), "EEE, d MMM")}
+                </span>
+              </div>
+              <div className={styles.returnBound}>
+                <span className={styles.boundLabel}>Latest return</span>
+                <span className={styles.boundDate}>
+                  {format(parseISO(maxEndDate), "EEE, d MMM")}
+                </span>
+              </div>
+            </div>
           )}
         </div>
 
