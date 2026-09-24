@@ -17,7 +17,7 @@ export default defineConfig(({ mode, command }) => {
   // diagnose it from a deployed bundle.
   // Dev is exempt: `vite` should start without a .env so the UI can be worked
   // on with no API running.
-  if (command === "build" && !env.VITE_API_URL) {
+  if (command === "build" && !env.VITE_API_URL && !process.env.VITE_API_URL) {
     throw new Error(
       "VITE_API_URL is not set. The production build needs the API's origin " +
         "(e.g. https://api.example.com) — set it in the host's environment " +
