@@ -68,27 +68,32 @@
 // TOOLBAR (FILTER)
 .toolbar {
   display: flex;
-  flex-direction: column;
-  gap: 1rem;
+  flex-wrap: wrap;
+  gap: 0.5rem;
   margin-bottom: 1.5rem;
-
-  @media (min-width: v.$tablet) {
-    flex-direction: row;
-  }
 }
 
-.select {
-  padding: 0.75rem 1rem;
+.filterChip {
+  padding: 0.5rem 1rem;
   background: v.$color-bg-card;
   border: 1px solid rgba(255, 255, 255, 0.1);
-  color: #fff;
-  border-radius: v.$radius-md;
+  color: v.$color-text-muted;
+  border-radius: 99px;
+  font-size: 0.85rem;
+  font-weight: 500;
   cursor: pointer;
-  width: 100%; // Full width on mobile
+  transition: v.$transition-base;
 
-  @media (min-width: v.$tablet) {
-    width: auto;
-    min-width: 180px;
+  &:hover:not(.selected) {
+    border-color: rgba(255, 255, 255, 0.3);
+    color: v.$color-text-main;
+  }
+
+  &.selected {
+    background: rgba(v.$color-primary, 0.12);
+    border-color: v.$color-primary;
+    color: v.$color-primary;
+    font-weight: 600;
   }
 }
 
@@ -217,42 +222,107 @@
 }
 
 // CELL STYLES
+// Retired is terminal, so those rows step back and let the working fleet
+// stand out. The action stays at full strength: the server decides what is
+// allowed, not the styling.
+.retiredRow td:not(.actionsCell) {
+  opacity: 0.5;
+}
+
+// A wrapper rather than flex on the td itself, which would pull the cell out
+// of the table layout on desktop.
+.modelCell {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.modelIcon {
+  flex: 0 0 auto;
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: v.$radius-md;
+  background: rgba(255, 255, 255, 0.05);
+  font-size: 1.1rem;
+}
+
+.modelText {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
 .modelName {
   font-weight: 600;
   color: v.$color-text-main;
 }
 
-.statusDot {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  text-transform: capitalize;
-  font-weight: 500;
-  font-size: 0.9rem;
+.modelMeta {
+  font-size: 0.8rem;
+  color: v.$color-text-muted;
+}
 
-  &::before {
-    content: "";
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: currentColor;
+.bikeId {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.95em;
+  color: v.$color-text-muted;
+}
+
+@mixin status-tint($color) {
+  color: $color;
+  background: rgba($color, 0.12);
+  border-color: rgba($color, 0.3);
+}
+
+// One width for every status pill: "Maintenance", the longest label, is ~6.25em
+// at the pill's 0.8rem (~5.1rem), plus padding and border. In rem rather than
+// em so the mobile city value can share it at its own font size.
+$status-pill-width: calc(5.15rem + 22px);
+
+// On mobile cards the city sits directly above the status pill. Giving it the
+// pill's width with centred text puts both values on one centre line, instead
+// of a right-aligned word over a pill whose text is centred.
+.cityValue {
+  display: inline-block;
+  min-width: $status-pill-width;
+  text-align: center;
+
+  @media (min-width: v.$desktop) {
+    min-width: 0;
+    text-align: left;
   }
+}
+
+// Same pill shape as the role tags on the Users page.
+.statusPill {
+  // Equal widths so the desktop column reads as a clean stack.
+  min-width: $status-pill-width;
+  display: inline-block;
+  text-align: center;
+  padding: 3px 10px;
+  border-radius: 99px;
+  border: 1px solid transparent;
+  font-weight: 600;
+  font-size: 0.8rem;
 
   // ACTIVE: in service, same green used for active users elsewhere.
   &.active {
-    color: v.$success;
+    @include status-tint(v.$success);
   }
   // MAINTENANCE: temporarily out of service, but expected back.
   &.maintenance {
-    color: v.$warning;
+    @include status-tint(v.$warning);
   }
   // LOST: unaccounted for; needs attention before it can be trusted again.
   &.lost {
-    color: v.$danger;
+    @include status-tint(v.$danger);
   }
   // RETIRED: permanently decommissioned, no distinct alert color needed.
   &.retired {
-    color: v.$color-text-muted;
+    @include status-tint(v.$color-text-muted);
   }
 }
 
@@ -385,6 +455,21 @@
   border-radius: v.$radius-md;
   color: v.$color-text-main;
   font-size: 1rem;
+
+  // The current status wears the same colours as its pill in the table, so
+  // the state being left is recognisable at a glance.
+  &.active {
+    @include status-tint(v.$success);
+  }
+  &.maintenance {
+    @include status-tint(v.$warning);
+  }
+  &.lost {
+    @include status-tint(v.$danger);
+  }
+  &.retired {
+    @include status-tint(v.$color-text-muted);
+  }
 }
 
 .modalActions {

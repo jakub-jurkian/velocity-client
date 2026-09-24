@@ -15,8 +15,29 @@ import { scrollToTop } from "../../../utils/scroll";
 import BusyLabel from "../../../components/common/BusyLabel";
 import toast from "react-hot-toast";
 import { useAppSelector } from "../../../store/hooks";
+import { findCatalogModel } from "../../../data/fleetCatalog";
 
 const PAGE_SIZE = 10;
+
+// The endpoint has no default order, and Postgres is free to return rows in a
+// different order after an update — so without this a bike could jump to
+// another page right after its status changed. Grouping by city then model
+// also makes the list scannable; the id is the tiebreaker that makes the order
+// fully deterministic.
+const SORT = "city,bikeModel.name,id,asc";
+
+// Tail of the UUID: enough to tell two identical-looking bikes apart. The tail
+// rather than the head because seeded ids share their leading blocks per batch
+// (11111111-1111-4111-8111-000000000001, ...002) and differ only at the end;
+// a random UUID is just as distinctive at either end.
+
+const shortId = (id: string) => `#${id.slice(-8)}`;
+
+// Icon and category from the catalogue, with a neutral fallback for new models.
+const modelDetails = (modelName: string) => {
+  const model = findCatalogModel(modelName);
+  return { icon: model?.imageEmoji ?? "🚲", category: model?.category };
+};
 
 const formatStatus = (status: BikeInstanceStatus) =>
   status.charAt(0) + status.slice(1).toLowerCase();
@@ -54,7 +75,11 @@ const BikeManagement = () => {
       const result = await fetchPage<AdminBike>(
         "/api/v1/admin/bikes",
         jwtToken,
-        { page, size: PAGE_SIZE, params: { status: statusFilter } },
+        {
+          page,
+          size: PAGE_SIZE,
+          params: { status: statusFilter, sort: SORT },
+        },
       );
       setBikes(result.data);
       setMeta(result.meta);
@@ -96,8 +121,9 @@ const BikeManagement = () => {
   // Changing the filter must jump back to page 0: staying on, say, page 3
   // while switching filters can land on a page beyond the new, smaller
   // result set and render an empty table that is not actually empty.
-  const handleFilterChange = (value: string) => {
-    setStatusFilter(value as BikeInstanceStatus | "");
+  const handleFilterChange = (value: BikeInstanceStatus | "") => {
+    if (value === statusFilter) return;
+    setStatusFilter(value);
     setPage(0);
   };
 
@@ -234,20 +260,24 @@ const BikeManagement = () => {
           </div>
         </header>
 
-        <div className={styles.toolbar}>
-          <select
-            className={styles.select}
-            value={statusFilter}
-            onChange={(e) => handleFilterChange(e.target.value)}
-            aria-label="Filter by status"
-          >
-            <option value="">All Statuses</option>
-            {BIKE_STATUSES.map((status) => (
-              <option key={status} value={status}>
-                {formatStatus(status)}
-              </option>
-            ))}
-          </select>
+        <div
+          className={styles.toolbar}
+          role="group"
+          aria-label="Filter by status"
+        >
+          {(["", ...BIKE_STATUSES] as const).map((status) => (
+            <button
+              key={status || "all"}
+              type="button"
+              className={`${styles.filterChip} ${
+                statusFilter === status ? styles.selected : ""
+              }`}
+              aria-pressed={statusFilter === status}
+              onClick={() => handleFilterChange(status)}
+            >
+              {status ? formatStatus(status) : "All"}
+            </button>
+          ))}
         </div>
 
         <div className={styles.tableContainer}>
@@ -267,16 +297,38 @@ const BikeManagement = () => {
                 </tr>
               ) : (
                 bikes.map((bike) => (
-                  <tr key={bike.id}>
-                    <td data-label="Model">
-                      <span className={styles.modelName}>
-                        {bike.bikeModelName}
-                      </span>
+                  <tr
+                    key={bike.id}
+                    className={
+                      bike.status === "RETIRED" ? styles.retiredRow : undefined
+                    }
+                  >
+                    {/* No data-label: on mobile this cell is the card's heading. */}
+                    <td>
+                      <div className={styles.modelCell}>
+                        <span className={styles.modelIcon} aria-hidden="true">
+                          {modelDetails(bike.bikeModelName).icon}
+                        </span>
+                        <span className={styles.modelText}>
+                          <span className={styles.modelName}>
+                            {bike.bikeModelName}
+                          </span>
+                          <span className={styles.modelMeta}>
+                            <code className={styles.bikeId} title={bike.id}>
+                              {shortId(bike.id)}
+                            </code>
+                            {modelDetails(bike.bikeModelName).category &&
+                              ` · ${modelDetails(bike.bikeModelName).category}`}
+                          </span>
+                        </span>
+                      </div>
                     </td>
-                    <td data-label="City">{bike.city}</td>
+                    <td data-label="City">
+                      <span className={styles.cityValue}>{bike.city}</span>
+                    </td>
                     <td data-label="Status">
                       <span
-                        className={`${styles.statusDot} ${statusClassName(bike.status)}`}
+                        className={`${styles.statusPill} ${statusClassName(bike.status)}`}
                       >
                         {formatStatus(bike.status)}
                       </span>
@@ -334,12 +386,19 @@ const BikeManagement = () => {
             >
               <h2>Change Bike Status</h2>
               <p className={styles.modalSubtitle}>
-                {editingBike.bikeModelName} — {editingBike.city}
+                {modelDetails(editingBike.bikeModelName).icon}{" "}
+                {editingBike.bikeModelName}{" "}
+                <code className={styles.bikeId} title={editingBike.id}>
+                  {shortId(editingBike.id)}
+                </code>{" "}
+                - {editingBike.city}
               </p>
 
               <div className={styles.formGroup}>
                 <label>Current Status</label>
-                <div className={styles.valueDisplay}>
+                <div
+                  className={`${styles.valueDisplay} ${statusClassName(editingBike.status)}`}
+                >
                   {formatStatus(editingBike.status)}
                 </div>
               </div>
