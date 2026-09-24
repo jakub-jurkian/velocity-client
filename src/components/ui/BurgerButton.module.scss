@@ -1,0 +1,35 @@
+@use "styles/theme" as v;
+
+.burger {
+  z-index: v.$z-nav + 1; // Above the menu it opens
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 5px;
+
+  span {
+    display: block;
+    width: 25px;
+    height: 2px;
+    background: v.$color-text-main;
+    transition: all 0.3s ease;
+  }
+
+  @media (min-width: v.$tablet) {
+    display: none;
+  }
+}
+
+.open {
+  span:nth-child(1) {
+    transform: rotate(45deg) translate(5px, 5px);
+  }
+
+  span:nth-child(2) {
+    opacity: 0;
+  }
+
+  span:nth-child(3) {
+    transform: rotate(-45deg) translate(5px, -5px);
+  }
+}

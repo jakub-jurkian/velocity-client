@@ -1,0 +1,56 @@
+@use "styles/theme" as v;
+
+.row {
+  display: grid;
+  grid-template-columns: minmax(90px, auto) minmax(0, 1fr);
+  align-items: baseline;
+  column-gap: 1.25rem;
+  margin-bottom: 1rem;
+}
+
+.label {
+  color: v.$color-text-muted;
+}
+
+.value {
+  min-width: 0;
+  font-weight: 600;
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+
+.highlight .value {
+  color: v.$color-primary;
+}
+
+.mono .value {
+  font-family: v.$font-mono;
+  font-size: 0.8rem;
+  font-weight: 400;
+  opacity: 0.6;
+}
+
+.total {
+  align-items: center;
+  margin-bottom: 0;
+
+  .label {
+    color: v.$color-text-main;
+    font-weight: 700;
+  }
+
+  .value {
+    color: v.$color-primary;
+    font-size: 1.6rem;
+    font-weight: 800;
+    line-height: 1.1;
+    text-shadow: 0 0 20px rgba(v.$color-primary, 0.25);
+  }
+}
+
+.divider {
+  height: 1px;
+  margin: 1.25rem 0;
+  border: 0;
+  background: v.$border;
+}

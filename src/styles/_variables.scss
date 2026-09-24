@@ -32,6 +32,11 @@ $radius-sm: 4px;
 $radius-md: 8px; // Standard for cards and inputs
 $radius-lg: 12px; // For modals
 $radius-pill: 99px;
+
+// One width for every status/role badge: "Administrator", the longest label,
+// is ~5.1rem at the badge's 0.75rem, plus padding and border. Table cells on
+// mobile cards reuse it so their values share one centre line.
+$badge-width: calc(5.2rem + 22px);
 $shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
 $shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
 $shadow-lg: 0 20px 50px rgba(0, 0, 0, 0.5);

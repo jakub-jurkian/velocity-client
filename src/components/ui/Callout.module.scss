@@ -1,0 +1,60 @@
+@use "styles/theme" as v;
+
+@mixin tone($color) {
+  border-left-color: $color;
+  background: rgba($color, 0.08);
+
+  .icon {
+    background: rgba($color, 0.12);
+  }
+
+  .title {
+    color: $color;
+  }
+}
+
+.callout {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  border: 1px solid v.$border;
+  border-left-width: 4px;
+  border-radius: v.$radius-md;
+  line-height: 1.5;
+}
+
+.icon {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  font-size: 1.3rem;
+}
+
+.body {
+  min-width: 0;
+}
+
+.title {
+  display: block;
+  margin-bottom: 0.2rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.primary {
+  @include tone(v.$color-primary);
+}
+
+.warning {
+  @include tone(v.$warning);
+}
+
+.danger {
+  @include tone(v.$danger);
+}
