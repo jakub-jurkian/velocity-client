@@ -266,11 +266,7 @@ const BikeManagement = () => {
           }
         >
           <div className={styles.fields}>
-            <ReadOnlyField label="Current Status">
-              <Badge tone={STATUS_TONE[editingBike.status]} fixed>
-                {humanize(editingBike.status)}
-              </Badge>
-            </ReadOnlyField>
+            <ReadOnlyField label="Current Status">{humanize(editingBike.status)}</ReadOnlyField>
             <SelectField
               id="modal-bike-status"
               label="New Status"

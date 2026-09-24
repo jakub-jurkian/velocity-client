@@ -106,6 +106,15 @@ $bar-height: 70px;
   padding-top: 1rem;
   border-top: 1px solid v.$border;
 
+  // Finger-sized in the drawer, as tall as the nav links above them. The
+  // element in the selector outweighs the Button's own size class.
+  @media (max-width: calc(#{v.$tablet} - 1px)) {
+    > :is(a, button) {
+      padding: 0.9rem 1.5rem;
+      font-size: 1rem;
+    }
+  }
+
   @media (min-width: v.$tablet) {
     flex-direction: row;
     gap: 0.75rem;

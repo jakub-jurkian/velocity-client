@@ -1,14 +1,13 @@
 @use "styles/theme" as v;
 
-// Tinted at rest, solid on hover: destructive and confirming actions.
+// Coloured text and edge only; a faint wash of the same colour on hover.
 @mixin tone($color) {
   color: $color;
-  background: rgba($color, 0.12);
   border-color: rgba($color, 0.5);
 
   &:hover:not(:disabled) {
-    color: #fff;
-    background: $color;
+    color: $color;
+    background: rgba($color, 0.1);
     border-color: $color;
   }
 }
