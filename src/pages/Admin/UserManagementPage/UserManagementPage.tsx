@@ -6,6 +6,7 @@ import { EMPTY_META } from "../../../types/Pagination";
 import { fetchPage, readProblemDetail } from "../../../api/pagination";
 import PageTransition from "../../../components/common/PageTransition";
 import BusyLabel from "../../../components/common/BusyLabel";
+import { getAvatarStyle, getInitials } from "../../../utils/avatar";
 import toast from "react-hot-toast";
 import { useAppSelector } from "../../../store/hooks";
 import { SUPPORTED_CITIES, type City } from "../../../types/Fleet";
@@ -296,8 +297,12 @@ const UserManagement = () => {
                 <tr key={user.id}>
                   <td className={styles.primaryCell}>
                     <div className={styles.userCell}>
-                      <div className={styles.avatar} aria-hidden="true">
-                        {user.fullName.charAt(0)}
+                      <div
+                        className={styles.avatar}
+                        style={getAvatarStyle(user.id)}
+                        aria-hidden="true"
+                      >
+                        {getInitials(user.fullName)}
                       </div>
                       <div className={styles.userInfo}>
                         <span className={styles.name}>{user.fullName}</span>

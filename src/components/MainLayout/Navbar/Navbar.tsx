@@ -4,6 +4,7 @@ import toast from "react-hot-toast";
 import { useAppDispatch, useAppSelector } from "../../../store/hooks";
 import { performLogout } from "../../../store/slices/authSlice";
 import BusyLabel from "../../common/BusyLabel";
+import { getAvatarStyle, getInitials } from "../../../utils/avatar";
 import styles from "./Navbar.module.scss";
 
 export const Navbar = () => {
@@ -104,8 +105,12 @@ export const Navbar = () => {
               >
                 {user.fullName.split(" ")[0]}
               </span>
-              <div className={styles.avatar} aria-hidden="true">
-                {user.fullName.charAt(0).toUpperCase()}
+              <div
+                className={styles.avatar}
+                style={getAvatarStyle(user.id)}
+                aria-hidden="true"
+              >
+                {getInitials(user.fullName)}
               </div>
             </div>
 

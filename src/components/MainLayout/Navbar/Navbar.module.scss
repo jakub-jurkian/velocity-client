@@ -95,7 +95,10 @@
   justify-content: center;
   font-weight: 700;
   color: #fff;
-  box-shadow: 0 0 10px rgba(v.$color-secondary, 0.4);
+  font-size: 0.9rem;
+  letter-spacing: 0.5px;
+  // Neutral shadow: the fill is now per-user (utils/avatar), not brand purple.
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.4);
   border: 2px solid rgba(255, 255, 255, 0.1);
 }
 

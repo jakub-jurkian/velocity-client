@@ -4,6 +4,7 @@ import { useAppDispatch, useAppSelector } from "../../store/hooks";
 import { updateUser } from "../../store/slices/authSlice";
 import PageTransition from "../../components/common/PageTransition";
 import BusyLabel from "../../components/common/BusyLabel";
+import { getAvatarStyle, getInitials } from "../../utils/avatar";
 import { SUPPORTED_CITIES, type City } from "../../types/Fleet";
 import {
   extractFieldErrors,
@@ -198,8 +199,12 @@ const MyProfilePage = () => {
       <div className={styles.profilePage}>
         <div className={styles.profileCard}>
           <aside className={styles.profileHeader}>
-            <div className={styles.avatarLarge}>
-              {user.fullName.charAt(0).toUpperCase()}
+            <div
+              className={styles.avatarLarge}
+              style={getAvatarStyle(user.id)}
+              aria-hidden="true"
+            >
+              {getInitials(user.fullName)}
             </div>
             <h1 className={styles.userName}>{user.fullName}</h1>
             <span className={styles.roleBadge}>{user.role.toUpperCase()}</span>
