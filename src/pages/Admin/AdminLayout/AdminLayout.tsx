@@ -5,6 +5,7 @@ import { cx } from "../../../utils/cx";
 import BurgerButton from "../../../components/ui/BurgerButton";
 import Button from "../../../components/ui/Button";
 import Logo from "../../../components/ui/Logo";
+import SkipLink, { MAIN_CONTENT_ID } from "../../../components/ui/SkipLink";
 import styles from "./AdminLayout.module.scss";
 
 const NAV_LINKS = [
@@ -20,14 +21,19 @@ const AdminLayout = () => {
 
   return (
     <div className={styles.admin}>
+      <SkipLink />
       <nav className={styles.topNav} aria-label="Admin Navigation">
         <div className={styles.brand}>
-          <BurgerButton open={isMenuOpen} onToggle={() => setIsMenuOpen((open) => !open)} />
+          <BurgerButton
+            open={isMenuOpen}
+            onToggle={() => setIsMenuOpen((open) => !open)}
+            controls="admin-menu"
+          />
           <Logo suffix="Admin" />
         </div>
 
         {/* One menu: a row in the bar on desktop, a drawer on phones. */}
-        <div className={cx(styles.menu, isMenuOpen && styles.open)}>
+        <div id="admin-menu" className={cx(styles.menu, isMenuOpen && styles.open)}>
           <div className={styles.links}>
             {NAV_LINKS.map((link) => (
               <NavLink
@@ -58,7 +64,7 @@ const AdminLayout = () => {
         </div>
       </nav>
 
-      <main className={styles.content}>
+      <main id={MAIN_CONTENT_ID} className={styles.content} tabIndex={-1}>
         <Outlet />
       </main>
     </div>

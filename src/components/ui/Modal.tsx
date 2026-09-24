@@ -18,6 +18,31 @@ interface Props {
   role?: "dialog" | "alertdialog";
 }
 
+const FOCUSABLE =
+  'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
+// Keeps Tab and Shift+Tab cycling inside the dialog, so keyboard focus
+// cannot wander onto the page hidden behind it.
+const trapFocus = (event: KeyboardEvent, panel: HTMLElement) => {
+  const focusable = [...panel.querySelectorAll<HTMLElement>(FOCUSABLE)];
+  const first = focusable[0];
+  const last = focusable[focusable.length - 1];
+  const active = document.activeElement;
+
+  if (!first) {
+    event.preventDefault();
+  } else if (!panel.contains(active)) {
+    event.preventDefault();
+    first.focus();
+  } else if (event.shiftKey && (active === first || active === panel)) {
+    event.preventDefault();
+    last.focus();
+  } else if (!event.shiftKey && active === last) {
+    event.preventDefault();
+    first.focus();
+  }
+};
+
 // Rendered only while open: mount it conditionally.
 const Modal = ({
   title,
@@ -31,11 +56,18 @@ const Modal = ({
   role = "dialog",
 }: Props) => {
   const titleId = useId();
+  const descriptionId = useId();
   const panel = useRef<HTMLDivElement>(null);
 
-  // Focus the dialog so screen readers announce it and Escape works at once.
+  // Focus the dialog so screen readers announce it and Escape works at once,
+  // and hand focus back to whatever opened it on close, so keyboard users
+  // resume where they were instead of at the top of the page.
   useEffect(() => {
+    const opener = document.activeElement as HTMLElement | null;
     panel.current?.focus();
+    return () => {
+      if (opener?.isConnected) opener.focus();
+    };
   }, []);
 
   // The page behind stays put while the dialog is open.
@@ -50,6 +82,7 @@ const Modal = ({
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape" && !locked) onClose();
+      if (event.key === "Tab" && panel.current) trapFocus(event, panel.current);
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
@@ -63,13 +96,18 @@ const Modal = ({
         role={role}
         aria-modal="true"
         aria-labelledby={titleId}
+        aria-describedby={description ? descriptionId : undefined}
         tabIndex={-1}
         onClick={(event) => event.stopPropagation()}
       >
         <h2 id={titleId} className={styles.title}>
           {title}
         </h2>
-        {description && <p className={styles.description}>{description}</p>}
+        {description && (
+          <p id={descriptionId} className={styles.description}>
+            {description}
+          </p>
+        )}
         {children}
         {actions && <div className={styles.actions}>{actions}</div>}
       </div>

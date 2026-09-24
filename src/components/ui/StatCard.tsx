@@ -14,7 +14,7 @@ interface Props {
 // One headline number with its label: dashboard and admin KPIs.
 const StatCard = ({ label, value, unit, hint, children }: Props) => (
   <article className={styles.card}>
-    <h3 className={styles.label}>{label}</h3>
+    <p className={styles.label}>{label}</p>
     <div className={styles.value}>
       {value}
       {unit && <span className={styles.unit}>{unit}</span>}

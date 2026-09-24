@@ -29,9 +29,17 @@ export const Navbar = () => {
         <Logo />
       </Link>
 
-      <BurgerButton open={isMenuOpen} onToggle={() => setIsMenuOpen((open) => !open)} />
+      <BurgerButton
+        open={isMenuOpen}
+        onToggle={() => setIsMenuOpen((open) => !open)}
+        controls="main-menu"
+      />
 
-      <nav className={cx(styles.navLinks, isMenuOpen && styles.open)} aria-label="Main Navigation">
+      <nav
+        id="main-menu"
+        className={cx(styles.navLinks, isMenuOpen && styles.open)}
+        aria-label="Main Navigation"
+      >
         {!user ? (
           <>
             <Link to="/about" className={styles.link} onClick={closeMenu}>

@@ -50,4 +50,9 @@
   // Holds the document's height open while one route animates out and the
   // next has not yet mounted, so the footer does not slide up and back down.
   min-height: 60vh;
+
+  // Receives focus from the skip link; a ring round the whole page is noise.
+  &:focus {
+    outline: none;
+  }
 }

@@ -1,7 +1,7 @@
 import { lazy, Suspense, useEffect, useState } from "react";
 import { Route, Routes, useLocation } from "react-router-dom";
 import toast, { Toaster } from "react-hot-toast";
-import { AnimatePresence, LazyMotion, domAnimation } from "framer-motion";
+import { AnimatePresence, LazyMotion, MotionConfig, domAnimation } from "framer-motion";
 
 import LandingPage from "./pages/LandingPage/LandingPage";
 import LoginPage from "./pages/LoginPage/LoginPage";
@@ -100,70 +100,73 @@ const App = () => {
         LazyMotion supplies only the DOM animation features to the `m`
         components, instead of every page shipping the full motion bundle.
         strict turns any stray `motion.*` into an error, so it cannot creep
-        back in.
+        back in. MotionConfig drops the movement for anyone whose system asks
+        for reduced motion.
       */}
-      <LazyMotion features={domAnimation} strict>
-        <AnimatePresence mode="wait">
-          <Routes location={location} key={location.pathname}>
-            {/* Public routes */}
-            <Route element={<MainLayout />}>
-              <Route path="/" element={<LandingPage />} />
-              <Route path="/about" element={<AboutPage />} />
-              <Route path="/pricing" element={<PricingPage />} />
-              <Route path="/fleet" element={<FleetPage />} />
-              <Route path="/contact" element={<ContactPage />} />
-              <Route path="/unauthorized" element={<UnauthorizedPage />} />
-              <Route path="*" element={<NotFoundPage />} />
-            </Route>
-
-            {/* Public ONLY routes (Login/Register) */}
-            <Route element={<PublicOnlyRoute />}>
-              <Route path="/login" element={<LoginPage />} />
-              <Route path="/register" element={<RegisterPage />} />
-            </Route>
-
-            {/* Any signed-in user */}
-            <Route element={<ProtectedRoute />}>
+      <MotionConfig reducedMotion="user">
+        <LazyMotion features={domAnimation} strict>
+          <AnimatePresence mode="wait">
+            <Routes location={location} key={location.pathname}>
+              {/* Public routes */}
               <Route element={<MainLayout />}>
-                <Route path="/dashboard" element={<DashboardPage />} />
-                <Route path="/profile" element={<ProfilePage />} />
-                <Route path="/my-rentals" element={<RentalsPage />} />
+                <Route path="/" element={<LandingPage />} />
+                <Route path="/about" element={<AboutPage />} />
+                <Route path="/pricing" element={<PricingPage />} />
+                <Route path="/fleet" element={<FleetPage />} />
+                <Route path="/contact" element={<ContactPage />} />
+                <Route path="/unauthorized" element={<UnauthorizedPage />} />
+                <Route path="*" element={<NotFoundPage />} />
               </Route>
-              <Route
-                path="/rent-bike"
-                element={
-                  <Suspense fallback={<PageLoader />}>
-                    <RentBikePage />
-                  </Suspense>
-                }
-              />
-            </Route>
 
-            {/* Admin routes */}
-            <Route
-              path="/admin"
-              element={
-                <ProtectedRoute allowedRoles={["ADMIN"]}>
-                  {/*
-                    One boundary on the parent covers the layout and every
-                    page beneath it: a suspending descendant is caught by the
-                    nearest Suspense ancestor, and the children render into
-                    this layout's Outlet.
-                  */}
-                  <Suspense fallback={<PageLoader />}>
-                    <AdminLayout />
-                  </Suspense>
-                </ProtectedRoute>
-              }
-            >
-              <Route index element={<Redirect to="panel" />} />
-              <Route path="panel" element={<PanelPage />} />
-              <Route path="users" element={<UserManagementPage />} />
-              <Route path="bikes" element={<BikeManagementPage />} />
-            </Route>
-          </Routes>
-        </AnimatePresence>
-      </LazyMotion>
+              {/* Public ONLY routes (Login/Register) */}
+              <Route element={<PublicOnlyRoute />}>
+                <Route path="/login" element={<LoginPage />} />
+                <Route path="/register" element={<RegisterPage />} />
+              </Route>
+
+              {/* Any signed-in user */}
+              <Route element={<ProtectedRoute />}>
+                <Route element={<MainLayout />}>
+                  <Route path="/dashboard" element={<DashboardPage />} />
+                  <Route path="/profile" element={<ProfilePage />} />
+                  <Route path="/my-rentals" element={<RentalsPage />} />
+                </Route>
+                <Route
+                  path="/rent-bike"
+                  element={
+                    <Suspense fallback={<PageLoader />}>
+                      <RentBikePage />
+                    </Suspense>
+                  }
+                />
+              </Route>
+
+              {/* Admin routes */}
+              <Route
+                path="/admin"
+                element={
+                  <ProtectedRoute allowedRoles={["ADMIN"]}>
+                    {/*
+                      One boundary on the parent covers the layout and every
+                      page beneath it: a suspending descendant is caught by the
+                      nearest Suspense ancestor, and the children render into
+                      this layout's Outlet.
+                    */}
+                    <Suspense fallback={<PageLoader />}>
+                      <AdminLayout />
+                    </Suspense>
+                  </ProtectedRoute>
+                }
+              >
+                <Route index element={<Redirect to="panel" />} />
+                <Route path="panel" element={<PanelPage />} />
+                <Route path="users" element={<UserManagementPage />} />
+                <Route path="bikes" element={<BikeManagementPage />} />
+              </Route>
+            </Routes>
+          </AnimatePresence>
+        </LazyMotion>
+      </MotionConfig>
     </>
   );
 };

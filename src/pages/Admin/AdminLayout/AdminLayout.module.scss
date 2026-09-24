@@ -130,6 +130,11 @@ $bar-height: 70px;
   margin: $bar-height auto 0;
   padding: 1rem;
 
+  // Receives focus from the skip link; a ring round the whole page is noise.
+  &:focus {
+    outline: none;
+  }
+
   @media (min-width: v.$tablet) {
     padding: 2rem;
   }

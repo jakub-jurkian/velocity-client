@@ -53,8 +53,8 @@ const LandingPage = () => (
     <section className={styles.statsBar}>
       {stats.map((stat) => (
         <div key={stat.label} className={styles.statItem}>
-          <h3>{stat.value}</h3>
-          <p>{stat.label}</p>
+          <p className={styles.statValue}>{stat.value}</p>
+          <p className={styles.statLabel}>{stat.label}</p>
         </div>
       ))}
     </section>

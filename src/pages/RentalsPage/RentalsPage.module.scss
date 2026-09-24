@@ -40,7 +40,7 @@
 
 .danger {
   @include status(v.$danger);
-  opacity: 0.7;
+  opacity: 0.8; // Dimmed, but its text still clears 4.5:1 contrast
 }
 
 .statusBadge {

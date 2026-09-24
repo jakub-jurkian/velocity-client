@@ -70,23 +70,6 @@
 .statItem {
   text-align: center;
 
-  h3 {
-    margin-bottom: 0.25rem;
-    font-size: 2rem;
-
-    @media (min-width: v.$tablet) {
-      font-size: 2.5rem;
-    }
-  }
-
-  p {
-    color: v.$color-primary;
-    font-size: 0.8rem;
-    font-weight: 600;
-    letter-spacing: 1px;
-    text-transform: uppercase;
-  }
-
   // A hairline between neighbours once they sit in a row.
   @media (min-width: v.$tablet) {
     padding: 0 2rem;
@@ -95,6 +78,27 @@
       border-left: 1px solid v.$border;
     }
   }
+}
+
+// A value, not a section title, so not a heading: headings here would jump
+// from the hero's h1 straight to h3.
+.statValue {
+  margin-bottom: 0.25rem;
+  font-size: 2rem;
+  font-weight: 700;
+  line-height: 1.2;
+
+  @media (min-width: v.$tablet) {
+    font-size: 2.5rem;
+  }
+}
+
+.statLabel {
+  color: v.$color-primary;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
 }
 
 .features {
