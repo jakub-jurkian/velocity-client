@@ -99,11 +99,6 @@
     box-shadow: 0 0 10px rgba(v.$color-primary, 0.1);
   }
 
-  .bikeEmoji {
-    margin-left: 8px;
-    font-size: 1.2em;
-  }
-
   .helperText {
     font-size: "0.8rem";
     color: "#888";
@@ -262,67 +257,20 @@
   margin-top: 1rem;
 }
 
-.bikeCard {
-  background: v.$color-bg-card;
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: v.$radius-lg;
-  padding: 1.25rem;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  // align-items: center;
-  transition: all 0.2s ease;
+// Lives inside the shared BikeModelCard's action slot, which handles spacing.
+.bookBtn {
+  background: v.$color-secondary; // Purple/Secondary brand color
+  color: #fff;
+  padding: 0.6rem 1.2rem;
+  border-radius: v.$radius-md;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: background 0.2s;
 
   &:hover {
-    background: color.adjust(v.$color-bg-card, $lightness: 3%);
-    border-color: rgba(v.$color-primary, 0.3);
-    transform: translateY(-2px);
-  }
-
-  .bikeInfo {
-    h3 {
-      margin: 0 0 0.5rem 0;
-      font-size: 1.1rem;
-      color: v.$color-text-main;
-    }
-  }
-
-  .specs {
-    // Default (Desktop): Single row
-    display: flex;
-    flex-wrap: wrap; // Safety for very small screens
-    gap: 1rem;
-    font-size: 0.85rem;
-    color: v.$color-text-muted;
-
-    @media (max-width: 572px) {
-      display: grid;
-      grid-template-columns: 1fr 1fr; // Exactly 2 columns
-    }
-    .spec {
-      background: rgba(255, 255, 255, 0.05);
-      padding: 2px 8px;
-      border-radius: 4px;
-      text-align: center;
-      white-space: nowrap;
-    }
-  }
-
-  .bookBtn {
-    background: v.$color-secondary; // Purple/Secondary brand color
-    color: #fff;
-    padding: 0.6rem 1.2rem;
-    margin-top: 1rem;
-    border-radius: v.$radius-md;
-    font-weight: 600;
-    border: none;
-    cursor: pointer;
-    transition: background 0.2s;
-
-    &:hover {
-      background: color.adjust(v.$color-secondary, $lightness: 10%);
-      box-shadow: 0 0 15px rgba(v.$color-secondary, 0.4);
-    }
+    background: color.adjust(v.$color-secondary, $lightness: 10%);
+    box-shadow: 0 0 15px rgba(v.$color-secondary, 0.4);
   }
 }
 

@@ -55,14 +55,7 @@ export default function StepSummary({
         {/* Bike Details */}
         <div className={styles.summaryRow}>
           <span className={styles.label}>Bike Model</span>
-          <span className={styles.value}>
-            {chosenBikeModel.name}{" "}
-            {chosenBikeModel.imageEmoji && (
-              <span className={styles.bikeEmoji} aria-hidden="true">
-                {chosenBikeModel.imageEmoji}
-              </span>
-            )}
-          </span>
+          <span className={styles.value}>{chosenBikeModel.name}</span>
         </div>
         <div className={styles.summaryRow}>
           <span className={styles.label}>Category</span>

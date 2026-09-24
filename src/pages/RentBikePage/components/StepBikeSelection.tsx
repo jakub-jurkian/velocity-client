@@ -1,5 +1,6 @@
 import type { BikeModel, City } from "../../../types/Fleet";
 import type { WizardStep } from "../../../types/Wizard";
+import BikeModelCard from "../../../components/BikeModelCard/BikeModelCard";
 import styles from "../RentBikePage.module.scss";
 
 interface Props {
@@ -37,41 +38,20 @@ export default function StepBikeSelection({
           </div>
         ) : (
           availableBikes.map((bike) => (
-            <div key={bike.id} className={styles.bikeCard}>
-              <div className={styles.bikeInfo}>
-                <h3>
-                  {bike.name}
-                  {bike.imageEmoji && (
-                    <span className={styles.bikeEmoji} aria-hidden="true">
-                      {bike.imageEmoji}
-                    </span>
-                  )}
-                </h3>
-
-                <div className={styles.specs}>
-                  <span className={styles.spec} title="Category">
-                    <span aria-hidden="true">🏷️</span> {bike.category}
-                  </span>
-                  <span className={styles.spec} title="Max Speed">
-                    <span aria-hidden="true">⚡</span> {bike.stats.speed} km/h
-                  </span>
-                  <span className={styles.spec} title="Range">
-                    <span aria-hidden="true">🛣️</span> {bike.stats.range} km
-                  </span>
-                  <span className={styles.spec} title="Cargo Capacity">
-                    <span aria-hidden="true">📦</span> {bike.stats.capacity} kg
-                  </span>
-                </div>
-              </div>
-
-              <button
-                className={styles.bookBtn}
-                onClick={() => onBookBike(bike.id)}
-                aria-label={`Book ${bike.name}`} // Crucial for accessibility
-              >
-                Book
-              </button>
-            </div>
+            <BikeModelCard
+              key={bike.id}
+              model={bike}
+              compact
+              action={
+                <button
+                  className={styles.bookBtn}
+                  onClick={() => onBookBike(bike.id)}
+                  aria-label={`Book ${bike.name}`} // Crucial for accessibility
+                >
+                  Book
+                </button>
+              }
+            />
           ))
         )}
       </div>

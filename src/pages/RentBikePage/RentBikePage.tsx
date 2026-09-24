@@ -16,6 +16,7 @@ import StepBikeSelection from "./components/StepBikeSelection";
 import StepSummary from "./components/StepSummary";
 import PageTransition from "../../components/common/PageTransition";
 import styles from "./RentBikePage.module.scss";
+import { findCatalogModel } from "../../data/fleetCatalog";
 import { useCheckout } from "../../hooks/useCheckout";
 import Redirect from "../../components/common/Redirect";
 import { WizardStep } from "../../types/Wizard";
@@ -149,17 +150,25 @@ const RentBikePage = () => {
       const data: AvailabilityResponse = await response.json();
 
       const mappedCatalog: BikeModel[] = data.models.map(
-        (apiBike: AvailableBikeModel) => ({
-          id: apiBike.bookableInstanceId,
-          name: apiBike.modelName,
-          category: formatCategory(apiBike.modelCategory),
-          description: apiBike.modelDescription,
-          stats: {
-            speed: apiBike.modelSpeed,
-            range: apiBike.modelRange,
-            capacity: apiBike.modelCapacity,
-          },
-        }),
+        (apiBike: AvailableBikeModel) => {
+          // The API has no artwork; the marketing catalogue supplies it by
+          // model name. Every spec below still comes from the API.
+          const artwork = findCatalogModel(apiBike.modelName);
+
+          return {
+            image: artwork?.image,
+            imageEmoji: artwork?.imageEmoji,
+            id: apiBike.bookableInstanceId,
+            name: apiBike.modelName,
+            category: formatCategory(apiBike.modelCategory),
+            description: apiBike.modelDescription,
+            stats: {
+              speed: apiBike.modelSpeed,
+              range: apiBike.modelRange,
+              capacity: apiBike.modelCapacity,
+            },
+          };
+        },
       );
 
       setAvailableBikes(mappedCatalog);

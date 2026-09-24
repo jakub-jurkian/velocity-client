@@ -13,6 +13,8 @@ export interface BikeModel {
   };
   // Marketing-only decoration: the API never sends it.
   imageEmoji?: string;
+  // Marketing-only product illustration (bundled asset URL).
+  image?: string;
 }
 
 // The Physical Bike (The real asset)
