@@ -44,14 +44,6 @@ const PRICING_TIERS: PricingTier[] = [
 ];
 
 const PricingPage = () => {
-  // Enterprise currency formatter
-  const formatCurrency = (amount: number) =>
-    new Intl.NumberFormat("pl-PL", {
-      style: "currency",
-      currency: "PLN",
-      maximumFractionDigits: 0,
-    }).format(amount);
-
   return (
     <PageTransition>
       <div className={styles.pricingPage}>
@@ -83,23 +75,16 @@ const PricingPage = () => {
                 )}
               </div>
 
-              <div className={styles.depositInfo}>
-                Security Deposit:{" "}
-                <strong>{formatCurrency(tier.deposit)}</strong>
-              </div>
-
-              <LandingBtn primary={tier.isPrimaryButton} />
+              <LandingBtn
+                primary={tier.isPrimaryButton}
+                className={styles.cta}
+              />
             </article>
           ))}
         </div>
 
         <footer className={styles.note}>
-          <p>
-            * Security deposit is required and refunded upon bike return in good
-            condition.
-            <br />
-            Rental periods range from 3 to 21 days.
-          </p>
+          <p>Rental periods range from 3 to 21 days.</p>
         </footer>
       </div>
     </PageTransition>
