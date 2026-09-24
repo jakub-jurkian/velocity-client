@@ -2,6 +2,7 @@ import { format, parseISO } from "date-fns";
 import { WizardStep } from "../../../types/Wizard";
 import type { BikeModel } from "../../../types/Fleet";
 import type { RentalQuote } from "../../../types/Pricing";
+import BusyLabel from "../../../components/common/BusyLabel";
 import styles from "../RentBikePage.module.scss";
 
 interface Props {
@@ -125,14 +126,9 @@ export default function StepSummary({
         disabled={isSubmitting}
         aria-busy={isSubmitting}
       >
-        {isSubmitting ? (
-          <>
-            <span className={styles.btnSpinner} aria-hidden="true" />
-            <span>Booking…</span>
-          </>
-        ) : (
-          "Confirm Booking"
-        )}
+        <BusyLabel busy={isSubmitting} busyText="Booking">
+          Confirm Booking
+        </BusyLabel>
       </button>
     </div>
   );

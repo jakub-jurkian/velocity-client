@@ -3,6 +3,7 @@ import toast from "react-hot-toast";
 import { useAppDispatch, useAppSelector } from "../../store/hooks";
 import { updateUser } from "../../store/slices/authSlice";
 import PageTransition from "../../components/common/PageTransition";
+import BusyLabel from "../../components/common/BusyLabel";
 import { SUPPORTED_CITIES, type City } from "../../types/Fleet";
 import {
   extractFieldErrors,
@@ -22,6 +23,7 @@ const MyProfilePage = () => {
   const { user, token } = useAppSelector((state) => state.auth);
 
   const [isEditing, setIsEditing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   // Initialized safely from Redux user state
   const [formData, setFormData] = useState({
@@ -118,6 +120,7 @@ const MyProfilePage = () => {
       return;
     }
 
+    setIsSaving(true);
     try {
       const apiUrl = import.meta.env.VITE_API_URL;
       const response = await fetch(`${apiUrl}/api/v1/users/${user.id}`, {
@@ -169,6 +172,8 @@ const MyProfilePage = () => {
       toast.error(
         "Unable to connect to VeloCity server. Please check your connection.",
       );
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -307,11 +312,19 @@ const MyProfilePage = () => {
                     type="button"
                     onClick={handleCancel}
                     className={styles.cancelBtn}
+                    disabled={isSaving}
                   >
                     Cancel
                   </button>
-                  <button type="submit" className={styles.saveBtn}>
-                    Save Changes
+                  <button
+                    type="submit"
+                    className={styles.saveBtn}
+                    disabled={isSaving}
+                    aria-busy={isSaving}
+                  >
+                    <BusyLabel busy={isSaving} busyText="Saving">
+                      Save Changes
+                    </BusyLabel>
                   </button>
                 </div>
               )}

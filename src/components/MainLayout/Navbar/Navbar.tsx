@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { useAppDispatch, useAppSelector } from "../../../store/hooks";
 import { performLogout } from "../../../store/slices/authSlice";
+import BusyLabel from "../../common/BusyLabel";
 import styles from "./Navbar.module.scss";
 
 export const Navbar = () => {
@@ -16,6 +17,7 @@ export const Navbar = () => {
   // State for Mobile Menu & Scroll
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   // Optimized Scroll Listener with { passive: true }
   useEffect(() => {
@@ -28,9 +30,11 @@ export const Navbar = () => {
   }, []);
 
   const logoutHandle = async () => {
-    setIsMenuOpen(false);
+    setIsLoggingOut(true);
     // Awaited so the toast follows the actual revocation round trip.
     await dispatch(performLogout());
+    setIsLoggingOut(false);
+    setIsMenuOpen(false);
     navigate("/");
 
     toast.success("Logged out successfully!");
@@ -105,8 +109,15 @@ export const Navbar = () => {
               </div>
             </div>
 
-            <button onClick={logoutHandle} className={styles.loginBtn}>
-              Log Out
+            <button
+              onClick={logoutHandle}
+              className={styles.loginBtn}
+              disabled={isLoggingOut}
+              aria-busy={isLoggingOut}
+            >
+              <BusyLabel busy={isLoggingOut} busyText="Logging out">
+                Log Out
+              </BusyLabel>
             </button>
           </>
         )}

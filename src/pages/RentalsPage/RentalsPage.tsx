@@ -11,6 +11,7 @@ import {
   readProblemDetail,
 } from "../../api/pagination";
 import PageTransition from "../../components/common/PageTransition";
+import BusyLabel from "../../components/common/BusyLabel";
 import PageLoader from "../../components/common/PageLoader";
 import { downloadReservationsCSV } from "../../utils/exportHelper";
 import styles from "./RentalsPage.module.scss";
@@ -188,8 +189,11 @@ const RentalsPage = () => {
             className={styles.exportBtn}
             onClick={handleExport}
             disabled={isExporting}
+            aria-busy={isExporting}
           >
-            {isExporting ? "Preparing…" : "Export CSV"}
+            <BusyLabel busy={isExporting} busyText="Preparing export">
+              Export CSV
+            </BusyLabel>
           </button>
         </header>
 
@@ -330,8 +334,11 @@ const RentalsPage = () => {
                   className={styles.dangerBtn}
                   onClick={confirmCancel}
                   disabled={isCancelling}
+                  aria-busy={isCancelling}
                 >
-                  {isCancelling ? "Cancelling..." : "Yes, Cancel it"}
+                  <BusyLabel busy={isCancelling} busyText="Cancelling">
+                    Yes, Cancel it
+                  </BusyLabel>
                 </button>
               </div>
             </div>

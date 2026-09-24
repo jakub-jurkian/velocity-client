@@ -438,12 +438,6 @@
   text-transform: uppercase;
   letter-spacing: 1px;
 
-  // Centres the spinner next to its label while booking is in flight.
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.75rem;
-
   &:hover:not(:disabled) {
     transform: translateY(-3px);
     box-shadow: 0 0 30px rgba(v.$color-primary, 0.5);
@@ -463,19 +457,6 @@
     transform: none;
     box-shadow: 0 0 10px rgba(v.$color-primary, 0.2);
   }
-}
-
-// Spinner for .confirmBtn specifically. It cannot reuse .miniSpinner, which
-// is white-on-dark: this button is black text on cyan, so the track and head
-// are inverted to stay legible.
-.btnSpinner {
-  width: 18px;
-  height: 18px;
-  flex: 0 0 18px;
-  border: 3px solid rgba(0, 0, 0, 0.25);
-  border-top-color: #000;
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
 }
 
 .payBtn {

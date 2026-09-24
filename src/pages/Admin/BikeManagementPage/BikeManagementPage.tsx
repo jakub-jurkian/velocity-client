@@ -11,6 +11,7 @@ import type { PaginationMeta } from "../../../types/Pagination";
 import { EMPTY_META } from "../../../types/Pagination";
 import { fetchPage, readProblemDetail } from "../../../api/pagination";
 import PageTransition from "../../../components/common/PageTransition";
+import BusyLabel from "../../../components/common/BusyLabel";
 import toast from "react-hot-toast";
 import { useAppSelector } from "../../../store/hooks";
 
@@ -369,8 +370,11 @@ const BikeManagement = () => {
                   className={styles.primaryBtn}
                   onClick={confirmStatusChange}
                   disabled={isSaving || targetStatus === editingBike.status}
+                  aria-busy={isSaving}
                 >
-                  {isSaving ? "Saving…" : "Confirm Change"}
+                  <BusyLabel busy={isSaving} busyText="Saving">
+                    Confirm Change
+                  </BusyLabel>
                 </button>
               </div>
             </div>
@@ -435,10 +439,11 @@ const BikeManagement = () => {
                   className={styles.dangerBtn}
                   onClick={forceStatusChange}
                   disabled={isSaving}
+                  aria-busy={isSaving}
                 >
-                  {isSaving
-                    ? "Cancelling…"
-                    : `Cancel ${conflicts.length} and continue`}
+                  <BusyLabel busy={isSaving} busyText="Cancelling bookings">
+                    Cancel {conflicts.length} and continue
+                  </BusyLabel>
                 </button>
               </div>
             </div>

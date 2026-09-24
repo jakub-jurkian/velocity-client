@@ -5,6 +5,7 @@ import type { PaginationMeta } from "../../../types/Pagination";
 import { EMPTY_META } from "../../../types/Pagination";
 import { fetchPage, readProblemDetail } from "../../../api/pagination";
 import PageTransition from "../../../components/common/PageTransition";
+import BusyLabel from "../../../components/common/BusyLabel";
 import toast from "react-hot-toast";
 import { useAppSelector } from "../../../store/hooks";
 import { SUPPORTED_CITIES, type City } from "../../../types/Fleet";
@@ -32,6 +33,7 @@ const UserManagement = () => {
   const [editingUser, setEditingUser] = useState<AdminUser | null>(null);
   const [isBlockModalOpen, setIsBlockModalOpen] = useState(false);
   const [userToBlock, setUserToBlock] = useState<AdminUser | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
 
   const jwtToken = useAppSelector((state) => state.auth.token);
   const currentUserId = useAppSelector((state) => state.auth.user?.id);
@@ -81,6 +83,15 @@ const UserManagement = () => {
   const confirmBlockToggle = async () => {
     if (!userToBlock || !jwtToken) return;
 
+    setIsSaving(true);
+    try {
+      await toggleBlock(userToBlock, jwtToken);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const toggleBlock = async (userToBlock: AdminUser, jwtToken: string) => {
     const { id: userId, status: currentStatus } = userToBlock;
     const statusUrl = currentStatus === "ACTIVE" ? "block" : "unblock";
 
@@ -127,6 +138,7 @@ const UserManagement = () => {
   };
 
   const closeBlockModal = () => {
+    if (isSaving) return;
     setIsBlockModalOpen(false);
     setUserToBlock(null);
   };
@@ -136,10 +148,24 @@ const UserManagement = () => {
     setIsModalOpen(true);
   };
 
+  const closeEditModal = () => {
+    if (isSaving) return;
+    setIsModalOpen(false);
+  };
+
   const handleSaveUser = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingUser || !jwtToken) return;
 
+    setIsSaving(true);
+    try {
+      await saveUser(editingUser, jwtToken);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const saveUser = async (editingUser: AdminUser, jwtToken: string) => {
     const originalUser = users.find((u) => u.id === editingUser.id);
     if (!originalUser) return;
 
@@ -361,10 +387,7 @@ const UserManagement = () => {
 
         {/* EDIT MODAL */}
         {isModalOpen && editingUser && (
-          <div
-            className={styles.modalOverlay}
-            onClick={() => setIsModalOpen(false)}
-          >
+          <div className={styles.modalOverlay} onClick={closeEditModal}>
             <div
               className={styles.modal}
               onClick={(event) => event.stopPropagation()}
@@ -474,12 +497,20 @@ const UserManagement = () => {
                   <button
                     type="button"
                     className={styles.secondaryBtn}
-                    onClick={() => setIsModalOpen(false)}
+                    onClick={closeEditModal}
+                    disabled={isSaving}
                   >
                     Cancel
                   </button>
-                  <button type="submit" className={styles.primaryBtn}>
-                    Save Changes
+                  <button
+                    type="submit"
+                    className={styles.primaryBtn}
+                    disabled={isSaving}
+                    aria-busy={isSaving}
+                  >
+                    <BusyLabel busy={isSaving} busyText="Saving">
+                      Save Changes
+                    </BusyLabel>
                   </button>
                 </div>
               </form>
@@ -510,6 +541,7 @@ const UserManagement = () => {
                 <button
                   className={styles.secondaryBtn}
                   onClick={closeBlockModal}
+                  disabled={isSaving}
                 >
                   No, Keep it
                 </button>
@@ -520,10 +552,21 @@ const UserManagement = () => {
                       : styles.primaryBtn
                   }
                   onClick={confirmBlockToggle}
+                  disabled={isSaving}
+                  aria-busy={isSaving}
                 >
-                  {userToBlock.status === "ACTIVE"
-                    ? "Yes, Block"
-                    : "Yes, Unblock"}
+                  <BusyLabel
+                    busy={isSaving}
+                    busyText={
+                      userToBlock.status === "ACTIVE"
+                        ? "Blocking"
+                        : "Unblocking"
+                    }
+                  >
+                    {userToBlock.status === "ACTIVE"
+                      ? "Yes, Block"
+                      : "Yes, Unblock"}
+                  </BusyLabel>
                 </button>
               </div>
             </div>

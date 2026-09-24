@@ -56,8 +56,13 @@
   white-space: nowrap;
   align-self: flex-start; // Prevent full width on mobile
 
-  &:hover {
+  &:hover:not(:disabled) {
     opacity: 0.9;
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
   }
 
   @media (min-width: v.$tablet) {
@@ -537,8 +542,13 @@
   padding: 0.6rem 1.2rem;
   font-weight: 500;
 
-  &:hover {
+  &:hover:not(:disabled) {
     color: v.$color-text-main;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
   }
 }
 
@@ -551,9 +561,14 @@
   padding: 0.6rem 1.2rem;
   font-weight: 600;
 
-  &:hover {
+  &:hover:not(:disabled) {
     background: v.$danger;
     color: white;
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
   }
 }
 
