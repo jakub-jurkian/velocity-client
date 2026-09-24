@@ -17,14 +17,6 @@ export interface BikeModel {
   image?: string;
 }
 
-// The Physical Bike (The real asset)
-export interface BikeInstance {
-  id: string;
-  modelId: string;
-  city: City;
-  status: "ACTIVE" | "MAINTENANCE" | "LOST" | "RETIRED";
-}
-
 export const BIKE_CATEGORIES = [
   "AGILITY",
   "HEAVY_DUTY",
