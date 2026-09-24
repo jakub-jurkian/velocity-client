@@ -1,71 +1,78 @@
 import { useState, type ChangeEvent, type FormEvent } from "react";
 
-// Define the shape of the validation function
-type ValidationFunction<T> = (values: T) => Partial<Record<keyof T, string>>;
+type Errors<T> = Partial<Record<keyof T, string>>;
 
 interface UseFormProps<T> {
   initialValues: T;
-  validate: ValidationFunction<T>;
-  onSubmit: (values: T) => Promise<void> | void; // Supports async
+  validate: (values: T) => Errors<T>;
+  onSubmit: (values: T) => Promise<void> | void;
 }
 
-export const useForm = <T extends Record<string, string | number | boolean>>({
+export const useForm = <T extends Record<string, string | boolean>>({
   initialValues,
   validate,
   onSubmit,
 }: UseFormProps<T>) => {
-  // State for form data
   const [values, setValues] = useState<T>(initialValues);
-
-  // State for errors
-  const [errors, setErrors] = useState<Partial<Record<keyof T, string>>>({});
-
-  // State for loading (disable button while submitting)
+  const [errors, setErrors] = useState<Errors<T>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Generic Change Handler (Works for ANY input)
-  const handleChange = (
-    e: ChangeEvent<HTMLInputElement | HTMLSelectElement>
-  ) => {
-    const { name, value, type } = e.target;
+  // One handler for every input, select and checkbox, keyed by `name`. Editing
+  // a field clears its error.
+  const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { target } = e;
+    const value =
+      target instanceof HTMLInputElement && target.type === "checkbox"
+        ? target.checked
+        : target.value;
 
-    const isCheckbox = type === 'checkbox';
-    
-  // @ts-expect-error for
-  const finalValue = isCheckbox ? e.target.checked : value;
-
-  setValues((prev) => ({
-    ...prev,
-    [name]: finalValue,
-  }));
-
-  if (errors[name as keyof T]) {
-    setErrors((prev) => ({ ...prev, [name]: undefined }));
-  }
+    setValues((prev) => ({ ...prev, [target.name]: value }));
+    setErrors((prev) =>
+      prev[target.name as keyof T] ? { ...prev, [target.name]: undefined } : prev,
+    );
   };
 
-  // The "Gatekeeper" Function
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    setIsSubmitting(true);
 
-    // Run Validation
-    const validationErrors = validate(values);
-
-    // Check results
-    if (Object.keys(validationErrors).length === 0) {
-      // Success: No errors, call the API
-      await onSubmit(values);
-    } else {
-      // Failure: Save errors to display
-      setErrors(validationErrors);
+    const found = validate(values);
+    if (Object.keys(found).length > 0) {
+      setErrors(found);
+      return;
     }
 
-    setIsSubmitting(false);
+    setIsSubmitting(true);
+    try {
+      await onSubmit(values);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Props for a TextField or SelectField bound to `name`.
+  const field = (name: keyof T & string) => ({
+    name,
+    value: String(values[name]),
+    onChange: handleChange,
+    error: errors[name],
+  });
+
+  // Props for a CheckboxField bound to `name`.
+  const checkbox = (name: keyof T & string) => ({
+    name,
+    checked: Boolean(values[name]),
+    onChange: handleChange,
+    error: errors[name],
+  });
+
+  // Replaces every value and clears the errors, e.g. to seed an edit form.
+  const reset = (next: T) => {
+    setValues(next);
+    setErrors({});
   };
 
   // setErrors is exposed so a submit handler can attach a server-side failure
   // to the field it belongs to. Without it a 409 on email has nowhere to go
   // but a toast, which leaves the offending input unmarked.
-  return { values, errors, isSubmitting, handleChange, handleSubmit, setErrors };
+  return { values, errors, isSubmitting, handleSubmit, setErrors, field, checkbox, reset };
 };

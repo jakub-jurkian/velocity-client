@@ -1,195 +1,102 @@
 import { Link, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { useAppDispatch } from "../../store/hooks";
-import { useForm } from "../../hooks/useForm";
-import { validateEmail, validateMinLength } from "../../utils/validators";
-import { readProblemDetail } from "../../api/pagination";
-import PageTransition from "../../components/common/PageTransition";
-import BusyLabel from "../../components/common/BusyLabel";
-import styles from "./LoginPage.module.scss";
 import { performLogin } from "../../store/slices/authSlice";
+import { useForm } from "../../hooks/useForm";
+import { collectErrors, validateEmail, validateMinLength } from "../../utils/validators";
+import { ApiError, apiFetch } from "../../api/client";
+import type { User } from "../../types/User";
+import AuthLayout from "../../components/AuthLayout/AuthLayout";
+import Button from "../../components/ui/Button";
+import { CheckboxField, Form, TextField } from "../../components/ui/Form";
+import styles from "./LoginPage.module.scss";
+
+// Only a 401 means the credentials were wrong. Everything else is the server
+// or the network failing, and saying "invalid email or password" there sends
+// the user off resetting a password that was never the problem.
+const loginFailureMessage = (error: unknown) => {
+  if (!(error instanceof ApiError)) {
+    return "A network error occurred. Please check your connection.";
+  }
+  if (error.status === 401) return error.detail ?? "Incorrect email or password.";
+  if (error.status >= 500) {
+    return "The server is not responding right now. Please try again shortly.";
+  }
+  return error.detail ?? `Sign-in failed (${error.status}). Please try again.`;
+};
 
 const LoginPage = () => {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
 
-  const { values, errors, isSubmitting, handleChange, handleSubmit } = useForm({
-    initialValues: {
-      email: "",
-      password: "",
-      rememberMe: false,
-    },
-    validate: (vals) => {
-      const errs: Record<string, string> = {};
-      const emailError = validateEmail(vals.email);
-      if (emailError) errs.email = emailError;
-
-      const passwordError = validateMinLength(vals.password, 8, "Password");
-      if (passwordError) errs.password = passwordError;
-
-      return errs;
-    },
-    onSubmit: async (vals) => {
+  const { isSubmitting, handleSubmit, field, checkbox } = useForm({
+    initialValues: { email: "", password: "", rememberMe: false },
+    validate: (values) =>
+      collectErrors({
+        email: validateEmail(values.email),
+        password: validateMinLength(values.password, 8, "Password"),
+      }),
+    onSubmit: async ({ email, password, rememberMe }) => {
       try {
-        const apiUrl = import.meta.env.VITE_API_URL;
-        const requestData = { email: vals.email, password: vals.password };
-
-        const loginResponse = await fetch(`${apiUrl}/api/v1/auth/login`, {
+        const { accessToken } = await apiFetch<{ accessToken: string }>("/api/v1/auth/login", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(requestData),
+          body: { email, password },
+          token: null,
         });
+        const user = await apiFetch<User>("/api/v1/auth/me", { token: accessToken });
 
-        if (!loginResponse.ok) {
-          // Only a 401 means the credentials were wrong. Everything else is
-          // the server or the network failing, and saying "invalid email or
-          // password" there sends the user off resetting a password that was
-          // never the problem.
-          if (loginResponse.status === 401) {
-            toast.error(
-              await readProblemDetail(
-                loginResponse,
-                "Incorrect email or password.",
-              ),
-            );
-          } else if (loginResponse.status >= 500) {
-            toast.error(
-              "The server is not responding right now. Please try again shortly.",
-            );
-          } else {
-            toast.error(
-              await readProblemDetail(
-                loginResponse,
-                `Sign-in failed (${loginResponse.status}). Please try again.`,
-              ),
-            );
-          }
-          return;
-        }
-
-        const data = await loginResponse.json();
-        const jwtToken = data.accessToken;
-
-        // fetch user profile
-        const userResponse = await fetch(`${apiUrl}/api/v1/auth/me`, {
-          headers: { Authorization: `Bearer ${jwtToken}` },
-        });
-
-        if (!userResponse.ok) {
-          throw new Error("Failed to fetch user details"); // Pushes to the catch block
-        }
-
-        const user = await userResponse.json();
-        //id, email, fullName, phone, role, city, joinedDate
-
-        // Delegate State & Storage to Redux Thunk
-        dispatch(performLogin(user, jwtToken, vals.rememberMe));
-
-        // Success
+        dispatch(performLogin(user, accessToken, rememberMe));
         toast.success("Logged in successfully!");
-        navigate(user.role === "ADMIN" ? "/admin/panel" : "/dashboard", {
-          replace: true,
-        });
-      } catch (error: unknown) {
-        // Catch network failures (e.g., server offline, CORS errors)
-        console.error("Login Error:", error);
-        toast.error("A network error occurred. Please check your connection.");
+        navigate(user.role === "ADMIN" ? "/admin/panel" : "/dashboard", { replace: true });
+      } catch (error) {
+        console.error("Login failed:", error);
+        toast.error(loginFailureMessage(error));
       }
     },
   });
 
   return (
-    <PageTransition>
-      <main className={styles.loginContainer}>
-        <div className={styles.glowOrb} aria-hidden="true"></div>
+    <AuthLayout
+      title="Welcome Back"
+      subtitle="Enter your credentials to access the fleet."
+      footer={
+        <p>
+          Don't have an account? <Link to="/register">Register</Link>
+        </p>
+      }
+    >
+      <Form onSubmit={handleSubmit} noValidate>
+        <TextField
+          id="email"
+          label="Email Address"
+          type="email"
+          placeholder="name@velocity.com"
+          autoComplete="email"
+          required
+          {...field("email")}
+        />
+        <TextField
+          id="password"
+          label="Password"
+          type="password"
+          placeholder="••••••••"
+          autoComplete="current-password"
+          required
+          {...field("password")}
+        />
 
-        <section className={styles.loginCard}>
-          <header className={styles.header}>
-            <div className={styles.logo}>
-              Velo<span className={styles.highlight}>City</span>
-            </div>
-            <h1 className={styles.title}>Welcome Back</h1>
-            <p className={styles.subtitle}>
-              Enter your credentials to access the fleet.
-            </p>
-          </header>
+        <div className={styles.options}>
+          <CheckboxField label="Remember me" {...checkbox("rememberMe")} />
+          <a href="#" className={styles.forgot}>
+            Forgot Password?
+          </a>
+        </div>
 
-          {/* Pass handleSubmit from the hook */}
-          <form className={styles.form} onSubmit={handleSubmit} noValidate>
-            {/* EMAIL INPUT */}
-            <div className={styles.inputGroup}>
-              <label htmlFor="email">Email Address</label>
-              <input
-                type="email"
-                id="email"
-                name="email"
-                value={values.email} // From Hook
-                onChange={handleChange} // From Hook
-                className={errors.email ? styles.errorInput : ""}
-                placeholder="name@velocity.com"
-                autoComplete="email"
-                required
-              />
-              {errors.email && (
-                <span className={styles.errorText}>{errors.email}</span>
-              )}
-            </div>
-
-            {/* PASSWORD INPUT */}
-            <div className={styles.inputGroup}>
-              <label htmlFor="password">Password</label>
-              <input
-                type="password"
-                id="password"
-                name="password"
-                value={values.password} // From Hook
-                onChange={handleChange} // From Hook
-                className={errors.password ? styles.errorInput : ""}
-                placeholder="••••••••"
-                autoComplete="current-password"
-                required
-              />
-              {errors.password && (
-                <span className={styles.errorText}>{errors.password}</span>
-              )}
-            </div>
-
-            <div className={styles.formFooter}>
-              <label className={styles.checkboxContainer}>
-                <input
-                  type="checkbox"
-                  name="rememberMe"
-                  checked={!!values.rememberMe} // Cast to boolean
-                  onChange={handleChange}
-                />
-                <span className={styles.checkmark}></span>
-                Remember me
-              </label>
-              <a href="#" className={styles.forgotLink}>
-                Forgot Password?
-              </a>
-            </div>
-
-            <button
-              type="submit"
-              className={styles.submitBtn}
-              disabled={isSubmitting} // Controlled by Hook
-              aria-busy={isSubmitting}
-            >
-              <BusyLabel busy={isSubmitting} busyText="Logging in">
-                Log In ➜
-              </BusyLabel>
-            </button>
-          </form>
-
-          <footer className={styles.cardFooter}>
-            <p>
-              Don't have an account? <Link to="/register">Register</Link>
-            </p>
-          </footer>
-        </section>
-      </main>
-    </PageTransition>
+        <Button type="submit" size="lg" block busy={isSubmitting} busyText="Logging in">
+          Log In ➜
+        </Button>
+      </Form>
+    </AuthLayout>
   );
 };
 
