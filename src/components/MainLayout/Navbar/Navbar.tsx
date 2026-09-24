@@ -1,99 +1,57 @@
-import { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import toast from "react-hot-toast";
-import { useAppDispatch, useAppSelector } from "../../../store/hooks";
-import { performLogout } from "../../../store/slices/authSlice";
-import BusyLabel from "../../common/BusyLabel";
-import { getAvatarStyle, getInitials } from "../../../utils/avatar";
+import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import { useAppSelector } from "../../../store/hooks";
+import { useLogout } from "../../../hooks/useLogout";
+import { cx } from "../../../utils/cx";
+import Avatar from "../../ui/Avatar";
+import BurgerButton from "../../ui/BurgerButton";
+import Button from "../../ui/Button";
+import Logo from "../../ui/Logo";
 import styles from "./Navbar.module.scss";
 
 export const Navbar = () => {
-  const dispatch = useAppDispatch();
-  const navigate = useNavigate();
-  const { user } = useAppSelector((state) => state.auth);
-
-  const isAdmin = user?.role === "ADMIN";
-  const isAuthenticated = !!user;
-
-  // State for Mobile Menu & Scroll
+  const user = useAppSelector((state) => state.auth.user);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
-  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
-  // Optimized Scroll Listener with { passive: true }
+  const closeMenu = () => setIsMenuOpen(false);
+  const { logout, isLoggingOut } = useLogout(closeMenu);
+
   useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 20);
-    };
-
+    const handleScroll = () => setIsScrolled(window.scrollY > 20);
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const logoutHandle = async () => {
-    setIsLoggingOut(true);
-    // Awaited so the toast follows the actual revocation round trip.
-    await dispatch(performLogout());
-    setIsLoggingOut(false);
-    setIsMenuOpen(false);
-    navigate("/");
-
-    toast.success("Logged out successfully!");
-  };
-
-  const closeMenu = () => setIsMenuOpen(false);
-
   return (
-    <header
-      className={`${styles.topBar} ${
-        isScrolled || isMenuOpen ? styles.scrolled : ""
-      }`}
-    >
-      <Link to="/" className={styles.logo} onClick={closeMenu}>
-        Velo<span className={styles.highlight}>City</span>
+    <header className={cx(styles.topBar, (isScrolled || isMenuOpen) && styles.scrolled)}>
+      <Link to="/" className={styles.logoLink} onClick={closeMenu}>
+        <Logo />
       </Link>
 
-      {/* Hamburger Icon */}
-      <button
-        className={`${styles.burger} ${isMenuOpen ? styles.active : ""}`}
-        onClick={() => setIsMenuOpen(!isMenuOpen)}
-        aria-label="Toggle navigation menu"
-        aria-expanded={isMenuOpen}
-      >
-        <span aria-hidden="true" />
-        <span aria-hidden="true" />
-        <span aria-hidden="true" />
-      </button>
+      <BurgerButton open={isMenuOpen} onToggle={() => setIsMenuOpen((open) => !open)} />
 
-      <nav
-        className={`${styles.navLinks} ${isMenuOpen ? styles.open : ""}`}
-        aria-label="Main Navigation"
-      >
-        {!isAuthenticated ? (
+      <nav className={cx(styles.navLinks, isMenuOpen && styles.open)} aria-label="Main Navigation">
+        {!user ? (
           <>
-            <Link to="/about" onClick={closeMenu}>
+            <Link to="/about" className={styles.link} onClick={closeMenu}>
               About
             </Link>
-            <Link to="/pricing" onClick={closeMenu}>
+            <Link to="/pricing" className={styles.link} onClick={closeMenu}>
               Pricing
             </Link>
-            <Link to="/login" className={styles.loginBtn} onClick={closeMenu}>
+            <Button to="/login" variant="outline" size="sm" onClick={closeMenu}>
               Login
-            </Link>
+            </Button>
           </>
         ) : (
           <>
-            {isAdmin && (
-              <Link
-                to="/admin"
-                className={styles.adminBadge}
-                onClick={closeMenu}
-              >
+            {user.role === "ADMIN" && (
+              <Link to="/admin" className={styles.link} onClick={closeMenu}>
                 Admin Panel
               </Link>
             )}
-            {/* Added closeMenu here so mobile drawer closes on navigation */}
-            <Link to="/dashboard" onClick={closeMenu}>
+            <Link to="/dashboard" className={styles.link} onClick={closeMenu}>
               Dashboard
             </Link>
 
@@ -105,25 +63,18 @@ export const Navbar = () => {
               >
                 {user.fullName.split(" ")[0]}
               </span>
-              <div
-                className={styles.avatar}
-                style={getAvatarStyle(user.id)}
-                aria-hidden="true"
-              >
-                {getInitials(user.fullName)}
-              </div>
+              <Avatar id={user.id} name={user.fullName} size={42} className={styles.avatar} />
             </div>
 
-            <button
-              onClick={logoutHandle}
-              className={styles.loginBtn}
-              disabled={isLoggingOut}
-              aria-busy={isLoggingOut}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={logout}
+              busy={isLoggingOut}
+              busyText="Logging out"
             >
-              <BusyLabel busy={isLoggingOut} busyText="Logging out">
-                Log Out
-              </BusyLabel>
-            </button>
+              Log Out
+            </Button>
           </>
         )}
       </nav>

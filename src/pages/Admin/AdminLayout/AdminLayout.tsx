@@ -1,132 +1,64 @@
 import { useState } from "react";
-import { Outlet, NavLink, useNavigate, Link } from "react-router-dom";
-import toast from "react-hot-toast";
-import { useAppDispatch } from "../../../store/hooks";
-import { performLogout } from "../../../store/slices/authSlice";
-import BusyLabel from "../../../components/common/BusyLabel";
+import { NavLink, Outlet } from "react-router-dom";
+import { useLogout } from "../../../hooks/useLogout";
+import { cx } from "../../../utils/cx";
+import BurgerButton from "../../../components/ui/BurgerButton";
+import Button from "../../../components/ui/Button";
+import Logo from "../../../components/ui/Logo";
 import styles from "./AdminLayout.module.scss";
 
+const NAV_LINKS = [
+  { to: "/admin/panel", label: "Dashboard" },
+  { to: "/admin/users", label: "Users" },
+  { to: "/admin/bikes", label: "Bikes" },
+];
+
 const AdminLayout = () => {
-  const [isMobileOpen, setIsMobileOpen] = useState(false);
-  const [isLoggingOut, setIsLoggingOut] = useState(false);
-  const navigate = useNavigate();
-  const dispatch = useAppDispatch();
-
-  const navLinks = [
-    { to: "/admin/panel", label: "Dashboard" },
-    { to: "/admin/users", label: "Users" },
-    { to: "/admin/bikes", label: "Bikes" },
-  ];
-
-  const handleLogout = async () => {
-    setIsLoggingOut(true);
-    // performLogout, not the bare logout action: it also revokes the token
-    // server-side and clears it from storage, so a reload stays logged out.
-    await dispatch(performLogout());
-    setIsMobileOpen(false); // Close drawer on logout
-    navigate("/");
-    toast.success("Logged out successfully!");
-  };
-
-  const handleClientView = () => {
-    setIsMobileOpen(false); // Close drawer on navigation
-  };
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const closeMenu = () => setIsMenuOpen(false);
+  const { logout, isLoggingOut } = useLogout(closeMenu);
 
   return (
-    <div className={styles.adminContainer}>
-      {/* TOP NAVIGATION BAR */}
+    <div className={styles.admin}>
       <nav className={styles.topNav} aria-label="Admin Navigation">
-        
-        {/* LEFT: Mobile Toggle + Brand */}
-        <div className={styles.brandGroup}>
-          <button 
-            className={styles.mobileToggle}
-            onClick={() => setIsMobileOpen(!isMobileOpen)}
-            aria-label="Toggle navigation menu"
-            aria-expanded={isMobileOpen}
-          >
-            {isMobileOpen ? "✕" : "☰"}
-          </button>
-          
-          <div className={styles.brand}>
-            Velo<span className={styles.highlight}>City</span> Admin
+        <div className={styles.brand}>
+          <BurgerButton open={isMenuOpen} onToggle={() => setIsMenuOpen((open) => !open)} />
+          <Logo suffix="Admin" />
+        </div>
+
+        {/* One menu: a row in the bar on desktop, a drawer on phones. */}
+        <div className={cx(styles.menu, isMenuOpen && styles.open)}>
+          <div className={styles.links}>
+            {NAV_LINKS.map((link) => (
+              <NavLink
+                key={link.to}
+                to={link.to}
+                className={({ isActive }) => cx(styles.navItem, isActive && styles.active)}
+                onClick={closeMenu}
+              >
+                {link.label}
+              </NavLink>
+            ))}
           </div>
-        </div>
 
-        {/* CENTER: Desktop Menu */}
-        <div className={styles.desktopMenu}>
-          {navLinks.map((link) => (
-            <NavLink
-              key={link.to}
-              to={link.to}
-              className={({ isActive }) => 
-                `${styles.navItem} ${isActive ? styles.active : ""}`
-              }
+          <div className={styles.actions}>
+            <Button to="/dashboard" variant="outline" size="sm" onClick={closeMenu}>
+              Client View
+            </Button>
+            <Button
+              variant="danger"
+              size="sm"
+              onClick={logout}
+              busy={isLoggingOut}
+              busyText="Logging out"
             >
-              {link.label}
-            </NavLink>
-          ))}
-        </div>
-
-        {/* RIGHT: User Actions (HIDDEN ON MOBILE via CSS) */}
-        <div className={styles.userSection}>
-          <Link to="/dashboard" className={styles.switchBtn} title="Go to User View">
-            <span>Client View</span>
-          </Link>
-
-          <button
-            className={styles.logoutBtn}
-            onClick={handleLogout}
-            disabled={isLoggingOut}
-            aria-busy={isLoggingOut}
-          >
-            <BusyLabel busy={isLoggingOut} busyText="Logging out">
-              <span>Logout</span>
-            </BusyLabel>
-          </button>
+              Logout
+            </Button>
+          </div>
         </div>
       </nav>
 
-      {/* MOBILE DRAWER */}
-      <div className={`${styles.mobileDrawer} ${isMobileOpen ? styles.open : ""}`}>
-        {navLinks.map((link) => (
-          <NavLink
-            key={link.to}
-            to={link.to}
-            className={({ isActive }) => 
-              `${styles.navItem} ${isActive ? styles.active : ""}`
-            }
-            onClick={() => setIsMobileOpen(false)}
-          >
-            {link.label}
-          </NavLink>
-        ))}
-
-        {/* MOBILE ACTIONS */}
-        <div className={styles.mobileActions}>
-          <Link 
-            to="/dashboard" 
-            className={styles.mobileSwitch}
-            onClick={handleClientView} // Closes drawer when switching views
-          >
-             Client View
-          </Link>
-          
-          <button
-            className={styles.mobileLogout}
-            onClick={handleLogout}
-            disabled={isLoggingOut}
-            aria-busy={isLoggingOut}
-          >
-            <BusyLabel busy={isLoggingOut} busyText="Logging out">
-              Logout
-            </BusyLabel>
-          </button>
-        </div>
-      </div>
-
-      {/* MAIN CONTENT */}
-      <main className={styles.mainContent}>
+      <main className={styles.content}>
         <Outlet />
       </main>
     </div>

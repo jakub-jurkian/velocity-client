@@ -1,25 +1,24 @@
 import { Outlet } from "react-router-dom";
-import styles from "./MainLayout.module.scss";
+import { cx } from "../../utils/cx";
 import Footer from "./Footer/Footer";
 import { Navbar } from "./Navbar/Navbar";
+import styles from "./MainLayout.module.scss";
 
-const MainLayout = () => {
-  return (
-    <div className={styles.layoutWrapper}>
-      <div className={styles.orbContainer} aria-hidden="true">
-        <div className={styles.glowOrbRight}></div>
-        <div className={styles.glowOrbLeft}></div>
-      </div>
-
-      <div className={styles.contentContainer}>
-        <Navbar />
-        <main className={styles.mainContent}>
-          <Outlet />
-        </main>
-        <Footer />
-      </div>
+const MainLayout = () => (
+  <div className={styles.layout}>
+    <div className={styles.orbs} aria-hidden="true">
+      <div className={cx(styles.orb, styles.orbRight)} />
+      <div className={cx(styles.orb, styles.orbLeft)} />
     </div>
-  );
-};
+
+    <div className={styles.content}>
+      <Navbar />
+      <main className={styles.main}>
+        <Outlet />
+      </main>
+      <Footer />
+    </div>
+  </div>
+);
 
 export default MainLayout;
