@@ -23,9 +23,9 @@ import PublicOnlyRoute from "./components/Auth/PublicOnlyRoute";
 import ScrollToTop from "./components/common/ScrollToTop";
 import Redirect from "./components/common/Redirect";
 import PageLoader from "./components/ui/PageLoader";
-import { ApiError, apiFetch } from "./api/client";
+import { ApiError, apiFetch, SessionExpiredError } from "./api/client";
 import { toastConfig } from "./utils/toastConfig";
-import { loginSuccess, logout } from "./store/slices/authSlice";
+import { clearSession, loginSuccess } from "./store/slices/authSlice";
 import { useAppDispatch, useAppSelector } from "./store/hooks";
 import type { User } from "./types/User";
 
@@ -61,10 +61,12 @@ const App = () => {
     apiFetch<User>("/api/v1/auth/me", { token: jwtToken, signal: controller.signal })
       .then((user) => dispatch(loginSuccess({ user, token: jwtToken })))
       .catch((error) => {
-        if (controller.signal.aborted) return;
-        // An invalid or expired token: log out to clear the bad state.
-        if (error instanceof ApiError && (error.status === 401 || error.status === 403)) {
-          dispatch(logout());
+        // An expired token (401) is cleared and reported by apiFetch itself.
+        if (controller.signal.aborted || error instanceof SessionExpiredError) return;
+        // A token the server refuses outright, e.g. a blocked account's: drop
+        // it from storage too, or every reload would try it again.
+        if (error instanceof ApiError && error.status === 403) {
+          dispatch(clearSession());
           return;
         }
         console.error("Session verification failed:", error);

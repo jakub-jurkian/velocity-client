@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import toast from "react-hot-toast";
-import { errorMessage } from "../api/client";
+import { toastError } from "../api/client";
 import { fetchPage } from "../api/pagination";
 import { EMPTY_META, type PaginationMeta } from "../types/Pagination";
 import { scrollToTop } from "../utils/scroll";
@@ -39,7 +38,7 @@ export const usePaginatedList = <T>(
       .catch((error) => {
         if (controller.signal.aborted) return;
         console.error(`Failed to load ${path}:`, error);
-        toast.error(errorMessage(error, errorText));
+        toastError(error, errorText);
       })
       .finally(() => {
         if (!controller.signal.aborted) setSettledKey(requestKey);

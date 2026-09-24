@@ -1,8 +1,7 @@
 import { useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import toast from "react-hot-toast";
 import { useAppSelector } from "../../store/hooks";
-import { apiFetch } from "../../api/client";
+import { apiFetch, toastError } from "../../api/client";
 import { useCheckout } from "../../hooks/useCheckout";
 import { findCatalogModel } from "../../data/fleetCatalog";
 import { CITY_LABELS } from "../../data/cities";
@@ -80,7 +79,7 @@ const RentBikePage = () => {
     } catch (error) {
       if (controller.signal.aborted) return;
       console.error("Search failed:", error);
-      toast.error("Failed to load available bikes.");
+      toastError(error, "Failed to load available bikes.");
       setStep(WizardStep.Dates);
     }
   };

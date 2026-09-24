@@ -1,6 +1,6 @@
 import { useState } from "react";
 import toast from "react-hot-toast";
-import { ApiError, apiFetch, errorMessage } from "../../../api/client";
+import { ApiError, apiFetch, toastError } from "../../../api/client";
 import { usePaginatedList } from "../../../hooks/usePaginatedList";
 import { findCatalogModel } from "../../../data/fleetCatalog";
 import { CITY_LABELS } from "../../../data/cities";
@@ -154,7 +154,7 @@ const BikeManagement = () => {
       // forcing, a booking that has already started. The server's own message
       // is the specific one.
       console.error(error);
-      toast.error(errorMessage(error, "Failed to update bike status."));
+      toastError(error, "Failed to update bike status.");
     } finally {
       setIsSaving(false);
     }

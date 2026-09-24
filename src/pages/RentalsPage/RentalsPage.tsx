@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { isBefore, parseISO, startOfDay } from "date-fns";
 import toast from "react-hot-toast";
-import { apiFetch, errorMessage } from "../../api/client";
+import { apiFetch, toastError } from "../../api/client";
 import { fetchAllPages } from "../../api/pagination";
 import { usePaginatedList } from "../../hooks/usePaginatedList";
 import type { Reservation } from "../../types/Reservation";
@@ -56,7 +56,7 @@ const RentalsPage = () => {
       downloadReservationsCSV(await fetchAllPages<Reservation>("/api/v1/reservations/my"));
     } catch (error) {
       console.error("Export failed:", error);
-      toast.error("Could not export your history. Please try again.");
+      toastError(error, "Could not export your history. Please try again.");
     } finally {
       setIsExporting(false);
     }
@@ -72,7 +72,7 @@ const RentalsPage = () => {
       reload();
     } catch (error) {
       console.error(error);
-      toast.error(errorMessage(error, "Failed to cancel reservation. It might be too late."));
+      toastError(error, "Failed to cancel reservation. It might be too late.");
     } finally {
       // Closed on failure too, so the rider is not stuck in the dialog.
       setIsCancelling(false);

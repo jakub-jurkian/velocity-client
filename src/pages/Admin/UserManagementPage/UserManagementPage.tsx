@@ -1,7 +1,7 @@
 import { useState, type ChangeEvent, type FormEvent } from "react";
 import toast from "react-hot-toast";
 import { useAppSelector } from "../../../store/hooks";
-import { ApiError, apiFetch, errorMessage } from "../../../api/client";
+import { ApiError, apiFetch, toastError } from "../../../api/client";
 import { usePaginatedList } from "../../../hooks/usePaginatedList";
 import { CITY_OPTIONS } from "../../../data/cities";
 import { SUPPORTED_ROLES, type AdminUser, type UserRole } from "../../../types/User";
@@ -72,9 +72,7 @@ const UserManagement = () => {
       setUserToToggle(null);
     } catch (error) {
       console.error(error);
-      toast.error(
-        errorMessage(error, blocking ? "Failed to block user." : "Failed to unblock user."),
-      );
+      toastError(error, blocking ? "Failed to block user." : "Failed to unblock user.");
     } finally {
       setIsSaving(false);
     }
@@ -125,7 +123,7 @@ const UserManagement = () => {
       toast.success("User updated successfully!");
     } catch (error) {
       console.error(error);
-      toast.error(errorMessage(error, "Failed to update the user."));
+      toastError(error, "Failed to update the user.");
     } finally {
       setIsSaving(false);
     }

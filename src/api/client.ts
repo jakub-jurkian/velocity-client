@@ -1,4 +1,6 @@
+import toast from "react-hot-toast";
 import { store } from "../store";
+import { clearSession } from "../store/slices/authSlice";
 
 // RFC 7807 ProblemDetail, as the API returns it on every error.
 interface ProblemDetail {
@@ -37,10 +39,26 @@ export class ApiError extends Error {
   }
 }
 
+// The signed-in session was refused (an expired or revoked token). By the time
+// a caller sees this the session is already cleared and the user told, so
+// callers should not report it again.
+export class SessionExpiredError extends ApiError {}
+
 // The message to show for a failed call: the server's own when it sent one,
 // otherwise the caller's fallback (network down, empty error body, ...).
 export const errorMessage = (error: unknown, fallback: string) =>
   (error instanceof ApiError && error.detail) || fallback;
+
+// Reports a failed call, except an expired session, which has its own notice.
+export const toastError = (error: unknown, fallback: string) => {
+  if (!(error instanceof SessionExpiredError)) toast.error(errorMessage(error, fallback));
+};
+
+const expireSession = () => {
+  store.dispatch(clearSession());
+  // A fixed id, so several requests failing together raise one notice.
+  toast.error("Your session has expired. Please log in again.", { id: "session-expired" });
+};
 
 type Query = Record<string, string | number | undefined>;
 
@@ -93,6 +111,20 @@ export const apiFetch = async <T = void>(
     body: body === undefined ? undefined : JSON.stringify(body),
   });
 
-  if (!response.ok) throw new ApiError(response.status, await readJson(response));
+  if (!response.ok) {
+    const problem = await readJson(response);
+
+    // A 401 on the stored session means it has expired or been revoked.
+    // Clearing it here sends every protected page back to /login at once,
+    // instead of each one failing on its own with a stale token. A token
+    // passed in explicitly (mid-login) is the caller's to handle.
+    if (response.status === 401 && token && token === store.getState().auth.token) {
+      expireSession();
+      throw new SessionExpiredError(response.status, problem);
+    }
+
+    throw new ApiError(response.status, problem);
+  }
+
   return (await readJson(response)) as T;
 };

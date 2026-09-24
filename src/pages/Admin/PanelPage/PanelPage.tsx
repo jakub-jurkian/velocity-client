@@ -12,8 +12,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import toast from "react-hot-toast";
-import { apiFetch } from "../../../api/client";
+import { apiFetch, toastError } from "../../../api/client";
 import { formatCurrency } from "../../../utils/format";
 import { cx } from "../../../utils/cx";
 import PageTransition from "../../../components/common/PageTransition";
@@ -56,7 +55,7 @@ const PanelPage = () => {
       .catch((error) => {
         if (controller.signal.aborted) return;
         console.error("Dashboard fetch error:", error);
-        toast.error("Could not load real-time analytics.");
+        toastError(error, "Could not load real-time analytics.");
       });
 
     return () => controller.abort();

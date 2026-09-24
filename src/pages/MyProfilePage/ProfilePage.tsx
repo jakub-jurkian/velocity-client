@@ -2,7 +2,7 @@ import { useState } from "react";
 import toast from "react-hot-toast";
 import { useAppDispatch, useAppSelector } from "../../store/hooks";
 import { updateUser } from "../../store/slices/authSlice";
-import { ApiError, apiFetch } from "../../api/client";
+import { ApiError, apiFetch, SessionExpiredError } from "../../api/client";
 import { useForm } from "../../hooks/useForm";
 import { changedFields } from "../../utils/changedFields";
 import { collectErrors, validateMinLength, validatePhone } from "../../utils/validators";
@@ -49,6 +49,7 @@ const ProfilePage = () => {
         toast.success("Profile updated successfully!");
       } catch (error) {
         console.error("Profile update failed:", error);
+        if (error instanceof SessionExpiredError) return; // Already reported
         if (!(error instanceof ApiError)) {
           toast.error("Unable to connect to VeloCity server. Please check your connection.");
           return;

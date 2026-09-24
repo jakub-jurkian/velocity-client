@@ -1,6 +1,6 @@
 import { useState } from "react";
 import toast from "react-hot-toast";
-import { ApiError, apiFetch } from "../api/client";
+import { ApiError, apiFetch, toastError } from "../api/client";
 
 interface Callbacks {
   onSuccess: () => void;
@@ -40,7 +40,7 @@ export const useCheckout = () => {
         return;
       }
       console.error("Checkout failed:", error);
-      toast.error("An unexpected error occurred during checkout.");
+      toastError(error, "An unexpected error occurred during checkout.");
     } finally {
       // Every exit path clears the flag, including the early return on a 409.
       // Leaving it set would strand the button in a permanent spinner.
