@@ -11,6 +11,7 @@ import type { PaginationMeta } from "../../../types/Pagination";
 import { EMPTY_META } from "../../../types/Pagination";
 import { fetchPage, readProblemDetail } from "../../../api/pagination";
 import PageTransition from "../../../components/common/PageTransition";
+import { scrollToTop } from "../../../utils/scroll";
 import BusyLabel from "../../../components/common/BusyLabel";
 import toast from "react-hot-toast";
 import { useAppSelector } from "../../../store/hooks";
@@ -218,6 +219,11 @@ const BikeManagement = () => {
   const confirmStatusChange = () => submitStatusChange(false);
   const forceStatusChange = () => submitStatusChange(true);
 
+  const goToPage = (step: 1 | -1) => {
+    setPage((current) => current + step);
+    scrollToTop();
+  };
+
   return (
     <PageTransition>
       <main className={styles.container}>
@@ -295,7 +301,7 @@ const BikeManagement = () => {
           <nav className={styles.pagination} aria-label="Bike pages">
             <button
               className={styles.pageBtn}
-              onClick={() => setPage((current) => current - 1)}
+              onClick={() => goToPage(-1)}
               disabled={!meta.hasPrevious || isLoading}
             >
               ← Previous
@@ -311,7 +317,7 @@ const BikeManagement = () => {
 
             <button
               className={styles.pageBtn}
-              onClick={() => setPage((current) => current + 1)}
+              onClick={() => goToPage(1)}
               disabled={!meta.hasNext || isLoading}
             >
               Next →

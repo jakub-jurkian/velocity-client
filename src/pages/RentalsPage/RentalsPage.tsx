@@ -11,6 +11,7 @@ import {
   readProblemDetail,
 } from "../../api/pagination";
 import PageTransition from "../../components/common/PageTransition";
+import { scrollToTop } from "../../utils/scroll";
 import BusyLabel from "../../components/common/BusyLabel";
 import PageLoader from "../../components/common/PageLoader";
 import { downloadReservationsCSV } from "../../utils/exportHelper";
@@ -179,6 +180,11 @@ const RentalsPage = () => {
     );
   }
 
+  const goToPage = (step: 1 | -1) => {
+    setPage((current) => current + step);
+    scrollToTop();
+  };
+
   return (
     <PageTransition>
       <div className={styles.rentalsPage}>
@@ -282,7 +288,7 @@ const RentalsPage = () => {
           <nav className={styles.pagination} aria-label="Reservation pages">
             <button
               className={styles.pageBtn}
-              onClick={() => setPage((current) => current - 1)}
+              onClick={() => goToPage(-1)}
               disabled={!meta.hasPrevious || isLoading}
             >
               ← Previous
@@ -298,7 +304,7 @@ const RentalsPage = () => {
 
             <button
               className={styles.pageBtn}
-              onClick={() => setPage((current) => current + 1)}
+              onClick={() => goToPage(1)}
               disabled={!meta.hasNext || isLoading}
             >
               Next →

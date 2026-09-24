@@ -5,6 +5,7 @@ import type { PaginationMeta } from "../../../types/Pagination";
 import { EMPTY_META } from "../../../types/Pagination";
 import { fetchPage, readProblemDetail } from "../../../api/pagination";
 import PageTransition from "../../../components/common/PageTransition";
+import { scrollToTop } from "../../../utils/scroll";
 import BusyLabel from "../../../components/common/BusyLabel";
 import { getAvatarStyle, getInitials } from "../../../utils/avatar";
 import toast from "react-hot-toast";
@@ -271,6 +272,11 @@ const UserManagement = () => {
     toast.success("User updated successfully!");
   };
 
+  const goToPage = (step: 1 | -1) => {
+    setPage((current) => current + step);
+    scrollToTop();
+  };
+
   return (
     <PageTransition>
       <main className={styles.container}>
@@ -366,7 +372,7 @@ const UserManagement = () => {
           <nav className={styles.pagination} aria-label="User pages">
             <button
               className={styles.pageBtn}
-              onClick={() => setPage((current) => current - 1)}
+              onClick={() => goToPage(-1)}
               disabled={!meta.hasPrevious || isLoading}
             >
               ← Previous
@@ -382,7 +388,7 @@ const UserManagement = () => {
 
             <button
               className={styles.pageBtn}
-              onClick={() => setPage((current) => current + 1)}
+              onClick={() => goToPage(1)}
               disabled={!meta.hasNext || isLoading}
             >
               Next →
