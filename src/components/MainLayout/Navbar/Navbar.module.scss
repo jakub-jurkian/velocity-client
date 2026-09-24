@@ -1,214 +1,114 @@
-@use "sass:color";
-@use "../../../styles/variables" as v;
+@use "styles/theme" as v;
+
+$bar-height: 70px;
 
 .topBar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  height: 70px;
-  padding: 0 1.5rem;
-  background: v.$color-bg-main;
   position: sticky;
   top: 0;
-  z-index: 1000;
+  z-index: v.$z-nav;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   width: 100%;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: 8px;
+  height: $bar-height;
   margin-bottom: 64px;
-
-  background: transparent;
+  padding: 0 1.5rem;
+  border-bottom: 1px solid v.$border-subtle;
   transition: all 0.3s ease-in-out;
 
-  // Center the content on large screens
+  // Keeps the content within 1200px on wide screens.
   @media (min-width: 1200px) {
-    padding: 0 calc(50% - 600px); // Trick to keep content max-width 1200
-  }
-  &.scrolled {
-    background: rgba(v.$color-bg-main, 0.95); // Nearly opaque
-    backdrop-filter: blur(10px); // Frosted glass effect
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    padding: 0 calc(50% - 600px);
   }
 }
 
-.logo {
-  font-size: 1.5rem;
-  font-weight: 800;
-  color: v.$color-text-main;
-  text-decoration: none;
-  z-index: 1001; // Keep logo above the mobile menu overlay
-  .highlight {
-    color: v.$color-primary;
-  }
+.scrolled {
+  background: rgba(v.$color-bg-main, 0.95);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
 }
 
-// THE HAMBURGER BUTTON (Mobile Only)
-.burger {
-  display: flex; // Visible by default (Mobile)
-  flex-direction: column;
-  gap: 5px;
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  z-index: 1001; // Keep above menu overlay
-  padding: 5px;
-
-  span {
-    display: block;
-    width: 25px;
-    height: 2px;
-    background: v.$color-text-main;
-    transition: all 0.3s ease;
-  }
-
-  // Animation to X
-  &.active {
-    span:nth-child(1) {
-      transform: rotate(45deg) translate(5px, 5px);
-    }
-    span:nth-child(2) {
-      opacity: 0;
-    }
-    span:nth-child(3) {
-      transform: rotate(-45deg) translate(5px, -5px);
-    }
-  }
-
-  // Hide on Desktop
-  @media (min-width: v.$tablet) {
-    display: none;
-  }
+// Above the mobile menu, like the burger.
+.logoLink {
+  z-index: v.$z-nav + 1;
 }
 
-.avatar {
-  width: 42px;
-  height: 42px;
-  // Gradient avatar to match brand
-  background: linear-gradient(
-    135deg,
-    v.$color-secondary,
-    color.adjust(v.$color-secondary, $lightness: -15%)
-  );
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 700;
-  color: #fff;
-  font-size: 0.9rem;
-  letter-spacing: 0.5px;
-  // Neutral shadow: the fill is now per-user (utils/avatar), not brand purple.
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.4);
-  border: 2px solid rgba(255, 255, 255, 0.1);
-}
-
-// THE NAVIGATION (Mobile First = Drawer)
+// PHONES: a drawer that slides down from under the bar.
 .navLinks {
-  // Mobile Styles (The Default)
   position: absolute;
-  top: 70px; // Starts below header
+  top: $bar-height;
   left: 0;
-  width: 100%;
-  background: v.$color-bg-main;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  padding: 2rem;
-
+  z-index: v.$z-nav - 1;
   display: flex;
-  flex-direction: column; // Stack items vertically
+  flex-direction: column;
   align-items: center;
   gap: 2rem;
-
-  // Animation Logic
-  transform: translateY(-150%); // Hide off-screen by default
-  transition: none;
-  z-index: 999;
+  width: 100%;
+  padding: 2rem;
+  background: v.$color-bg-main;
+  border-bottom: 1px solid v.$border;
+  transform: translateY(-150%);
 
   &.open {
-    transform: translateY(0); // Slide in
+    transform: translateY(0);
     transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5);
   }
 
-  // Base Link Styles
-  a {
-    color: v.$color-text-muted;
-    text-decoration: none;
-    font-weight: 500;
-    font-size: 1.1rem; // Bigger text for mobile tapping
-    &:hover {
-      color: v.$color-text-main;
-    }
-  }
-
-  // Desktop Override (The Switch)
+  // DESKTOP: an ordinary row.
   @media (min-width: v.$tablet) {
-    position: static; // No longer absolute
-    width: auto; // Natural width
-    height: 100%;
+    position: static;
+    flex-direction: row;
+    width: auto;
+    padding: 0;
     background: transparent;
     border: none;
-    padding: 0;
-
-    flex-direction: row; // Switch to horizontal
-    gap: 2rem;
-
-    transform: none; // Always visible
-    transition: none;
     box-shadow: none;
+    transform: none;
+  }
+}
 
-    // Reset font size
-    a {
-      font-size: 1rem;
-    }
+.link {
+  color: v.$color-text-muted;
+  font-size: 1.1rem; // Bigger tap targets in the drawer
+  font-weight: 500;
+
+  &:hover {
+    color: v.$color-text-main;
   }
 
-  // USER INFO STYLING
-  .userInfo {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 1rem;
-    min-width: 0;
-    padding-left: 0;
-    border: none;
-
-    // Desktop Override
-    @media (min-width: v.$tablet) {
-      flex-direction: row;
-      padding-left: 1rem;
-      border-left: 1px solid rgba(255, 255, 255, 0.1);
-      height: 32px; // Match design
-    }
+  @media (min-width: v.$tablet) {
+    font-size: 1rem;
   }
+}
 
-  .userName {
-    display: block; // Show on mobile menu
-    max-width: min(100%, 18rem);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+.userInfo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  min-width: 0;
 
-    @media (min-width: v.$tablet) {
-      max-width: 9rem;
-    }
+  @media (min-width: v.$tablet) {
+    flex-direction: row;
+    height: 32px;
+    padding-left: 1rem;
+    border-left: 1px solid v.$border;
   }
-  .loginBtn {
-    // Mobile: bigger button
-    justify-content: center;
+}
 
-    padding: 0.8rem;
-    height: 40px;
-    border: 1px solid v.$color-primary;
-    color: v.$color-primary;
-    padding: 0.4rem 1.2rem;
-    border-radius: v.$radius-md;
-    font-weight: 500;
-    transition: all 0.2s;
+.userName {
+  max-width: min(100%, 18rem);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 
-    &:hover {
-      background: rgba(v.$color-primary, 0.1);
-      color: v.$color-text-main;
-    }
-    cursor: pointer;
+  @media (min-width: v.$tablet) {
+    max-width: 9rem;
   }
+}
+
+.avatar {
+  border: 2px solid v.$border;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.4);
 }

@@ -1,356 +1,200 @@
-import { useCallback, useEffect, useState } from "react";
-import { parseISO, format, startOfDay, isBefore } from "date-fns";
+import { useState } from "react";
+import { isBefore, parseISO, startOfDay } from "date-fns";
 import toast from "react-hot-toast";
-import { useAppSelector } from "../../store/hooks";
+import { apiFetch, toastError } from "../../api/client";
+import { fetchAllPages } from "../../api/pagination";
+import { usePaginatedList } from "../../hooks/usePaginatedList";
 import type { Reservation } from "../../types/Reservation";
-import type { PaginationMeta } from "../../types/Pagination";
-import { EMPTY_META } from "../../types/Pagination";
-import {
-  fetchAllPages,
-  fetchPage,
-  readProblemDetail,
-} from "../../api/pagination";
-import PageTransition from "../../components/common/PageTransition";
-import { scrollToTop } from "../../utils/scroll";
-import BusyLabel from "../../components/common/BusyLabel";
-import PageLoader from "../../components/common/PageLoader";
 import { downloadReservationsCSV } from "../../utils/exportHelper";
+import { formatCurrency, formatDate, humanize } from "../../utils/format";
+import { cx } from "../../utils/cx";
+import PageTransition from "../../components/common/PageTransition";
+import Button from "../../components/ui/Button";
+import Callout from "../../components/ui/Callout";
+import ConfirmDialog from "../../components/ui/ConfirmDialog";
+import DetailRow, { Divider } from "../../components/ui/DetailRow";
+import EmptyState from "../../components/ui/EmptyState";
+import PageHeader from "../../components/ui/PageHeader";
+import PageLoader from "../../components/ui/PageLoader";
+import Pagination from "../../components/ui/Pagination";
 import styles from "./RentalsPage.module.scss";
 
-const PAGE_SIZE = 10;
-
-// Formatter Utilities
-const formatCurrency = (amount: number) =>
-  new Intl.NumberFormat("pl-PL", {
-    style: "currency",
-    currency: "PLN",
-  }).format(amount);
-
-const formatDate = (dateStr: string) => {
-  return format(parseISO(dateStr), "MMM d, yyyy");
+// Green covers both live-and-good and finished-cleanly; red is the only failed
+// outcome, and blue marks a booking still waiting on confirmation.
+const STATUS_CLASS: Record<Reservation["status"], string> = {
+  CONFIRMED: styles.success,
+  COMPLETED: styles.success,
+  CANCELLED: styles.danger,
+  PENDING: styles.info,
 };
 
-//  Maps a status onto its lowercase modifier class.
-
-//  The status arrives uppercase from the API while the stylesheet declares
-//  `.confirmed`, `.cancelled` and friends, so indexing the stylesheet with the
-//  raw status returned undefined and the card silently lost its colour — both
-//  the left border and the badge tint.
-const statusClassName = (status: Reservation["status"]) =>
-  styles[status.toLowerCase()] ?? "";
+// Only a confirmed booking that has not started yet can be cancelled.
+const isCancellable = (reservation: Reservation) =>
+  reservation.status === "CONFIRMED" &&
+  isBefore(startOfDay(new Date()), startOfDay(parseISO(reservation.startDate)));
 
 const RentalsPage = () => {
-  const jwtToken = useAppSelector((state) => state.auth.token);
-  const [reservations, setReservations] = useState<Reservation[]>([]);
-  const [meta, setMeta] = useState<PaginationMeta>(EMPTY_META);
-  const [page, setPage] = useState(0);
-  const [isLoading, setIsLoading] = useState(true);
+  const {
+    items: reservations,
+    meta,
+    goToPage,
+    isLoading,
+    reload,
+  } = usePaginatedList<Reservation>("/api/v1/reservations/my", {
+    errorText: "An unexpected error occurred while loading your reservations.",
+  });
+
   const [isExporting, setIsExporting] = useState(false);
-
-  // --- Modal State ---
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedResId, setSelectedResId] = useState<string | null>(null);
-  const [isCancelling, setIsCancelling] = useState(false); // Prevents double-clicks
-
-  // Data Fetching
-  // One page at a time. The API caps a page at 50 rows, so reading `data` and
-  // ignoring `meta` used to hide every reservation past the first page.
-  const fetchReservations = useCallback(async () => {
-    if (!jwtToken) return;
-
-    try {
-      const result = await fetchPage<Reservation>(
-        "/api/v1/reservations/my",
-        jwtToken,
-        { page, size: PAGE_SIZE },
-      );
-      setReservations(result.data);
-      setMeta(result.meta);
-    } catch (error) {
-      console.error("Fetch reservations error:", error);
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : "An unexpected error occurred while loading your reservations.",
-      );
-    } finally {
-      setIsLoading(false);
-    }
-  }, [jwtToken, page]);
-
-  useEffect(() => {
-    setIsLoading(true);
-    fetchReservations();
-  }, [fetchReservations]);
+  const [cancellingId, setCancellingId] = useState<string | null>(null);
+  const [isCancelling, setIsCancelling] = useState(false);
 
   // The CSV is a full export, so it walks every page rather than dumping
   // whichever one happens to be on screen.
   const handleExport = async () => {
-    if (!jwtToken) return;
-
+    setIsExporting(true);
     try {
-      setIsExporting(true);
-      const all = await fetchAllPages<Reservation>(
-        "/api/v1/reservations/my",
-        jwtToken,
-      );
-      downloadReservationsCSV(all);
+      downloadReservationsCSV(await fetchAllPages<Reservation>("/api/v1/reservations/my"));
     } catch (error) {
       console.error("Export failed:", error);
-      toast.error("Could not export your history. Please try again.");
+      toastError(error, "Could not export your history. Please try again.");
     } finally {
       setIsExporting(false);
     }
   };
 
-  // Cancellation Logic
-  const handleCancelClick = (reservationId: string) => {
-    setSelectedResId(reservationId);
-    setIsModalOpen(true);
-  };
-
   const confirmCancel = async () => {
-    if (!selectedResId) return;
+    if (!cancellingId) return;
 
+    setIsCancelling(true);
     try {
-      setIsCancelling(true);
-      const apiUrl = import.meta.env.VITE_API_URL;
-
-      const response = await fetch(
-        `${apiUrl}/api/v1/reservations/${selectedResId}/cancel`,
-        {
-          method: "POST",
-          headers: { Authorization: `Bearer ${jwtToken}` },
-        },
-      );
-
-      if (!response.ok) {
-        throw new Error(
-          await readProblemDetail(
-            response,
-            "Failed to cancel reservation. It might be too late.",
-          ),
-        );
-      }
-
+      await apiFetch(`/api/v1/reservations/${cancellingId}/cancel`, { method: "POST" });
       toast.success("Reservation cancelled successfully!");
-      setIsModalOpen(false);
-      setSelectedResId(null);
-      await fetchReservations(); // Refresh the list seamlessly
+      reload();
     } catch (error) {
       console.error(error);
-      const errorMessage =
-        error instanceof Error ? error.message : "An error occurred";
-      toast.error(errorMessage);
-      setIsModalOpen(false); // Close modal on error so they aren't stuck
+      toastError(error, "Failed to cancel reservation. It might be too late.");
     } finally {
+      // Closed on failure too, so the rider is not stuck in the dialog.
       setIsCancelling(false);
+      setCancellingId(null);
     }
   };
 
-  const closeModal = () => {
-    if (isCancelling) return; // Prevent clicking out while request is in flight
-    setIsModalOpen(false);
-    setSelectedResId(null);
-  };
-
-  // Business Logic
-  const isCancellable = (res: Reservation) => {
-    if (res.status !== "CONFIRMED") return false;
-
-    // Strict, timezone-safe date comparison
-    const tripDate = startOfDay(parseISO(res.startDate));
-    const today = startOfDay(new Date());
-
-    return isBefore(today, tripDate);
-  };
-
-  // Renders
-  if (isLoading) return <PageLoader />;
+  // Only the first load replaces the page; later pages keep the current list
+  // on screen until the next one arrives.
+  if (isLoading && reservations.length === 0) return <PageLoader />;
 
   // Judged on the server-side total, not the current page, so an empty page
   // never masquerades as an empty history.
   if (meta.totalElements === 0) {
     return (
-      <div className={styles.emptyState}>
-        <div className={styles.icon}>📜</div>
-        <h2>No history yet</h2>
-        <p>You haven't made any reservations.</p>
-      </div>
+      <PageTransition>
+        <EmptyState
+          icon="📜"
+          title="No history yet"
+          action={<Button to="/rent-bike">Rent a bike</Button>}
+        >
+          You haven't made any reservations.
+        </EmptyState>
+      </PageTransition>
     );
   }
 
-  const goToPage = (step: 1 | -1) => {
-    setPage((current) => current + step);
-    scrollToTop();
-  };
-
   return (
     <PageTransition>
-      <div className={styles.rentalsPage}>
-        <header className={styles.header}>
-          <h1>Ride History</h1>
-          <p>Your past and upcoming journeys.</p>
-          <button
-            className={styles.exportBtn}
+      <PageHeader
+        title="Ride History"
+        subtitle="Your past and upcoming journeys."
+        actions={
+          <Button
+            variant="secondary"
             onClick={handleExport}
-            disabled={isExporting}
-            aria-busy={isExporting}
+            busy={isExporting}
+            busyText="Preparing export"
           >
-            <BusyLabel busy={isExporting} busyText="Preparing export">
-              Export CSV
-            </BusyLabel>
-          </button>
-        </header>
+            Export CSV
+          </Button>
+        }
+      />
 
-        <div className={styles.grid}>
-          {reservations.map((res) => (
-            <article
-              key={res.id}
-              className={`${styles.card} ${statusClassName(res.status)}`}
-            >
-              <div className={styles.statusBadge}>
-                {res.status.charAt(0) + res.status.slice(1).toLowerCase()}
-              </div>
+      <div className={styles.grid}>
+        {reservations.map((res) => (
+          <article key={res.id} className={cx(styles.card, STATUS_CLASS[res.status])}>
+            <div className={styles.statusBadge}>{humanize(res.status)}</div>
 
-              <div className={styles.cardContent}>
-                {/*
-                  Sits directly under the status badge it explains, ahead of the
-                  booking details. Dropping it between two label/value rows
-                  broke their rhythm and buried the one thing the rider needs
-                  to read on a cancelled card.
-
-                  Shown only when someone else ended the booking: a
-                  self-cancellation carries no reason, so this cannot fire on a
-                  booking the rider cancelled themselves.
-                */}
-                {res.status === "CANCELLED" && res.cancellationReason && (
-                  <div className={styles.cancellationNotice} role="status">
-                    <span className={styles.noticeTitle}>
-                      Cancelled by VeloCity
-                    </span>
-                    <p className={styles.noticeBody}>
-                      {res.cancellationReason}. You have not been charged for
-                      this booking. Contact{" "}
-                      <a href="mailto:support@velocity.com">
-                        support@velocity.com
-                      </a>{" "}
-                      if you need help arranging a replacement bike.
-                    </p>
-                  </div>
-                )}
-
-                <div className={styles.row}>
-                  <span className={styles.label}>Bike</span>
-                  <span className={styles.valueHighlight}>
-                    {res.bike.modelName}
-                  </span>
-                </div>
-
-                <div className={styles.row}>
-                  <span className={styles.label}>Dates</span>
-                  <span className={styles.value}>
-                    {formatDate(res.startDate)} - {formatDate(res.endDate)}
-                  </span>
-                </div>
-
-                <div className={`${styles.row} ${styles.idRow}`}>
-                  <span className={styles.label}>Reservation ID</span>
-                  <span className={styles.mono}>{res.id}</span>
-                </div>
-
-                <div className={styles.divider}></div>
-
-                <div className={styles.totalRow}>
-                  <span>Total Paid</span>
-                  <span className={styles.price}>
-                    {formatCurrency(res.totalCost)}
-                  </span>
-                </div>
-              </div>
-
-              {isCancellable(res) && (
-                <div className={styles.cardFooter}>
-                  <button
-                    className={styles.cancelBtn}
-                    onClick={() => handleCancelClick(res.id)}
-                  >
-                    Cancel Reservation
-                  </button>
-                </div>
+            <div className={styles.cardContent}>
+              {/*
+                Leads the card, directly under the status it explains.
+                Shown only when someone else ended the booking: a
+                self-cancellation carries no reason.
+              */}
+              {res.status === "CANCELLED" && res.cancellationReason && (
+                <Callout
+                  tone="warning"
+                  title="Cancelled by VeloCity"
+                  role="status"
+                  className={styles.notice}
+                >
+                  <p className={styles.noticeBody}>
+                    {res.cancellationReason}. You have not been charged for this booking.
+                    Contact <a href="mailto:support@velocity.com">support@velocity.com</a> if
+                    you need help arranging a replacement bike.
+                  </p>
+                </Callout>
               )}
-            </article>
-          ))}
-        </div>
 
-        {/* PAGINATION */}
-        {meta.totalPages > 1 && (
-          <nav className={styles.pagination} aria-label="Reservation pages">
-            <button
-              className={styles.pageBtn}
-              onClick={() => goToPage(-1)}
-              disabled={!meta.hasPrevious || isLoading}
-            >
-              ← Previous
-            </button>
-
-            <span className={styles.pageInfo} aria-live="polite">
-              Page {meta.currentPage + 1} of {meta.totalPages}
-              <span className={styles.pageTotal}>
-                {" "}
-                ({meta.totalElements} reservations)
-              </span>
-            </span>
-
-            <button
-              className={styles.pageBtn}
-              onClick={() => goToPage(1)}
-              disabled={!meta.hasNext || isLoading}
-            >
-              Next →
-            </button>
-          </nav>
-        )}
-
-        {/* CONFIRMATION MODAL */}
-        {isModalOpen && (
-          <div className={styles.modalOverlay} onClick={closeModal}>
-            <div
-              className={styles.modal}
-              onClick={(e) => e.stopPropagation()}
-              role="dialog"
-              aria-modal="true"
-              aria-labelledby="modal-title"
-            >
-              <h2 id="modal-title">Cancel Reservation?</h2>
-              <p>
-                Are you sure you want to cancel this reservation?
-                <br />
-                This action cannot be undone.
-              </p>
-              <div className={styles.modalActions}>
-                <button
-                  className={styles.secondaryBtn}
-                  onClick={closeModal}
-                  disabled={isCancelling}
-                >
-                  No, Keep it
-                </button>
-                <button
-                  className={styles.dangerBtn}
-                  onClick={confirmCancel}
-                  disabled={isCancelling}
-                  aria-busy={isCancelling}
-                >
-                  <BusyLabel busy={isCancelling} busyText="Cancelling">
-                    Yes, Cancel it
-                  </BusyLabel>
-                </button>
-              </div>
+              <DetailRow label="Bike" variant="highlight">
+                {res.bike.modelName}
+              </DetailRow>
+              <DetailRow label="Dates">
+                {formatDate(res.startDate)} - {formatDate(res.endDate)}
+              </DetailRow>
+              <DetailRow label="Reservation ID" variant="mono">
+                {res.id}
+              </DetailRow>
+              <Divider />
+              <DetailRow label="Total Paid" variant="total">
+                {formatCurrency(res.totalCost)}
+              </DetailRow>
             </div>
-          </div>
-        )}
+
+            {isCancellable(res) && (
+              <div className={styles.cardFooter}>
+                <Button variant="danger" size="sm" onClick={() => setCancellingId(res.id)}>
+                  Cancel Reservation
+                </Button>
+              </div>
+            )}
+          </article>
+        ))}
       </div>
+
+      <Pagination
+        meta={meta}
+        onChange={goToPage}
+        disabled={isLoading}
+        label="Reservation pages"
+        noun="reservations"
+      />
+
+      {cancellingId && (
+        <ConfirmDialog
+          title="Cancel Reservation?"
+          message={
+            <>
+              Are you sure you want to cancel this reservation?
+              <br />
+              This action cannot be undone.
+            </>
+          }
+          cancelLabel="No, Keep it"
+          confirmLabel="Yes, Cancel it"
+          onConfirm={confirmCancel}
+          onCancel={() => setCancellingId(null)}
+          busy={isCancelling}
+          busyText="Cancelling"
+        />
+      )}
     </PageTransition>
   );
 };

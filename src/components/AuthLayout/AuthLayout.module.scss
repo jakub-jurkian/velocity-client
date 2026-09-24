@@ -1,0 +1,83 @@
+@use "styles/theme" as v;
+
+.container {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 100vh;
+  padding: 1rem;
+  overflow: hidden;
+}
+
+.glow {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 650px;
+  height: 650px;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+@each $name, $color in (primary: v.$color-primary, secondary: v.$color-secondary) {
+  .#{$name} {
+    background: radial-gradient(circle, rgba($color, 0.15) 0%, transparent 70%);
+  }
+}
+
+.card {
+  position: relative; // Above the glow
+  width: 100%;
+  max-width: 420px;
+  margin: 2rem 0;
+  padding: 2rem;
+  background: rgba(v.$color-bg-card, 0.6);
+  backdrop-filter: blur(16px);
+  border: 1px solid v.$border;
+  border-radius: v.$radius-lg;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+
+  @media (max-width: v.$mobile) {
+    padding: 1.5rem;
+  }
+}
+
+.wide {
+  max-width: 600px;
+}
+
+.header {
+  margin-bottom: 2rem;
+  text-align: center;
+}
+
+.title {
+  margin: 1.25rem 0 0.5rem;
+  font-size: 1.6rem;
+}
+
+.subtitle {
+  color: v.$color-text-muted;
+  font-size: 0.9rem;
+}
+
+.footer {
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid v.$border;
+  color: v.$color-text-muted;
+  font-size: 0.9rem;
+  text-align: center;
+
+  a {
+    margin-left: 0.25rem;
+    color: v.$color-text-main;
+    font-weight: 600;
+
+    &:hover {
+      color: v.$color-primary;
+    }
+  }
+}

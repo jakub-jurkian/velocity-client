@@ -1,263 +1,141 @@
-@use "../../../styles/variables" as v;
+@use "styles/theme" as v;
 
-// MAIN CONTAINER
-.adminContainer {
-  display: flex;
-  flex-direction: column;
+$bar-height: 70px;
+
+.admin {
   min-height: 100vh;
-  background-color: v.$color-bg-main;
-  color: v.$color-text-main;
 }
 
-// TOP NAVIGATION BAR
 .topNav {
   position: fixed;
   top: 0;
   left: 0;
-  width: 100%;
-  height: 70px;
-  background: v.$color-bg-card;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 2rem;
-  z-index: 1000;
-  box-shadow: v.$shadow-sm;
-
-  @media (max-width: v.$tablet) {
-    padding: 0 1rem;
-  }
-
-  @media (min-width: v.$tablet) and (max-width: 900px) {
-    padding: 0 1rem;
-  }
-}
-
-// BRANDING
-.brand {
-  font-size: 1.5rem;
-  font-weight: 800;
-  color: v.$color-text-main;
-  text-decoration: none;
-  display: flex;
-  align-items: center;
-
-  .highlight {
-    color: v.$color-primary;
-    margin-right: 4px;
-  }
-}
-
-// DESKTOP MENU (Horizontal)
-.desktopMenu {
+  z-index: v.$z-nav;
   display: flex;
   align-items: center;
   gap: 1.5rem;
-  height: 100%;
+  width: 100%;
+  height: $bar-height;
+  padding: 0 1rem;
+  background: v.$color-bg-card;
+  border-bottom: 1px solid v.$border-subtle;
+  box-shadow: v.$shadow-sm;
 
-  @media (min-width: v.$tablet) and (max-width: 900px) {
-    gap: 0.75rem;
-  }
-
-  @media (max-width: v.$tablet) {
-    display: none;
-  }
-}
-
-.navItem {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-  color: v.$color-text-muted;
-  text-decoration: none;
-  font-weight: 500;
-  font-size: 0.95rem;
-  padding: 0.5rem 0.8rem;
-  border-radius: v.$radius-md;
-  transition: all 0.2s ease;
-
-  .icon {
-    font-size: 1.2rem;
-    line-height: 1;
-  }
-
-  &:hover {
-    color: v.$color-text-main;
-    background: rgba(255, 255, 255, 0.05);
-  }
-
-  &.active {
-    color: v.$color-primary;
-    background: rgba(v.$color-primary, 0.1);
+  @media (min-width: 900px) {
+    padding: 0 2rem;
   }
 }
 
-// USER ACTIONS (Top Right)
-.userSection {
+.brand {
   display: flex;
   align-items: center;
   gap: 1rem;
-
-  // HIDE ON MOBILE (Moved to Drawer)
-  @media (max-width: v.$tablet) {
-    display: none;
-  }
 }
 
-.switchBtn {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  text-decoration: none;
-  color: v.$color-primary;
-  font-size: 0.9rem;
-  font-weight: 500;
-  white-space: nowrap;
-  padding: 0.4rem 0.8rem;
-  border-radius: v.$radius-md;
-  transition: all 0.2s;
-  background: rgba(v.$color-primary, 0.1);
-
-  &:hover {
-    background: rgba(v.$color-primary, 0.2);
-    transform: translateY(-1px);
-  }
-
-  @media (min-width: v.$tablet) and (max-width: 900px) {
-    padding: 0.4rem 0.6rem;
-  }
-}
-
-.logoutBtn {
-  background: transparent;
-  border: 1px solid rgba(v.$danger, 0.3);
-  color: v.$danger;
-  padding: 0.4rem 1rem;
-  border-radius: v.$radius-md;
-  cursor: pointer;
-  font-size: 0.85rem;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  transition: all 0.2s;
-  font-weight: 600;
-
-  &:hover {
-    background: v.$danger;
-    color: #fff;
-  }
-}
-
-// MOBILE DRAWER ELEMENTS
-.mobileToggle {
-  display: none;
-  background: none;
-  border: none;
-  color: v.$color-text-main;
-  font-size: 1.6rem;
-  cursor: pointer;
-  padding: 0.5rem;
-  line-height: 1;
-
-  @media (max-width: v.$tablet) {
-    display: block;
-  }
-}
-
-.mobileDrawer {
+// PHONES: a full-height drawer under the bar.
+.menu {
   position: fixed;
-  top: 70px;
+  top: $bar-height;
   left: 0;
-  width: 100%;
-  height: calc(100vh - 70px);
-  background: v.$color-bg-card;
-  transform: translateX(-100%);
-  transition: none;
-  z-index: 90;
-  padding: 2rem;
   display: flex;
   flex-direction: column;
   gap: 1rem;
+  width: 100%;
+  height: calc(100vh - #{$bar-height});
+  padding: 2rem;
+  background: v.$color-bg-card;
+  transform: translateX(-100%);
 
   &.open {
     transform: translateX(0);
     transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
-  .navItem {
-    width: 100%;
-    padding: 1rem;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  // DESKTOP: links centred in the bar, actions on the right.
+  @media (min-width: v.$tablet) {
+    position: static;
+    flex: 1;
+    flex-direction: row;
+    align-items: center;
+    height: auto;
+    padding: 0;
+    background: none;
+    transform: none;
+  }
+}
 
-    &.active {
-      border-left: 4px solid v.$color-primary;
-      background: rgba(v.$color-primary, 0.05);
-    }
+.links {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+
+  @media (min-width: v.$tablet) {
+    flex-direction: row;
+    gap: 0.75rem;
+    margin: 0 auto;
+  }
+}
+
+.navItem {
+  padding: 1rem;
+  border-radius: v.$radius-md;
+  color: v.$color-text-muted;
+  font-size: 0.95rem;
+  font-weight: 500;
+
+  &:hover {
+    color: v.$color-text-main;
+    background: v.$surface-hover;
   }
 
-  // Mobile Action Buttons Container
-  .mobileActions {
-    margin-top: auto; // Push to bottom
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-    padding-top: 1rem;
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
-  }
-
-  .mobileSwitch {
-    justify-content: center;
-    background: rgba(v.$color-primary, 0.1);
+  &.active {
     color: v.$color-primary;
-    padding: 1rem;
-    border-radius: v.$radius-md;
-    text-decoration: none;
-    display: flex;
-    gap: 0.5rem;
-    font-weight: 600;
+    background: rgba(v.$color-primary, 0.1);
   }
 
-  .mobileLogout {
-    width: 100%;
-    justify-content: center;
-    background: rgba(v.$danger, 0.1);
-    color: v.$danger;
-    padding: 1rem;
-    border-radius: v.$radius-md;
-    border: 1px solid rgba(v.$danger, 0.2);
-    cursor: pointer;
-    display: flex;
-    gap: 0.5rem;
-    font-weight: 600;
-    font-size: 1rem;
+  @media (min-width: v.$tablet) {
+    padding: 0.5rem 0.8rem;
+  }
+}
 
-    &:active {
-      background: rgba(v.$danger, 0.2);
+.actions {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-top: auto;
+  padding-top: 1rem;
+  border-top: 1px solid v.$border;
+
+  // Finger-sized in the drawer, as tall as the nav links above them. The
+  // element in the selector outweighs the Button's own size class.
+  @media (max-width: calc(#{v.$tablet} - 1px)) {
+    > :is(a, button) {
+      padding: 0.9rem 1.5rem;
+      font-size: 1rem;
     }
   }
 
   @media (min-width: v.$tablet) {
-    display: none;
-    transition: none;
+    flex-direction: row;
+    gap: 0.75rem;
+    margin-top: 0;
+    padding-top: 0;
+    border-top: none;
   }
 }
 
-.brandGroup {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
-
-// MAIN CONTENT AREA
-.mainContent {
+.content {
   width: 100%;
   max-width: 1400px;
-  margin: 0 auto;
-  padding: 2rem;
-  margin-top: 70px;
+  margin: $bar-height auto 0;
+  padding: 1rem;
 
-  @media (max-width: v.$tablet) {
-    padding: 1rem;
+  // Receives focus from the skip link; a ring round the whole page is noise.
+  &:focus {
+    outline: none;
+  }
+
+  @media (min-width: v.$tablet) {
+    padding: 2rem;
   }
 }

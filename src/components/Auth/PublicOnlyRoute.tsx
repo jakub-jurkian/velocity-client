@@ -1,21 +1,16 @@
-import { useAppSelector } from "../../store/hooks";
 import { Outlet } from "react-router-dom";
-import Redirect from "../common/Redirect.tsx";
+import { useAppSelector } from "../../store/hooks";
+import Redirect from "../common/Redirect";
 
-interface Props {
-  children?: React.ReactNode;
-}
-
-const PublicOnlyRoute = ({ children }: Props) => {
+// Log in and register: a signed-in user is sent to their own start page.
+const PublicOnlyRoute = () => {
   const user = useAppSelector((state) => state.auth.user);
 
   if (user) {
-    return (
-      <Redirect to={user.role === "ADMIN" ? "/admin/panel" : "/dashboard"} />
-    );
+    return <Redirect to={user.role === "ADMIN" ? "/admin/panel" : "/dashboard"} />;
   }
 
-  return children ? <>{children}</> : <Outlet />;
+  return <Outlet />;
 };
 
 export default PublicOnlyRoute;

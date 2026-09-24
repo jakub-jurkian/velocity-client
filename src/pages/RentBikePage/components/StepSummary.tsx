@@ -1,128 +1,77 @@
-import { format, parseISO } from "date-fns";
-import { WizardStep } from "../../../types/Wizard";
 import type { BikeModel } from "../../../types/Fleet";
 import type { RentalQuote } from "../../../types/Pricing";
-import BusyLabel from "../../../components/common/BusyLabel";
+import { formatCurrency, formatDate } from "../../../utils/format";
+import Badge from "../../../components/ui/Badge";
+import Button from "../../../components/ui/Button";
+import DetailRow, { Divider } from "../../../components/ui/DetailRow";
 import styles from "../RentBikePage.module.scss";
 
 interface Props {
-  setStep: (step: WizardStep) => void;
-  chosenBikeModel: BikeModel;
+  bike: BikeModel;
   dates: { start: string; end: string };
   // Server-priced quote. Every figure below is rendered, never recomputed.
   quote: RentalQuote;
-  onConfirm: (e: React.FormEvent) => void;
+  onBack: () => void;
+  onConfirm: () => void;
   // True while the booking round trip is in flight.
   isSubmitting: boolean;
 }
 
 export default function StepSummary({
-  setStep,
-  chosenBikeModel,
+  bike,
   dates,
-  onConfirm,
   quote,
+  onBack,
+  onConfirm,
   isSubmitting,
 }: Props) {
   const hasDiscount = quote.discountPercentage > 0;
 
-  // Enterprise formatting utilities
-  const formatCurrency = (amount: number) =>
-    new Intl.NumberFormat("pl-PL", {
-      style: "currency",
-      currency: "PLN",
-    }).format(amount);
-
-  const formatDate = (dateString: string) =>
-    format(parseISO(dateString), "MMM d, yyyy"); // e.g., "Oct 12, 2026"
-
   return (
-    <div className={styles.stepContainer}>
-      <button
-        onClick={() => setStep(WizardStep.BikeSelection)} // Removed magic number
-        className={styles.backBtn}
-        // Stepping back mid-request would leave a booking in flight with no
-        // screen left to report its outcome.
+    <div className={styles.step}>
+      {/* Stepping back mid-request would leave a booking in flight with no
+          screen left to report its outcome. */}
+      <Button
+        variant="ghost"
+        size="sm"
+        className={styles.back}
+        onClick={onBack}
         disabled={isSubmitting}
       >
         ← Back to Bikes
-      </button>
+      </Button>
 
       <h1>Confirm Booking</h1>
       <p className={styles.subtitle}>Please review your reservation details.</p>
 
       <div className={styles.summaryCard}>
-        {/* Bike Details */}
-        <div className={styles.summaryRow}>
-          <span className={styles.label}>Bike Model</span>
-          <span className={styles.value}>{chosenBikeModel.name}</span>
-        </div>
-        <div className={styles.summaryRow}>
-          <span className={styles.label}>Category</span>
-          <span className={styles.value}>{chosenBikeModel.category}</span>
-        </div>
-
-        <div className={styles.divider}></div>
-
-        {/* Rental Dates */}
-        <div className={styles.summaryRow}>
-          <span className={styles.label}>Dates</span>
-          <span className={styles.value}>
-            {formatDate(dates.start)} — {formatDate(dates.end)}
-          </span>
-        </div>
-        <div className={styles.summaryRow}>
-          <span className={styles.label}>Duration</span>
-          <span className={styles.value}>{quote.rentalDays} days</span>
-        </div>
-
-        <div className={styles.divider}></div>
-
-        {/* DETAILED PRICING BREAKDOWN */}
-        <div className={`${styles.summaryRow} ${styles.alignCenter}`}>
-          <span className={styles.label}>Daily Rate</span>
-
-          <div className={styles.rateContainer}>
-            {/* Show the undiscounted rate only when a tier actually applied */}
+        <DetailRow label="Bike Model">{bike.name}</DetailRow>
+        <DetailRow label="Category">{bike.category}</DetailRow>
+        <Divider />
+        <DetailRow label="Dates">
+          {formatDate(dates.start)} — {formatDate(dates.end)}
+        </DetailRow>
+        <DetailRow label="Duration">{quote.rentalDays} days</DetailRow>
+        <Divider />
+        <DetailRow label="Daily Rate">
+          <span className={styles.rate}>
+            {/* The undiscounted rate only when a tier actually applied. */}
             {hasDiscount && (
-              <span className={styles.oldRate}>
-                {formatCurrency(quote.baseDailyRate)}
-              </span>
+              <span className={styles.oldRate}>{formatCurrency(quote.baseDailyRate)}</span>
             )}
-
-            {/* Final Daily Rate */}
-            <span className={styles.value}>
-              {formatCurrency(quote.effectiveDailyRate)}
-            </span>
-
-            {/* Discount Badge */}
-            {hasDiscount && (
-              <span className={styles.discountBadge}>
-                -{quote.discountPercentage}%
-              </span>
-            )}
-          </div>
-        </div>
-
-        {/* Total Calculation Row */}
-        <div className={`${styles.summaryRow} ${styles.totalRow}`}>
-          <span className={styles.label}>Total Price</span>
-          <span className={styles.totalValue}>
-            {formatCurrency(quote.totalCost)}
+            {formatCurrency(quote.effectiveDailyRate)}
+            {hasDiscount && <Badge tone="accent">-{quote.discountPercentage}%</Badge>}
           </span>
-        </div>
+        </DetailRow>
+        <Divider />
+        <DetailRow label="Total Price" variant="total">
+          {formatCurrency(quote.totalCost)}
+        </DetailRow>
       </div>
 
-      <button
-        className={styles.confirmBtn}
-        onClick={onConfirm}
-        disabled={isSubmitting}
-        aria-busy={isSubmitting}
-      >
-        <BusyLabel busy={isSubmitting} busyText="Booking">
-          Confirm Booking
-        </BusyLabel>
-      </button>
+      <Button size="lg" block onClick={onConfirm} busy={isSubmitting} busyText="Booking">
+        Confirm Booking
+      </Button>
     </div>
   );
 }

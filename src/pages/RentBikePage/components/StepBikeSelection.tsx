@@ -1,60 +1,61 @@
 import type { BikeModel, City } from "../../../types/Fleet";
-import type { WizardStep } from "../../../types/Wizard";
+import { CITY_LABELS } from "../../../data/cities";
 import BikeModelCard from "../../../components/BikeModelCard/BikeModelCard";
+import Button from "../../../components/ui/Button";
+import EmptyState from "../../../components/ui/EmptyState";
 import styles from "../RentBikePage.module.scss";
 
 interface Props {
-  availableBikes: BikeModel[];
+  bikes: BikeModel[];
   city: City;
-  setStep: (step: WizardStep) => void;
-  onBookBike: (bikeId: string) => void;
+  onBack: () => void;
+  onBook: (bike: BikeModel) => void;
 }
 
-export default function StepBikeSelection({
-  availableBikes,
-  city,
-  setStep,
-  onBookBike,
-}: Props) {
+export default function StepBikeSelection({ bikes, city, onBack, onBook }: Props) {
   return (
-    <div className={styles.stepContainer}>
-      <button onClick={() => setStep(1)} className={styles.backBtn}>
+    <div className={styles.step}>
+      <Button variant="ghost" size="sm" className={styles.back} onClick={onBack}>
         ← Change Dates
-      </button>
+      </Button>
 
       <h1>Available Bikes</h1>
       <p className={styles.subtitle}>
-        Found {availableBikes.length} bike
-        {availableBikes.length === 1 ? "" : "s"} for your dates.
+        Found {bikes.length} bike{bikes.length === 1 ? "" : "s"} for your dates.
       </p>
 
-      <div className={styles.bikeList}>
-        {availableBikes.length === 0 ? (
-          <div className={styles.noResults}>
-            <p>😔 No bikes available in {city} for these dates.</p>
-            <button onClick={() => setStep(1)} className={styles.retryBtn}>
+      {bikes.length === 0 ? (
+        <EmptyState
+          icon="😔"
+          title="No bikes available"
+          action={
+            <Button variant="outline" onClick={onBack}>
               Try different dates
-            </button>
-          </div>
-        ) : (
-          availableBikes.map((bike) => (
+            </Button>
+          }
+        >
+          Every bike in {CITY_LABELS[city]} is taken for these dates.
+        </EmptyState>
+      ) : (
+        <div className={styles.bikeList}>
+          {bikes.map((bike) => (
             <BikeModelCard
               key={bike.id}
               model={bike}
               compact
               action={
-                <button
-                  className={styles.bookBtn}
-                  onClick={() => onBookBike(bike.id)}
-                  aria-label={`Book ${bike.name}`} // Crucial for accessibility
+                <Button
+                  variant="accent"
+                  onClick={() => onBook(bike)}
+                  aria-label={`Book ${bike.name}`}
                 >
                   Book
-                </button>
+                </Button>
               }
             />
-          ))
-        )}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

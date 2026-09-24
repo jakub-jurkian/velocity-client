@@ -1,0 +1,58 @@
+@use "variables" as v;
+
+// The dark tile every card, panel and table shares.
+@mixin card($radius: v.$radius-lg) {
+  background: v.$color-bg-card;
+  border: 1px solid v.$border-subtle;
+  border-radius: $radius;
+}
+
+// Lift and brand-tinted edge on hover, for cards that invite a click or a look.
+@mixin card-hover {
+  transition:
+    transform 0.2s,
+    border-color 0.2s;
+
+  &:hover {
+    transform: translateY(-3px);
+    border-color: rgba(v.$color-primary, 0.3);
+  }
+}
+
+@mixin gradient-text {
+  background: linear-gradient(to right, v.$color-primary, v.$color-secondary);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+@mixin focus-ring($color: v.$color-primary) {
+  outline: none;
+  border-color: $color;
+  box-shadow: 0 0 0 3px rgba($color, 0.15);
+}
+
+// Text, fill and edge in one hue: badges, pills and status readouts.
+@mixin tint($color) {
+  color: $color;
+  background: rgba($color, 0.12);
+  border-color: rgba($color, 0.3);
+}
+
+// Small uppercase label above a value, e.g. "TOTAL REVENUE".
+@mixin eyebrow {
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: v.$color-text-muted;
+}
+
+@mixin visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}

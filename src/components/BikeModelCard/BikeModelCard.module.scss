@@ -1,8 +1,8 @@
-@use "../../styles/variables" as v;
+@use "styles/theme" as v;
 
 .card {
   background: v.$color-bg-card;
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  border: 1px solid v.$border-subtle;
   border-radius: v.$radius-lg;
   overflow: hidden;
   display: flex;
@@ -40,9 +40,9 @@
   top: 1rem;
   left: 1rem;
   background: rgba(0, 0, 0, 0.5);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid v.$border;
   padding: 4px 10px;
-  border-radius: 99px;
+  border-radius: v.$radius-pill;
   font-size: 0.75rem;
   text-transform: uppercase;
   letter-spacing: 1px;
@@ -105,15 +105,15 @@
 .barTrack {
   flex: 1;
   height: 6px;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 99px;
+  background: v.$border;
+  border-radius: v.$radius-pill;
   overflow: hidden;
 }
 
 .barFill {
   height: 100%;
   background: v.$color-primary;
-  border-radius: 99px;
+  border-radius: v.$radius-pill;
 }
 
 .value {

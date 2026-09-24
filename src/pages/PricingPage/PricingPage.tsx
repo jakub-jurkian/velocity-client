@@ -1,94 +1,62 @@
+import { MAX_RENTAL_DAYS, MIN_RENTAL_DAYS } from "../../data/rental";
+import { cx } from "../../utils/cx";
 import PageTransition from "../../components/common/PageTransition";
-import LandingBtn from "../../components/LandingBtn/LandingBtn";
+import Badge from "../../components/ui/Badge";
+import Button from "../../components/ui/Button";
+import PageHeader from "../../components/ui/PageHeader";
 import styles from "./PricingPage.module.scss";
 
-interface PricingTier {
-  id: string;
-  duration: string;
-  name: string;
-  price: number;
-  discount?: string;
-  deposit: number;
-  isPopular?: boolean;
-  isPrimaryButton: boolean;
-}
-
-const PRICING_TIERS: PricingTier[] = [
-  {
-    id: "short-term",
-    duration: "3 - 7 Days",
-    name: "Weekender",
-    price: 25,
-    deposit: 200,
-    isPrimaryButton: false,
-  },
-  {
-    id: "medium-term",
-    duration: "8 - 14 Days",
-    name: "Rider",
-    price: 20,
-    discount: "~20% OFF",
-    deposit: 200,
-    isPopular: true,
-    isPrimaryButton: true,
-  },
-  {
-    id: "long-term",
-    duration: "15 - 21 Days",
-    name: "Pro Rider",
-    price: 15,
-    discount: "~40% OFF",
-    deposit: 200,
-    isPrimaryButton: false,
-  },
+// Marketing copy only: the price of an actual booking always comes from the
+// API's quote.
+const PRICING_TIERS = [
+  { duration: "3 - 7 Days", name: "Weekender", price: 25 },
+  { duration: "8 - 14 Days", name: "Rider", price: 20, discount: "~20% OFF", isPopular: true },
+  { duration: "15 - 21 Days", name: "Pro Rider", price: 15, discount: "~40% OFF" },
 ];
 
-const PricingPage = () => {
-  return (
-    <PageTransition>
-      <div className={styles.pricingPage}>
-        <header className={styles.header}>
-          <h1>Flexible Rental Plans.</h1>
-          <p>The longer you ride, the less you pay per day.</p>
-        </header>
+const PricingPage = () => (
+  <PageTransition>
+    <PageHeader
+      align="center"
+      title="Flexible Rental Plans."
+      subtitle="The longer you ride, the less you pay per day."
+    />
 
-        <div className={styles.pricingGrid}>
-          {PRICING_TIERS.map((tier) => (
-            <article
-              key={tier.id}
-              className={`${styles.card} ${tier.isPopular ? styles.popular : ""}`}
-            >
-              {tier.isPopular && (
-                <div className={styles.promoBadge}>Popular Choice</div>
-              )}
+    <div className={styles.grid}>
+      {PRICING_TIERS.map((tier) => (
+        <article key={tier.name} className={cx(styles.card, tier.isPopular && styles.popular)}>
+          {tier.isPopular && <div className={styles.promoBadge}>Popular Choice</div>}
 
-              <div className={styles.durationBadge}>{tier.duration}</div>
-              <div className={styles.tierName}>{tier.name}</div>
+          <div className={styles.duration}>{tier.duration}</div>
+          <div className={styles.tierName}>{tier.name}</div>
 
-              <div className={styles.priceContainer}>
-                <span className={styles.label}>Daily Rent</span>
-                <div className={styles.priceRange}>
-                  {tier.price} <span className={styles.currency}>PLN/day</span>
-                </div>
-                {tier.discount && (
-                  <span className={styles.discountTag}>{tier.discount}</span>
-                )}
-              </div>
+          <div className={styles.price}>
+            <span className={styles.priceLabel}>Daily Rent</span>
+            <div className={styles.amount}>
+              {tier.price} <span className={styles.currency}>PLN/day</span>
+            </div>
+            {tier.discount && <Badge tone="success">{tier.discount}</Badge>}
+          </div>
 
-              <LandingBtn
-                primary={tier.isPrimaryButton}
-                className={styles.cta}
-              />
-            </article>
-          ))}
-        </div>
+          {/* Pinned to the card's foot, so all three line up although only
+              two carry a discount. */}
+          <Button
+            to="/rent-bike"
+            variant={tier.isPopular ? "primary" : "secondary"}
+            size="lg"
+            block
+            className={styles.cta}
+          >
+            Start Riding
+          </Button>
+        </article>
+      ))}
+    </div>
 
-        <footer className={styles.note}>
-          <p>Rental periods range from 3 to 21 days.</p>
-        </footer>
-      </div>
-    </PageTransition>
-  );
-};
+    <p className={styles.note}>
+      Rental periods range from {MIN_RENTAL_DAYS} to {MAX_RENTAL_DAYS} days.
+    </p>
+  </PageTransition>
+);
 
 export default PricingPage;

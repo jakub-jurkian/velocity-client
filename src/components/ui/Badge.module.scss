@@ -1,0 +1,46 @@
+@use "styles/theme" as v;
+
+.badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border: 1px solid transparent;
+  border-radius: v.$radius-pill;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.fixed {
+  min-width: v.$badge-width;
+}
+
+.primary {
+  @include v.tint(v.$color-primary);
+}
+
+.accent {
+  color: #fff;
+  background: v.$color-secondary;
+  border-color: v.$color-secondary;
+}
+
+.success {
+  @include v.tint(v.$success);
+}
+
+.warning {
+  @include v.tint(v.$warning);
+}
+
+.danger {
+  @include v.tint(v.$danger);
+}
+
+.info {
+  @include v.tint(v.$info);
+}
+
+.neutral {
+  @include v.tint(v.$color-text-muted);
+}

@@ -1,19 +1,14 @@
-// Checks if a value is empty or just whitespace.
-export const validateRequired = (
-  value: string,
-  fieldLabel: string,
-): string | undefined => {
-  if (!value || value.trim() === "") {
-    return `${fieldLabel} is required`;
-  }
-  return undefined;
-};
+// Keeps only the checks that failed, so a form's validate() can list every
+// field in one object: collectErrors({ email: validateEmail(v.email), ... }).
+export const collectErrors = <K extends string>(checks: Record<K, string | undefined>) =>
+  Object.fromEntries(
+    Object.entries(checks).filter(([, message]) => message),
+  ) as Partial<Record<K, string>>;
 
 // Checks for a valid email format using regex.
 export const validateEmail = (email: string): string | undefined => {
   if (!email) return "Email is required";
 
-  // Standard email regex
   const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   if (!regex.test(email)) {
     return "Please enter a valid email address";
@@ -56,9 +51,8 @@ export const validatePhone = (phone: string): string | undefined => {
 // the rule is actually enforced — this copy only saves the user a round trip.
 // Duplicated from the backend with nothing keeping the two in step - change both.
 const PASSWORD_PATTERN = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).*$/;
-
-export const PASSWORD_MIN_LENGTH = 8;
-export const PASSWORD_MAX_LENGTH = 64;
+const PASSWORD_MIN_LENGTH = 8;
+const PASSWORD_MAX_LENGTH = 64;
 
 export const validatePassword = (password: string): string | undefined => {
   if (!password) return "Password is required";
@@ -74,27 +68,4 @@ export const validatePassword = (password: string): string | undefined => {
     return "Password needs an uppercase letter, a lowercase letter, a digit and a special character";
   }
   return undefined;
-};
-
-// Pulls per-field messages out of an RFC 7807 body. The API returns
-// `invalidFields` on a 400 from `@Valid`; the top-level `detail` is only the
-// generic "Validation failed for one or more fields." summary, so reading
-// `detail` alone throws away everything useful.
-
-export const extractFieldErrors = (
-  problem: unknown,
-): Record<string, string> => {
-  const fields = (problem as { invalidFields?: Record<string, string[]> })
-    ?.invalidFields;
-  if (!fields) return {};
-
-  return Object.entries(fields).reduce<Record<string, string>>(
-    (acc, [field, messages]) => {
-      if (Array.isArray(messages) && messages.length > 0) {
-        acc[field] = messages[0];
-      }
-      return acc;
-    },
-    {},
-  );
 };

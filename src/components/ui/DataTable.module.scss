@@ -1,0 +1,155 @@
+@use "styles/theme" as v;
+
+.container {
+  width: 100%;
+
+  @media (min-width: v.$desktop) {
+    @include v.card;
+    box-shadow: v.$shadow-sm;
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+}
+
+// PHONES AND TABLETS: each row is a card, each cell a "label ... value" line.
+.table {
+  width: 100%;
+  border-collapse: collapse;
+
+  thead {
+    display: none;
+  }
+
+  tbody {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  tr {
+    @include v.card(v.$radius-md);
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+    padding: 1rem;
+    border-color: v.$border;
+  }
+
+  td {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    font-size: 0.95rem;
+
+    &[data-label]::before {
+      content: attr(data-label);
+      color: v.$color-text-muted;
+      font-size: 0.85rem;
+      font-weight: 500;
+    }
+  }
+
+  // DESKTOP: a real table.
+  @media (min-width: v.$desktop) {
+    display: table;
+    min-width: var(--min-width);
+
+    thead {
+      display: table-header-group;
+    }
+
+    th {
+      padding: 1rem 1.5rem;
+      background: v.$surface-sunken;
+      border-bottom: 1px solid v.$border;
+      color: v.$color-text-muted;
+      font-size: 0.75rem;
+      letter-spacing: 0.5px;
+      text-align: left;
+      text-transform: uppercase;
+    }
+
+    tbody {
+      display: table-row-group;
+    }
+
+    tr {
+      display: table-row;
+      background: transparent;
+      border: none;
+      border-bottom: 1px solid v.$border-subtle;
+      border-radius: 0;
+
+      &:last-child {
+        border-bottom: none;
+      }
+
+      &:hover {
+        background: v.$surface-raised;
+      }
+    }
+
+    td {
+      display: table-cell;
+      padding: 1rem 1.5rem;
+      border: none;
+
+      &[data-label]::before {
+        display: none;
+      }
+    }
+  }
+}
+
+// On a card every value shares one width and centres in it, so the values
+// stacked down the right edge line up on a single centre line.
+.value {
+  display: inline-flex;
+  justify-content: center;
+  min-width: v.$badge-width;
+  text-align: center;
+
+  @media (min-width: v.$desktop) {
+    justify-content: flex-start;
+    min-width: 0;
+    text-align: left;
+  }
+}
+
+// The card's heading on phones, set off from the labelled values below it.
+.primary {
+  padding-bottom: 1rem;
+  border-bottom: 1px solid v.$border;
+}
+
+.actions {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+
+  @media (min-width: v.$desktop) {
+    text-align: right;
+    white-space: nowrap;
+
+    > * + * {
+      margin-left: 0.5rem;
+    }
+  }
+}
+
+.table th.alignRight {
+  text-align: right;
+}
+
+.emptyRow td {
+  justify-content: center;
+  padding: 2rem 1rem;
+  color: v.$color-text-muted;
+  text-align: center;
+
+  @media (min-width: v.$desktop) {
+    padding: 3rem 1rem;
+  }
+}

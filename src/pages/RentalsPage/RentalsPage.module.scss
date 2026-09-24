@@ -1,59 +1,16 @@
-@use "../../styles/variables" as v;
+@use "styles/theme" as v;
 
-// --- MAIN CONTENT ---
-.content {
-  width: 100%;
-  max-width: 1000px;
-  margin: 0 auto;
-  position: relative;
-  z-index: 10;
-  padding-bottom: 4rem;
-}
+// Edge and badge in the status colour, so the two always agree.
+@mixin status($color) {
+  border-left: 4px solid $color;
 
-.container {
-  max-width: 1000px;
-  margin: 0 auto;
-  padding: 2rem;
-}
-
-.header {
-  margin-bottom: 3rem;
-  h1 {
-    font-size: 2.5rem;
-    font-weight: 800;
-    margin-bottom: 0.5rem;
-  }
-  p {
-    color: v.$color-text-muted;
-  }
-}
-
-.exportBtn {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.6rem 1.2rem;
-  margin-top: 1rem;
-
-  background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  color: v.$color-text-muted;
-  border-radius: v.$radius-md;
-  font-size: 0.9rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-
-  &:hover {
-    border-color: v.$color-primary;
-    color: v.$color-primary;
-    background: rgba(v.$color-primary, 0.05);
+  .statusBadge {
+    color: $color;
   }
 }
 
 .grid {
   display: grid;
-  grid-template-columns: 1fr;
   gap: 1.5rem;
 
   @media (min-width: v.$tablet) {
@@ -61,346 +18,64 @@
   }
 }
 
+// The grid stretches every card to the tallest in its row. A column layout
+// lets the content absorb the surplus, so the footer stays on the bottom edge
+// instead of the space falling out under it.
 .card {
-  background: v.$color-bg-card;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: v.$radius-lg;
-  overflow: hidden;
-  position: relative;
-  transition: transform 0.2s;
-
-  // The grid stretches every card to the tallest in its row. Without a column
-  // layout here the children stack from the top and the surplus height falls
-  // out as dead space under the footer, which is what a card carrying a
-  // cancellation notice does to its shorter neighbours.
+  @include v.card;
+  @include v.card-hover;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
+  border-color: v.$border;
+}
 
-  &:hover {
-    transform: translateY(-3px);
-    border-color: rgba(255, 255, 255, 0.2);
-  }
+.success {
+  @include status(v.$success);
+}
 
-  // Status Coloring Border
-  // Green covers both live-and-good and finished-cleanly; red is the only
-  // failed outcome, and blue marks a booking still waiting on confirmation.
-  &.confirmed,
-  &.completed {
-    border-left: 4px solid v.$success;
-  }
-  &.cancelled {
-    border-left: 4px solid v.$danger;
-    opacity: 0.7;
-  }
-  &.pending {
-    border-left: 4px solid v.$info;
-  }
+.info {
+  @include status(v.$info);
+}
+
+.danger {
+  @include status(v.$danger);
+  opacity: 0.8; // Dimmed, but its text still clears 4.5:1 contrast
 }
 
 .statusBadge {
-  background: rgba(0, 0, 0, 0.3);
   padding: 0.5rem 1rem;
+  background: rgba(0, 0, 0, 0.3);
+  border-bottom: 1px solid v.$border-subtle;
   font-size: 0.8rem;
   font-weight: 700;
-  text-transform: uppercase;
   letter-spacing: 1px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-
-  // Dynamic Text Colors based on parent class — kept in step with the border
-  // above, so the badge and the edge always agree.
-  .confirmed &,
-  .completed & {
-    color: v.$success;
-  }
-  .cancelled & {
-    color: v.$danger;
-  }
-  .pending & {
-    color: v.$info;
-  }
+  text-transform: uppercase;
 }
 
 .cardContent {
-  padding: 1.5rem;
-  // Absorbs the stretch, so the footer sits on the card's bottom edge instead
-  // of floating wherever the content happens to end.
   flex: 1;
-}
-
-.row {
-  display: grid;
-  grid-template-columns: minmax(90px, auto) minmax(0, 1fr);
-  align-items: start;
-  column-gap: 1.25rem;
-  margin-bottom: 1.25rem;
-  font-size: 0.95rem;
-
-  .label {
-    color: v.$color-text-muted;
-    line-height: 1.5;
-  }
-
-  .valueHighlight {
-    color: v.$color-primary;
-    font-weight: 600;
-    line-height: 1.5;
-    min-width: 0;
-    text-align: right;
-    overflow-wrap: anywhere;
-  }
-  
-  .value {
-    min-width: 0;
-    line-height: 1.5;
-    text-align: right;
-    overflow-wrap: anywhere;
-  }
-
-  .mono {
-    font-family: monospace;
-    opacity: 0.6;
-    font-size: 0.8rem;
-    line-height: 1.5;
-    min-width: 0;
-    text-align: right;
-    overflow-wrap: anywhere;
-  }
-}
-
-.idRow {
-  align-items: center;
-  margin-bottom: 0;
-  padding-top: 0.15rem;
-}
-
-.divider {
-  height: 1px;
-  background: rgba(255, 255, 255, 0.1);
-  margin: 1rem 0;
-}
-
-.totalRow {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-weight: 700;
-
-  .price {
-    font-size: 1.25rem;
-    color: v.$color-text-main;
-  }
-}
-
-.emptyState {
-  text-align: center;
-  margin-top: 5rem;
-  opacity: 0.6;
-  .icon {
-    font-size: 4rem;
-    margin-bottom: 1rem;
-  }
-}
-
-.cardFooter {
-  padding: 1rem 1.5rem;
-  background: rgba(0, 0, 0, 0.2);
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-  display: flex;
-  justify-content: flex-end;
-}
-
-.cancelBtn {
-  background: transparent;
-  border: 1px solid v.$danger;
-  color: v.$danger;
-  padding: 0.5rem 1rem;
-  border-radius: v.$radius-md;
-  font-size: 0.85rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-
-  &:hover {
-    background: v.$danger;
-    color: #fff;
-  }
-}
-
-// MODAL STYLE
-.modalOverlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.85);
-  backdrop-filter: blur(4px);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 2000;
   padding: 1.5rem;
 }
 
-.modal {
-  background: v.$color-bg-card; // Ensure variables are imported
-  padding: 2rem;
-  border-radius: v.$radius-lg;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  width: 100%;
-  max-width: 400px;
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
-  text-align: center;
-
-  h2 {
-    color: v.$color-text-main;
-    margin-bottom: 1rem;
-  }
-
-  p {
-    color: v.$color-text-muted;
-    margin-bottom: 2rem;
-    line-height: 1.5;
-  }
-}
-
-.modalActions {
-  display: flex;
-  justify-content: center;
-  gap: 1rem;
-
-  button {
-    flex: 1;
-    min-width: 0;
-    padding: 0.8rem 1.5rem;
-    border-radius: v.$radius-md;
-    font-weight: 600;
-    border: none;
-    cursor: pointer;
-    transition: all 0.2s;
-  }
-}
-
-@media (max-width: v.$mobile) {
-  .modalOverlay {
-    padding: 1rem;
-  }
-
-  .modal {
-    padding: 1.5rem 1.25rem;
-
-    h2 {
-      font-size: 1.6rem;
-      line-height: 1.2;
-    }
-  }
-
-  .modalActions {
-    gap: 0.75rem;
-
-    button {
-      padding: 0.75rem 0.5rem;
-      font-size: 0.9rem;
-      line-height: 1.2;
-    }
-  }
-}
-
-.secondaryBtn {
-  background: transparent;
-  color: v.$color-text-muted;
-  border: 1px solid rgba(255, 255, 255, 0.2) !important;
-
-  &:hover {
-    border-color: v.$color-text-main !important;
-    color: v.$color-text-main;
-  }
-}
-
-.dangerBtn {
-  background: rgba(v.$danger, 0.15); // e.g. red
-  color: v.$danger;
-
-  &:hover {
-    background: v.$danger;
-    color: white;
-  }
-}
-
-// PAGINATION
-.pagination {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-wrap: wrap;
-  gap: 1rem;
-  margin-top: 2.5rem;
-}
-
-.pageBtn {
-  padding: 0.6rem 1.2rem;
-
-  background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  color: v.$color-text-muted;
-  border-radius: v.$radius-md;
-  font-size: 0.9rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: v.$transition-base;
-
-  &:hover:not(:disabled) {
-    border-color: v.$color-primary;
-    color: v.$color-primary;
-  }
-
-  &:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
-  }
-}
-
-.pageInfo {
-  color: v.$color-text-main;
-  font-size: 0.9rem;
-  font-weight: 500;
-}
-
-.pageTotal {
-  color: v.$color-text-muted;
-  font-weight: 400;
-}
-
-// ADMIN CANCELLATION NOTICE
-
-// Only rendered on a booking cancelled by staff, never on a self-cancellation.
-// Amber rather than red: this is an explanation, not an error the rider caused.
-.cancellationNotice {
-  // Matches the .row rhythm below it, since it now leads the card content.
-  margin: 0 0 1.25rem;
-  padding: 0.85rem 1rem;
-  border-radius: 8px;
-  border-left: 4px solid v.$warning;
-  background: rgba(v.$warning, 0.1);
-}
-
-.noticeTitle {
-  display: block;
-  font-weight: 700;
-  font-size: 0.85rem;
-  letter-spacing: 0.02em;
-  text-transform: uppercase;
-  color: v.$warning;
-  margin-bottom: 0.35rem;
+// Amber rather than red: an explanation, not an error the rider caused.
+.notice {
+  margin-bottom: 1.25rem;
 }
 
 .noticeBody {
-  margin: 0;
   font-size: 0.9rem;
-  line-height: 1.5;
 
   a {
     color: v.$warning;
     text-decoration: underline;
   }
+}
+
+.cardFooter {
+  display: flex;
+  justify-content: flex-end;
+  padding: 1rem 1.5rem;
+  background: v.$surface-sunken;
+  border-top: 1px solid v.$border;
 }

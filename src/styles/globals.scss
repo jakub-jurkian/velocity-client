@@ -1,5 +1,4 @@
-@use "variables" as v;
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap");
+@use "styles/theme" as v;
 
 // Basic Reset
 *,
@@ -8,24 +7,6 @@
   box-sizing: border-box;
   margin: 0;
   padding: 0;
-}
-// CSS Variables for Theming
-:root {
-  // Backgrounds
-  --color-bg: #{v.$color-bg-main};
-  --color-surface: #{v.$color-bg-card};
-
-  // Text
-  --color-text-main: #{v.$color-text-main};
-  --color-text-muted: #{v.$color-text-dim};
-
-  // Brand Colors
-  --color-primary: #{v.$color-primary}; // Electric Cyan
-  --color-secondary: #{v.$color-secondary}; // Electric Purple
-  --color-accent: #{v.$color-accent}; // Hot Pink
-
-  // Utility
-  --radius-main: #{v.$radius-md};
 }
 
 // Reserve the scrollbar gutter permanently. Without this, a short page (or the
@@ -36,34 +17,27 @@ html {
   scrollbar-gutter: stable;
 }
 
-// Global Body Styles
 body {
-  font-family: #{v.$font-main}, sans-serif;
-  background-color: var(--color-bg);
-  color: var(--color-text-main);
+  font-family: v.$font-main;
+  background-color: v.$color-bg-main;
+  color: v.$color-text-main;
   line-height: 1.6;
   min-height: 100vh;
-
-  // Font Rendering Optimization
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-
-  // Prevent horizontal scroll on mobile
   overflow-x: hidden;
 }
 
-// Global Link Styling
 a {
   color: inherit;
   text-decoration: none;
-  transition: opacity 0.2s ease;
+  transition: color 0.2s ease;
 
   &:hover {
-    color: var(--color-primary);
+    color: v.$color-primary;
   }
 }
 
-// Global Button Reset
 button {
   font-family: inherit;
   cursor: pointer;
@@ -72,22 +46,13 @@ button {
   color: inherit;
 }
 
-// Layout Utilities
-.container {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 0 1.5rem;
-  width: 100%;
-}
-
-// Accessibility (Focus State)
 :focus-visible {
-  outline: 2px solid var(--color-primary);
+  outline: 2px solid v.$color-primary;
   outline-offset: 4px;
 }
 
 // A button showing a BusyLabel spinner is working, not unavailable: keep it at
-// full strength instead of the dimmed look pages give a disabled button.
+// full strength instead of the dimmed look a disabled button gets.
 button[aria-busy="true"],
 button[aria-busy="true"]:disabled {
   cursor: progress;

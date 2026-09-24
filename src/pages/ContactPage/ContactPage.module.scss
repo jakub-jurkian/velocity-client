@@ -1,93 +1,16 @@
-@use "../../styles/variables" as v;
+@use "styles/theme" as v;
 
-.contactSection {
-  text-align: center;
+.grid {
+  display: grid;
+  gap: 1.5rem;
 
-  h2 {
-    font-size: 2.5rem;
-    margin-bottom: 1rem;
-    font-weight: 800;
-  }
-
-  .contactSubtitle {
-    color: v.$color-text-muted;
-    margin-bottom: 3rem;
-    font-size: 1.1rem;
-  }
-
-  .contactGrid {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 1.5rem;
-
-    @media (min-width: 768px) {
-      grid-template-columns: repeat(3, 1fr);
-    }
-
-    .contactCard {
-      background: v.$color-bg-card;
-      border: 1px solid rgba(255, 255, 255, 0.05);
-      padding: 2.5rem 1.5rem;
-      border-radius: v.$radius-lg;
-      transition: transform 0.2s, border-color 0.2s;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-
-      &:hover {
-        transform: translateY(-5px);
-        border-color: v.$color-primary;
-
-        .icon {
-          transform: scale(1.1);
-        }
-      }
-
-      .icon {
-        font-size: 2.5rem;
-        margin-bottom: 1rem;
-        transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-      }
-
-      h3 {
-        font-size: 1.25rem;
-        margin-bottom: 0.5rem;
-        color: v.$color-text-main;
-      }
-
-      p {
-        color: v.$color-text-muted;
-        line-height: 1.6;
-        font-size: 1rem;
-
-        a {
-          color: v.$color-primary;
-          font-weight: 600;
-          text-decoration: none;
-
-          &:hover {
-            text-decoration: underline;
-          }
-        }
-
-        .sub {
-          font-size: 0.85rem;
-          opacity: 0.7;
-          margin-top: 4px;
-          display: inline-block;
-        }
-      }
-    }
+  @media (min-width: v.$tablet) {
+    grid-template-columns: repeat(3, 1fr);
   }
 }
 
-.icon {
-  font-size: 2.5rem;
-  margin-bottom: 1rem;
-  transition: opacity 0.3s ease;
-
-  &.loading {
-    opacity: 0.5;
-    filter: blur(2px);
-  }
+.sub {
+  display: block;
+  margin-top: 4px;
+  font-size: 0.85rem;
 }

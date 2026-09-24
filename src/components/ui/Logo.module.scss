@@ -1,0 +1,29 @@
+@use "styles/theme" as v;
+
+.logo {
+  display: inline-block;
+  color: v.$color-text-main;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+}
+
+.sm {
+  font-size: 1.25rem;
+}
+
+.md {
+  font-size: 1.5rem;
+}
+
+.lg {
+  font-size: 1.75rem;
+}
+
+.highlight {
+  color: v.$color-primary;
+}
+
+.suffix {
+  margin-left: 0.35em;
+}

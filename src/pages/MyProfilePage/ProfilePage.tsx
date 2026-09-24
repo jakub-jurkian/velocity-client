@@ -2,343 +2,143 @@ import { useState } from "react";
 import toast from "react-hot-toast";
 import { useAppDispatch, useAppSelector } from "../../store/hooks";
 import { updateUser } from "../../store/slices/authSlice";
+import { ApiError, apiFetch, SessionExpiredError } from "../../api/client";
+import { useForm } from "../../hooks/useForm";
+import { changedFields } from "../../utils/changedFields";
+import { collectErrors, validateMinLength, validatePhone } from "../../utils/validators";
+import { CITY_LABELS, CITY_OPTIONS } from "../../data/cities";
+import type { User } from "../../types/User";
 import PageTransition from "../../components/common/PageTransition";
-import BusyLabel from "../../components/common/BusyLabel";
-import { getAvatarStyle, getInitials } from "../../utils/avatar";
-import { SUPPORTED_CITIES, type City } from "../../types/Fleet";
-import {
-  extractFieldErrors,
-  validateMinLength,
-  validatePhone,
-} from "../../utils/validators";
+import Avatar from "../../components/ui/Avatar";
+import Badge from "../../components/ui/Badge";
+import Button from "../../components/ui/Button";
+import { Form, ReadOnlyField, SelectField, TextField } from "../../components/ui/Form";
 import styles from "./ProfilePage.module.scss";
 
-interface UserUpdatePayload {
-  fullName?: string;
-  phone?: string;
-  city?: City;
-}
+// What a user may change about themselves. Email is fixed once registered.
+const EDITABLE = ["fullName", "phone", "city"] as const;
 
-const MyProfilePage = () => {
+const ProfilePage = () => {
   const dispatch = useAppDispatch();
-  const { user, token } = useAppSelector((state) => state.auth);
-
+  const user = useAppSelector((state) => state.auth.user);
   const [isEditing, setIsEditing] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
 
-  // Initialized safely from Redux user state
-  const [formData, setFormData] = useState({
-    fullName: user?.fullName || "",
-    phone: user?.phone || "",
-    city: user?.city || SUPPORTED_CITIES[0],
-    email: user?.email || "",
-  });
+  const { isSubmitting, handleSubmit, setErrors, field, reset } = useForm({
+    initialValues: { fullName: "", phone: "", city: "" },
+    // Mirrors the entity rules the API enforces, so a one-letter name is
+    // refused here instead of round-tripping for a 400.
+    validate: (values) =>
+      collectErrors({
+        fullName: validateMinLength(values.fullName, 2, "Full name"),
+        phone: validatePhone(values.phone),
+      }),
+    onSubmit: async (values) => {
+      if (!user) return;
 
-  const [errors, setErrors] = useState<Record<string, string>>({});
-
-  /**
-   * Seeds the form from the current user at the moment editing starts.
-   *
-   * The initial useState above runs on the first render, and on a hard refresh
-   * /auth/me has not resolved yet, so it captures an empty user and the inputs
-   * would open blank. Reading `user` here instead means the form always starts
-   * from whatever is on screen, with no effect syncing two copies of the state.
-   */
-  const handleStartEditing = () => {
-    if (!user) return;
-    setFormData({
-      fullName: user.fullName,
-      phone: user.phone,
-      city: user.city,
-      email: user.email,
-    });
-    setErrors({});
-    setIsEditing(true);
-  };
-
-  // Check permissions
-  const isAdmin = user?.role === "ADMIN";
-
-  const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
-  ) => {
-    const { name, value } = e.target;
-    setFormData({
-      ...formData,
-      [name]: value,
-    });
-    // Clear the field's error as soon as the user edits it.
-    setErrors((prev) => {
-      if (!prev[name]) return prev;
-      const next = { ...prev };
-      delete next[name];
-      return next;
-    });
-  };
-
-  /**
-   * Mirrors the entity rules the API enforces, so a two-character name is
-   * refused here instead of round-tripping for a 400.
-   */
-  const validateForm = (): Record<string, string> => {
-    const found: Record<string, string> = {};
-
-    const fullNameError = validateMinLength(formData.fullName, 2, "Full name");
-    if (fullNameError) found.fullName = fullNameError;
-
-    const phoneError = validatePhone(formData.phone);
-    if (phoneError) found.phone = phoneError;
-
-    return found;
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!user) return;
-
-    const validationErrors = validateForm();
-    if (Object.keys(validationErrors).length > 0) {
-      setErrors(validationErrors);
-      return;
-    }
-
-    // Check if any field has actually changed
-    const changedPayload: UserUpdatePayload = {};
-
-    if (user.fullName !== formData.fullName) {
-      changedPayload.fullName = formData.fullName;
-    }
-    if (user.phone !== formData.phone) {
-      changedPayload.phone = formData.phone;
-    }
-    if (user.city !== formData.city) {
-      changedPayload.city = formData.city;
-    }
-
-    if (Object.keys(changedPayload).length === 0) {
-      toast("No changes made.", { icon: "ℹ️" });
-      setIsEditing(false);
-      return;
-    }
-
-    setIsSaving(true);
-    try {
-      const apiUrl = import.meta.env.VITE_API_URL;
-      const response = await fetch(`${apiUrl}/api/v1/users/${user.id}`, {
-        method: "PATCH",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(changedPayload),
-      });
-
-      if (!response.ok) {
-        const contentType = response.headers.get("content-type") || "";
-        const isJson =
-          contentType.includes("application/problem+json") ||
-          contentType.includes("application/json");
-
-        if (isJson) {
-          const errorData = await response.json();
-
-          // `detail` on a validation failure is only the generic summary; the
-          // per-field messages live in `invalidFields`. A 409 is a duplicate
-          // phone, which belongs on that input.
-          const fieldErrors = extractFieldErrors(errorData);
-
-          if (response.status === 409) {
-            fieldErrors.phone = errorData.detail;
-          }
-
-          if (Object.keys(fieldErrors).length > 0) {
-            setErrors(fieldErrors);
-            return;
-          }
-
-          toast.error(errorData.detail || "Failed to update profile.");
-        } else {
-          toast.error("Server error. Please try again later.");
-        }
+      const changes = changedFields(user, { ...user, ...values } as User, EDITABLE);
+      if (Object.keys(changes).length === 0) {
+        toast("No changes made.", { icon: "ℹ️" });
+        setIsEditing(false);
         return;
       }
 
-      // Update Redux state
-      dispatch(updateUser(changedPayload));
-      setErrors({});
-      setIsEditing(false);
-      toast.success("Profile updated successfully!");
-    } catch (error) {
-      console.error("Network error during profile update:", error);
-      toast.error(
-        "Unable to connect to VeloCity server. Please check your connection.",
-      );
-    } finally {
-      setIsSaving(false);
-    }
-  };
+      try {
+        await apiFetch(`/api/v1/users/${user.id}`, { method: "PATCH", body: changes });
+        dispatch(updateUser(changes));
+        setIsEditing(false);
+        toast.success("Profile updated successfully!");
+      } catch (error) {
+        console.error("Profile update failed:", error);
+        if (error instanceof SessionExpiredError) return; // Already reported
+        if (!(error instanceof ApiError)) {
+          toast.error("Unable to connect to VeloCity server. Please check your connection.");
+          return;
+        }
 
-  const handleCancel = () => {
-    // Reset form state back to current user values on cancel
-    if (user) {
-      setFormData({
-        fullName: user.fullName,
-        phone: user.phone,
-        city: user.city,
-        email: user.email,
-      });
-    }
-    setErrors({});
-    setIsEditing(false);
-  };
+        // A 409 is a duplicate phone, which belongs on that input.
+        const fieldErrors = error.fieldErrors;
+        if (error.status === 409 && error.detail) fieldErrors.phone = error.detail;
+
+        if (Object.keys(fieldErrors).length > 0) setErrors(fieldErrors);
+        else toast.error(error.detail ?? "Failed to update profile.");
+      }
+    },
+  });
 
   if (!user) return null;
 
+  // Seeded when editing starts rather than on mount: after a hard refresh
+  // /auth/me may not have resolved on the first render, and the form would
+  // otherwise open blank.
+  const startEditing = () => {
+    reset({ fullName: user.fullName, phone: user.phone, city: user.city });
+    setIsEditing(true);
+  };
+
   return (
     <PageTransition>
-      <div className={styles.profilePage}>
-        <div className={styles.profileCard}>
-          <aside className={styles.profileHeader}>
-            <div
-              className={styles.avatarLarge}
-              style={getAvatarStyle(user.id)}
-              aria-hidden="true"
-            >
-              {getInitials(user.fullName)}
-            </div>
-            <h1 className={styles.userName}>{user.fullName}</h1>
-            <span className={styles.roleBadge}>{user.role.toUpperCase()}</span>
-            <p className={styles.userId}>ID: {user.id}</p>
-          </aside>
+      <div className={styles.profileCard}>
+        <aside className={styles.sidebar}>
+          <Avatar id={user.id} name={user.fullName} size={120} className={styles.avatar} />
+          <h1 className={styles.userName}>{user.fullName}</h1>
+          <Badge tone="primary">{user.role}</Badge>
+          <p className={styles.userId}>ID: {user.id}</p>
+        </aside>
 
-          <section className={styles.profileDetails}>
-            <div className={styles.sectionHeader}>
-              <h2>Account Details</h2>
-              {!isEditing && (
-                <button
-                  className={styles.editBtn}
-                  onClick={handleStartEditing}
+        <section className={styles.details}>
+          <div className={styles.sectionHeader}>
+            <h2>Account Details</h2>
+            {!isEditing && (
+              <Button variant="outline" size="sm" onClick={startEditing}>
+                Edit Details
+              </Button>
+            )}
+          </div>
+
+          <Form onSubmit={handleSubmit} noValidate>
+            {isEditing ? (
+              <>
+                <TextField id="fullName" label="Full Name" required {...field("fullName")} />
+                <TextField id="phone" label="Phone Number" type="tel" required {...field("phone")} />
+                <SelectField id="city" label="City" options={CITY_OPTIONS} {...field("city")} />
+              </>
+            ) : (
+              <>
+                <ReadOnlyField label="Full Name">{user.fullName}</ReadOnlyField>
+                <ReadOnlyField label="Phone Number">{user.phone}</ReadOnlyField>
+                <ReadOnlyField label="City">{CITY_LABELS[user.city]}</ReadOnlyField>
+              </>
+            )}
+
+            <ReadOnlyField label="Email Address">
+              {user.email}
+              {user.role !== "ADMIN" && (
+                <span className={styles.lock} aria-hidden="true">
+                  🔒
+                </span>
+              )}
+            </ReadOnlyField>
+
+            {isEditing && (
+              <div className={styles.actions}>
+                <Button
+                  variant="secondary"
+                  block
+                  onClick={() => setIsEditing(false)}
+                  disabled={isSubmitting}
                 >
-                  Edit Details
-                </button>
-              )}
-            </div>
-
-            <form onSubmit={handleSubmit} className={styles.formGrid}>
-              <div className={styles.inputGroup}>
-                <label htmlFor="fullName">Full Name</label>
-                {isEditing ? (
-                  <>
-                    <input
-                      id="fullName"
-                      type="text"
-                      name="fullName"
-                      value={formData.fullName}
-                      onChange={handleInputChange}
-                      className={`${styles.input} ${
-                        errors.fullName ? styles.errorInput : ""
-                      }`}
-                      aria-invalid={!!errors.fullName}
-                      required
-                    />
-                    {errors.fullName && (
-                      <span className={styles.errorText}>
-                        {errors.fullName}
-                      </span>
-                    )}
-                  </>
-                ) : (
-                  <div className={styles.valueDisplay}>{user.fullName}</div>
-                )}
+                  Cancel
+                </Button>
+                <Button type="submit" block busy={isSubmitting} busyText="Saving">
+                  Save Changes
+                </Button>
               </div>
-
-              <div className={styles.inputGroup}>
-                <label htmlFor="phone">Phone Number</label>
-                {isEditing ? (
-                  <>
-                    <input
-                      id="phone"
-                      type="tel"
-                      name="phone"
-                      value={formData.phone}
-                      onChange={handleInputChange}
-                      className={`${styles.input} ${
-                        errors.phone ? styles.errorInput : ""
-                      }`}
-                      aria-invalid={!!errors.phone}
-                      required
-                    />
-                    {errors.phone && (
-                      <span className={styles.errorText}>{errors.phone}</span>
-                    )}
-                  </>
-                ) : (
-                  <div className={styles.valueDisplay}>{user.phone}</div>
-                )}
-              </div>
-
-              {/* City */}
-              <div className={styles.inputGroup}>
-                <label htmlFor="city">City</label>
-                {isEditing ? (
-                  <div className={styles.selectControl}>
-                    <select
-                      id="city"
-                      name="city"
-                      value={formData.city}
-                      onChange={handleInputChange}
-                      className={styles.input}
-                      required
-                    >
-                      {SUPPORTED_CITIES.map((city) => (
-                        <option key={city} value={city}>
-                          {city}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                ) : (
-                  <div className={styles.valueDisplay}>{user.city}</div>
-                )}
-              </div>
-
-              {/* EMAIL read-only */}
-              <div className={styles.inputGroup}>
-                <label>Email Address</label>
-                <div className={`${styles.valueDisplay} ${styles.readOnly}`}>
-                  {user.email}
-                  {!isAdmin && <span className={styles.lockIcon} aria-hidden="true">🔒</span>}
-                </div>
-              </div>
-
-              {isEditing && (
-                <div className={styles.actionButtons}>
-                  <button
-                    type="button"
-                    onClick={handleCancel}
-                    className={styles.cancelBtn}
-                    disabled={isSaving}
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    className={styles.saveBtn}
-                    disabled={isSaving}
-                    aria-busy={isSaving}
-                  >
-                    <BusyLabel busy={isSaving} busyText="Saving">
-                      Save Changes
-                    </BusyLabel>
-                  </button>
-                </div>
-              )}
-            </form>
-          </section>
-        </div>
+            )}
+          </Form>
+        </section>
       </div>
     </PageTransition>
   );
 };
 
-export default MyProfilePage;
+export default ProfilePage;

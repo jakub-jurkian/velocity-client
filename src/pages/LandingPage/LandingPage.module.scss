@@ -1,10 +1,9 @@
-@use "../../styles/variables" as v;
+@use "styles/theme" as v;
 
-// HERO SECTION
-.heroSection {
-  padding: 0rem 0rem 4rem 0rem;
-  display: flex;
-  justify-content: center;
+.hero {
+  max-width: 800px;
+  margin: 0 auto;
+  padding-bottom: 4rem;
   text-align: center;
 
   @media (min-width: v.$tablet) {
@@ -12,103 +11,100 @@
   }
 }
 
-.heroContent {
-  width: 100%;
-  max-width: 800px;
-}
-
 .heroTitle {
-  font-size: 2.5rem;
-  line-height: 1.2;
-  font-weight: 900;
   margin-bottom: 1rem;
-  color: v.$color-text-main;
+  font-size: 2.5rem;
+  font-weight: 800;
+  line-height: 1.2;
 
   @media (min-width: v.$tablet) {
+    margin-bottom: 1.5rem;
     font-size: 4.5rem;
     line-height: 1.1;
-    margin-bottom: 1.5rem;
   }
+}
 
-  .gradientText {
-    background: linear-gradient(to right, v.$color-primary, v.$color-secondary);
-    background-clip: text;
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-  }
+.gradientText {
+  @include v.gradient-text;
 }
 
 .heroSubtitle {
-  font-size: 1rem;
-  color: v.$color-text-muted;
   margin-bottom: 2.5rem;
-  line-height: 1.5;
   padding: 0 1rem;
+  color: v.$color-text-muted;
+  line-height: 1.5;
 
   @media (min-width: v.$tablet) {
-    font-size: 1.25rem;
     margin-bottom: 3rem;
+    font-size: 1.25rem;
   }
 }
 
-// Buttons
+// Full-width stacked buttons on phones, a centred row from tablet up.
 .ctaGroup {
   display: flex;
   flex-direction: column;
   gap: 1rem;
-  align-items: center;
-  width: 100%;
 
   @media (min-width: v.$tablet) {
     flex-direction: row;
     justify-content: center;
-    width: auto;
   }
 }
 
-// STATS BAR
 .statsBar {
   display: flex;
   flex-direction: column;
   gap: 2rem;
   padding: 3rem 1rem;
-  background-color: v.$color-bg-card;
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  background: v.$color-bg-card;
+  border-block: 1px solid v.$border-subtle;
 
   @media (min-width: v.$tablet) {
     flex-direction: row;
-    gap: 4rem;
-    padding: 3rem 0;
     justify-content: center;
+    gap: 0;
   }
 }
 
 .statItem {
   text-align: center;
-  h3 {
-    font-size: 2rem;
-    color: v.$color-text-main;
-    margin-bottom: 0.25rem;
 
-    @media (min-width: v.$tablet) {
-      font-size: 2.5rem;
+  // A hairline between neighbours once they sit in a row.
+  @media (min-width: v.$tablet) {
+    padding: 0 2rem;
+
+    & + & {
+      border-left: 1px solid v.$border;
     }
-  }
-  p {
-    color: v.$color-primary;
-    text-transform: uppercase;
-    font-size: 0.8rem;
-    letter-spacing: 1px;
-    font-weight: 600;
   }
 }
 
-// FEATURES
-.featuresSection {
-  padding: 4rem 1.5rem;
+// A value, not a section title, so not a heading: headings here would jump
+// from the hero's h1 straight to h3.
+.statValue {
+  margin-bottom: 0.25rem;
+  font-size: 2rem;
+  font-weight: 700;
+  line-height: 1.2;
+
+  @media (min-width: v.$tablet) {
+    font-size: 2.5rem;
+  }
+}
+
+.statLabel {
+  color: v.$color-primary;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.features {
   max-width: 1200px;
   margin: 0 auto;
+  padding: 4rem 0;
 
   @media (min-width: v.$tablet) {
     padding: 6rem 2rem;
@@ -116,72 +112,26 @@
 }
 
 .sectionTitle {
-  text-align: center;
-  font-size: 2rem;
   margin-bottom: 3rem;
-  .highlight {
-    color: v.$color-primary;
-  }
+  font-size: 2rem;
+  text-align: center;
 
   @media (min-width: v.$tablet) {
-    font-size: 2.5rem;
     margin-bottom: 4rem;
+    font-size: 2.5rem;
   }
+}
+
+.highlight {
+  color: v.$color-primary;
 }
 
 .grid {
   display: grid;
-  grid-template-columns: 1fr;
   gap: 1.5rem;
 
   @media (min-width: v.$tablet) {
     grid-template-columns: repeat(3, 1fr);
     gap: 2rem;
   }
-}
-
-.card {
-  background: v.$color-bg-card;
-  padding: 1.5rem;
-  border-radius: v.$radius-md;
-  border: 1px solid transparent;
-  transition: border-color 0.3s;
-  text-align: center;
-
-  @media (min-width: v.$tablet) {
-    padding: 2rem;
-  }
-
-  &:hover {
-    border-color: v.$color-secondary;
-  }
-
-  .icon {
-    font-size: 2rem;
-    margin-bottom: 1rem;
-  }
-
-  h3 {
-    font-size: 1.25rem;
-    margin-bottom: 0.5rem;
-    @media (min-width: v.$tablet) {
-      font-size: 1.5rem;
-    }
-  }
-
-  p {
-    color: v.$color-text-muted;
-    font-size: 0.95rem;
-    line-height: 1.5;
-  }
-}
-
-// FOOTER
-.footer {
-  text-align: center;
-  padding: 2rem;
-  margin-top: auto;
-  color: v.$color-text-muted;
-  font-size: 0.8rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
 }

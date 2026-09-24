@@ -99,13 +99,17 @@ export const performLogout =
       }
     }
 
-    // Clear side effects
-    localStorage.removeItem("velocity_jwt");
-    sessionStorage.removeItem("velocity_jwt");
-
-    // Then update Redux state
-    dispatch(logout());
+    dispatch(clearSession());
   };
+
+// Drops the session from storage and from Redux, without contacting the
+// server: for a token the server has already refused, where there is
+// nothing left to revoke.
+export const clearSession = () => (dispatch: AppDispatch) => {
+  localStorage.removeItem("velocity_jwt");
+  sessionStorage.removeItem("velocity_jwt");
+  dispatch(logout());
+};
 
 // Thunk for Logging In
 export const performLogin =

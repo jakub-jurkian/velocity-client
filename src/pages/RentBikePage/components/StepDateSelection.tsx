@@ -1,134 +1,129 @@
-import { useState, useMemo } from "react";
-import { format, addDays, parseISO, isAfter } from "date-fns";
-import styles from "../RentBikePage.module.scss";
+import { useState, type FormEvent } from "react";
+import { addDays, differenceInCalendarDays, format, isAfter, parseISO } from "date-fns";
 import type { City } from "../../../types/Fleet";
+import { CITY_LABELS } from "../../../data/cities";
+import { MAX_RENTAL_DAYS, MIN_RENTAL_DAYS } from "../../../data/rental";
+import Button from "../../../components/ui/Button";
+import Callout from "../../../components/ui/Callout";
+import { Form, TextField } from "../../../components/ui/Form";
+import styles from "../RentBikePage.module.scss";
 
-const MIN_RENTAL_DAYS = 3;
-const MAX_RENTAL_DAYS = 21;
+type Dates = { start: string; end: string };
+
+const isoDay = (date: Date) => format(date, "yyyy-MM-dd");
+
+// The pickers' min and max are only hints, and a typed date can bypass them,
+// so the range is checked again before asking the API. Strings compare safely
+// because both are 'YYYY-MM-DD'.
+const rangeError = ({ start, end }: Dates) => {
+  if (!start || !end) return "Please select both dates.";
+  if (end < start) return "End date cannot be before start date.";
+  // Mirrors @Future on ReservationBookRequest.startDate.
+  if (start <= isoDay(new Date())) return "Bookings must start from tomorrow onwards.";
+
+  // Exclusive end, like the backend: Sep 10 -> Sep 15 is 5 days.
+  const days = differenceInCalendarDays(parseISO(end), parseISO(start));
+  if (days < MIN_RENTAL_DAYS) return `Minimum rental period is ${MIN_RENTAL_DAYS} days.`;
+  if (days > MAX_RENTAL_DAYS) return `Maximum rental period is ${MAX_RENTAL_DAYS} days.`;
+  return "";
+};
 
 interface Props {
-  dates: { start: string; end: string };
-  setDates: (d: { start: string; end: string }) => void;
-  onSubmit: (e: React.FormEvent, setError: (msg: string) => void) => void;
+  dates: Dates;
+  setDates: (dates: Dates) => void;
   city: City;
+  // Called once the range is valid.
+  onSearch: () => void;
 }
 
-export default function StepDateSelection({
-  dates,
-  setDates,
-  onSubmit,
-  city,
-}: Props) {
+export default function StepDateSelection({ dates, setDates, city, onSearch }: Props) {
   const [error, setError] = useState("");
 
-  const earliestStartDate = useMemo(
-    () => format(addDays(new Date(), 1), "yyyy-MM-dd"),
-    [],
-  );
+  const earliestStart = isoDay(addDays(new Date(), 1));
+  // The end date is exclusive server-side, so a 21-day rental ends on start + 21.
+  const earliestReturn = dates.start && isoDay(addDays(parseISO(dates.start), MIN_RENTAL_DAYS));
+  const latestReturn = dates.start && isoDay(addDays(parseISO(dates.start), MAX_RENTAL_DAYS));
 
-  // The end date is exclusive server-side (days = end - start), so a 21-day
-  // rental ends on start + 21 and a 3-day rental ends on start + 3.
-  const maxEndDate = useMemo(() => {
-    if (!dates.start) return undefined;
-
-    // Use date-fns to safely add days ignoring timezone shifts
-    const maxDate = addDays(parseISO(dates.start), MAX_RENTAL_DAYS);
-    return format(maxDate, "yyyy-MM-dd");
-  }, [dates.start]);
-
-  const minEndDate = useMemo(() => {
-    if (!dates.start) return undefined;
-
-    const minDate = addDays(parseISO(dates.start), MIN_RENTAL_DAYS);
-    return format(minDate, "yyyy-MM-dd");
-  }, [dates.start]);
-
-  const handleDateChange = (field: "start" | "end", value: string) => {
-    if (error) setError("");
-
-    const newDates = { ...dates, [field]: value };
-
-    // If start date moves past end date, clear the end date
-    if (field === "start" && newDates.end) {
-      if (isAfter(parseISO(value), parseISO(newDates.end))) {
-        newDates.end = "";
-      }
+  const handleChange = (field: keyof Dates, value: string) => {
+    setError("");
+    const next = { ...dates, [field]: value };
+    // A start moved past the chosen end clears the end.
+    if (field === "start" && next.end && isAfter(parseISO(value), parseISO(next.end))) {
+      next.end = "";
     }
+    setDates(next);
+  };
 
-    setDates(newDates);
+  const handleSubmit = (event: FormEvent) => {
+    event.preventDefault();
+    const problem = rangeError(dates);
+    if (problem) setError(problem);
+    else onSearch();
   };
 
   return (
-    <div className={styles.stepContainer}>
-      <div className={styles.locationBanner}>
-        <span className={styles.pinIcon} aria-hidden="true">
-          📍
-        </span>
-        <div className={styles.bannerText}>
-          <span className={styles.label}>Browsing fleet in</span>
-          <span className={styles.city}>{city}</span>
-        </div>
-      </div>
+    <div className={styles.step}>
+      <Callout icon="📍" title="Browsing fleet in" className={styles.banner}>
+        <span className={styles.city}>{CITY_LABELS[city]}</span>
+      </Callout>
 
       <h1>When do you need it?</h1>
       <p className={styles.subtitle}>
-        Select your rental dates ({MIN_RENTAL_DAYS}-{MAX_RENTAL_DAYS} days).
-        Bookings start from tomorrow.
+        Select your rental dates ({MIN_RENTAL_DAYS}-{MAX_RENTAL_DAYS} days). Bookings start
+        from tomorrow.
       </p>
 
-      <form onSubmit={(e) => onSubmit(e, setError)} className={styles.dateForm}>
-        <div className={styles.inputGroup}>
-          <label htmlFor="startDate">Start Date</label>
-          <input
-            id="startDate"
-            type="date"
-            value={dates.start}
-            onChange={(e) => handleDateChange("start", e.target.value)}
-            min={earliestStartDate}
-            className={styles.input}
-            required
-          />
-        </div>
+      <Form onSubmit={handleSubmit} noValidate>
+        <TextField
+          id="startDate"
+          label="Start Date"
+          type="date"
+          value={dates.start}
+          onChange={(e) => handleChange("start", e.target.value)}
+          min={earliestStart}
+          required
+        />
 
-        <div className={styles.inputGroup}>
-          <label htmlFor="endDate">End Date</label>
-          <input
+        <div>
+          <TextField
             id="endDate"
+            label="End Date"
             type="date"
             value={dates.end}
-            onChange={(e) => handleDateChange("end", e.target.value)}
-            // No fallback needed: minEndDate is always set once a start date
-            // exists, and the field is disabled until then.
-            min={minEndDate}
-            max={maxEndDate}
+            onChange={(e) => handleChange("end", e.target.value)}
+            min={earliestReturn || undefined}
+            max={latestReturn || undefined}
             disabled={!dates.start}
-            className={styles.input}
             required
           />
-          {minEndDate && maxEndDate && (
+          {earliestReturn && latestReturn && (
             <div className={styles.returnWindow}>
               <div className={styles.returnBound}>
                 <span className={styles.boundLabel}>Earliest return</span>
                 <span className={styles.boundDate}>
-                  {format(parseISO(minEndDate), "EEE, d MMM")}
+                  {format(parseISO(earliestReturn), "EEE, d MMM")}
                 </span>
               </div>
               <div className={styles.returnBound}>
                 <span className={styles.boundLabel}>Latest return</span>
                 <span className={styles.boundDate}>
-                  {format(parseISO(maxEndDate), "EEE, d MMM")}
+                  {format(parseISO(latestReturn), "EEE, d MMM")}
                 </span>
               </div>
             </div>
           )}
         </div>
 
-        {error && <div className={styles.errorBox}>⚠️ {error}</div>}
+        {error && (
+          <Callout tone="danger" icon="⚠️" role="alert">
+            {error}
+          </Callout>
+        )}
 
-        <button type="submit" className={styles.primaryBtn}>
+        <Button type="submit" size="lg" block>
           Find Bikes ➜
-        </button>
-      </form>
+        </Button>
+      </Form>
     </div>
   );
 }

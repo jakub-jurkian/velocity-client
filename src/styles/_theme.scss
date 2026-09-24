@@ -1,0 +1,4 @@
+// Single entry point for stylesheets: `@use "styles/theme" as v;` brings in
+// both the tokens and the mixins under one namespace.
+@forward "variables";
+@forward "mixins";

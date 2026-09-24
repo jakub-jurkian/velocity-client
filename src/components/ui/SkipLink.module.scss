@@ -1,0 +1,21 @@
+@use "styles/theme" as v;
+
+.skip {
+  position: fixed;
+  top: 0.75rem;
+  left: 0.75rem;
+  z-index: v.$z-modal;
+  padding: 0.6rem 1rem;
+  border-radius: v.$radius-md;
+  background: v.$color-primary;
+  color: v.$color-on-primary;
+  font-weight: 700;
+  transform: translateY(-200%);
+  transition: transform 0.2s;
+
+  &:focus,
+  &:hover {
+    color: v.$color-on-primary;
+    transform: translateY(0);
+  }
+}

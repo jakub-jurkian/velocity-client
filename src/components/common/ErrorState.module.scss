@@ -1,4 +1,4 @@
-@use "../../styles/variables" as v;
+@use "styles/theme" as v;
 
 .errorContainer {
   text-align: center;
@@ -7,7 +7,7 @@
 .errorCode {
   font-size: 8rem;
   line-height: 1;
-  font-weight: 900;
+  font-weight: 800;
   margin: 0;
   color: transparent;
   // Outline text effect

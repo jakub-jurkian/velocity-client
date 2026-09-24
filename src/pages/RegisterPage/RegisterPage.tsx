@@ -1,294 +1,164 @@
-import toast from "react-hot-toast";
 import { Link, useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
 import { useForm } from "../../hooks/useForm";
 import {
-  extractFieldErrors,
+  collectErrors,
   validateEmail,
   validateMinLength,
   validatePassword,
   validatePhone,
 } from "../../utils/validators";
-import PageTransition from "../../components/common/PageTransition";
-import BusyLabel from "../../components/common/BusyLabel";
-import { SUPPORTED_CITIES } from "../../types/Fleet"; // 1. Use the central source of truth
+import { ApiError, apiFetch } from "../../api/client";
+import { SUPPORTED_CITIES } from "../../types/Fleet";
+import { CITY_OPTIONS } from "../../data/cities";
+import AuthLayout from "../../components/AuthLayout/AuthLayout";
+import Button from "../../components/ui/Button";
+import { CheckboxField, FieldRow, Form, SelectField, TextField } from "../../components/ui/Form";
+import SlowNotice from "../../components/ui/SlowNotice";
 import styles from "./RegisterPage.module.scss";
 
 const RegisterPage = () => {
   const navigate = useNavigate();
 
-  const { values, errors, isSubmitting, handleChange, handleSubmit, setErrors } = useForm({
+  const { isSubmitting, handleSubmit, setErrors, field, checkbox } = useForm({
     initialValues: {
       fullName: "",
       phone: "",
       email: "",
       password: "",
       confirmPassword: "",
+      city: SUPPORTED_CITIES[0] as string,
       agreeOnTerms: false,
-      city: SUPPORTED_CITIES[0], // Default to the first supported city safely
     },
-    validate: (vals) => {
-      const errs: Record<string, string> = {};
-      
-      const fullNameError = validateMinLength(vals.fullName, 2, "Full Name");
-      if (fullNameError) errs.fullName = fullNameError;
-
-      const phoneError = validatePhone(vals.phone);
-      if (phoneError) errs.phone = phoneError;
-
-      const emailError = validateEmail(vals.email);
-      if (emailError) errs.email = emailError;
-
-      const passwordError = validatePassword(vals.password);
-      if (passwordError) errs.password = passwordError;
-
-      if (vals.password !== vals.confirmPassword) {
-        errs.confirmPassword = "Passwords do not match.";
-      }
-
-      if (!vals.agreeOnTerms) {
-        errs.agreeOnTerms = "You must agree to the terms to continue.";
-      }
-
-      return errs;
-    },
-    onSubmit: async (vals) => {
+    validate: (values) =>
+      collectErrors({
+        fullName: validateMinLength(values.fullName, 2, "Full Name"),
+        phone: validatePhone(values.phone),
+        email: validateEmail(values.email),
+        password: validatePassword(values.password),
+        confirmPassword:
+          values.password === values.confirmPassword ? undefined : "Passwords do not match.",
+        agreeOnTerms: values.agreeOnTerms
+          ? undefined
+          : "You must agree to the terms to continue.",
+      }),
+    onSubmit: async ({ fullName, phone, email, password, city }) => {
       try {
-        const apiUrl = import.meta.env.VITE_API_URL; // 2. No hardcoded localhost
-
-        const response = await fetch(`${apiUrl}/api/v1/auth/register`, {
+        await apiFetch("/api/v1/auth/register", {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            email: vals.email,
-            password: vals.password,
-            fullName: vals.fullName,
-            city: vals.city,
-            phone: vals.phone,
-          }),
+          body: { email, password, fullName, city, phone },
+          token: null,
         });
-
-        if (!response.ok) {
-          // 3. Safe JSON parsing to protect against HTML server crashes
-          const contentType = response.headers.get("content-type") || "";
-          const isJson = contentType.includes("application/problem+json") || 
-                         contentType.includes("application/json");
-
-          if (isJson) {
-            const errorData = await response.json();
-
-            // A 400 from @Valid carries per-field messages in `invalidFields`;
-            // a 409 is a duplicate email or phone. Both belong on the input
-            // that caused them, not in a toast the user has to map back to a
-            // field themselves.
-            const fieldErrors = extractFieldErrors(errorData);
-
-            if (response.status === 409) {
-              const field = /phone/i.test(errorData.detail ?? "")
-                ? "phone"
-                : "email";
-              fieldErrors[field] = errorData.detail;
-            }
-
-            if (Object.keys(fieldErrors).length > 0) {
-              setErrors(fieldErrors);
-              return;
-            }
-
-            toast.error(errorData.detail || "Registration failed. Please check your inputs.");
-          } else {
-            toast.error("Server error. Please try again later.");
-          }
+        navigate("/login", { replace: true });
+        toast.success("You have been registered successfully!");
+      } catch (error) {
+        if (!(error instanceof ApiError)) {
+          console.error("Registration network error:", error);
+          toast.error("Unable to connect to VeloCity server. Please check your connection.");
           return;
         }
 
-        navigate("/login", { replace: true });
-        toast.success("You have been registered successfully!");
-        
-      } catch (error) {
-        console.error("Registration network error:", error);
-        toast.error("Unable to connect to VeloCity server. Please check your connection.");
+        // A 400 from @Valid carries per-field messages; a 409 is a duplicate
+        // email or phone. Both belong on the input that caused them, not in a
+        // toast the user has to map back to a field themselves.
+        const fieldErrors = error.fieldErrors;
+        if (error.status === 409 && error.detail) {
+          fieldErrors[/phone/i.test(error.detail) ? "phone" : "email"] = error.detail;
+        }
+
+        if (Object.keys(fieldErrors).length > 0) {
+          setErrors(fieldErrors);
+        } else if (error.status >= 500) {
+          toast.error("Server error. Please try again later.");
+        } else {
+          toast.error(error.detail ?? "Registration failed. Please check your inputs.");
+        }
       }
     },
   });
 
   return (
-    <PageTransition>
-      <main className={styles.registerContainer}>
-        <div className={styles.glowOrb} aria-hidden="true"></div>
+    <AuthLayout
+      wide
+      glow="secondary"
+      title="Join the Fleet"
+      subtitle="Create an account and start riding."
+      footer={
+        <p>
+          Already have an account? <Link to="/login">Log in here</Link>
+        </p>
+      }
+    >
+      <Form onSubmit={handleSubmit} noValidate>
+        <FieldRow>
+          <TextField
+            id="fullName"
+            label="Full Name"
+            placeholder="Sam Bridges"
+            autoComplete="name"
+            required
+            {...field("fullName")}
+          />
+          <TextField
+            id="phone"
+            label="Phone Number"
+            type="tel"
+            placeholder="+48123456789"
+            autoComplete="tel"
+            required
+            {...field("phone")}
+          />
+        </FieldRow>
 
-        <section
-          className={styles.registerCard}
-          aria-labelledby="register-title"
-        >
-          <header className={styles.header}>
-            <div className={styles.logo}>
-              Velo<span className={styles.highlight}>City</span>
-            </div>
-            <h1 id="register-title" className={styles.title}>
-              Join the Fleet
-            </h1>
-            <p className={styles.subtitle}>
-              Create an account and start riding.
-            </p>
-          </header>
+        <TextField
+          id="email"
+          label="Email Address"
+          type="email"
+          placeholder="name@velocity.com"
+          autoComplete="email"
+          required
+          {...field("email")}
+        />
 
-          <form className={styles.form} onSubmit={handleSubmit}>
-            {/* Name & Phone Grid */}
-            <div className={styles.formGrid}>
-              <div className={styles.inputGroup}>
-                <label htmlFor="fullName">Full Name</label>
-                <input
-                  type="text"
-                  id="fullName"
-                  name="fullName"
-                  placeholder="Sam Bridges"
-                  autoComplete="name"
-                  required
-                  onChange={handleChange}
-                />
-                {errors.fullName && (
-                  <span className={styles.errorText}>{errors.fullName}</span>
-                )}
-              </div>
+        <FieldRow>
+          <TextField
+            id="password"
+            label="Password"
+            type="password"
+            placeholder="••••••••"
+            autoComplete="new-password"
+            required
+            {...field("password")}
+          />
+          <TextField
+            id="confirmPassword"
+            label="Confirm Password"
+            type="password"
+            placeholder="••••••••"
+            autoComplete="new-password"
+            required
+            {...field("confirmPassword")}
+          />
+        </FieldRow>
 
-              <div className={styles.inputGroup}>
-                <label htmlFor="phone">Phone Number</label>
-                <input
-                  type="tel"
-                  id="phone"
-                  name="phone"
-                  placeholder="+48123456789"
-                  autoComplete="tel"
-                  required
-                  onChange={handleChange}
-                />
-                {errors.phone && (
-                  <span className={styles.errorText}>{errors.phone}</span>
-                )}
-              </div>
-            </div>
+        <SelectField id="city" label="City" options={CITY_OPTIONS} required {...field("city")} />
 
-            {/* Email */}
-            <div className={styles.inputGroup}>
-              <label htmlFor="email">Email Address</label>
-              <input
-                type="email"
-                id="email"
-                name="email"
-                placeholder="name@velocity.com"
-                autoComplete="email"
-                required
-                onChange={handleChange}
-              />
-              {errors.email && (
-                <span className={styles.errorText}>{errors.email}</span>
-              )}
-            </div>
+        <CheckboxField
+          label={
+            <>
+              I agree to the <span className={styles.fakeLink}>Terms of Service</span> and{" "}
+              <span className={styles.fakeLink}>Privacy Policy</span>.
+            </>
+          }
+          {...checkbox("agreeOnTerms")}
+        />
 
-            {/* Passwords Grid */}
-            <div className={styles.formGrid}>
-              <div className={styles.inputGroup}>
-                <label htmlFor="password">Password</label>
-                <input
-                  type="password"
-                  id="password"
-                  name="password"
-                  placeholder="••••••••"
-                  autoComplete="new-password"
-                  required
-                  onChange={handleChange}
-                />
-                {errors.password && (
-                  <span className={styles.errorText}>{errors.password}</span>
-                )}
-              </div>
-
-              <div className={styles.inputGroup}>
-                <label htmlFor="confirmPassword">Confirm Password</label>
-                <input
-                  type="password"
-                  id="confirmPassword"
-                  name="confirmPassword"
-                  placeholder="••••••••"
-                  autoComplete="new-password"
-                  required
-                  onChange={handleChange}
-                />
-                {errors.confirmPassword && (
-                  <span className={styles.errorText}>
-                    {errors.confirmPassword}
-                  </span>
-                )}
-              </div>
-            </div>
-
-            {/* City Selection */}
-            <div className={styles.inputGroup}>
-              <label htmlFor="city">City</label>
-              <div className={styles.selectControl}>
-                <select
-                  id="city"
-                  name="city"
-                  value={values.city}
-                  onChange={handleChange}
-                  required
-                >
-                  {/* Iterate over the central source of truth */}
-                  {SUPPORTED_CITIES.map((city) => (
-                    <option key={city} value={city}>
-                      {city}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            {/* Terms Checkbox */}
-            <div className={styles.termsGroup}>
-              <label className={styles.checkboxContainer}>
-                <input
-                  type="checkbox"
-                  required
-                  name="agreeOnTerms"
-                  checked={!!values.agreeOnTerms}
-                  onChange={handleChange}
-                />
-                <span className={styles.checkmark}></span>
-                <span className={styles.termsText}>
-                  {/* 4. Removed href="#" to prevent page jumping. Use spans or real <Link>s */}
-                  I agree to the <span className={styles.fakeLink}>Terms of Service</span> and{" "}
-                  <span className={styles.fakeLink}>Privacy Policy</span>.
-                </span>
-              </label>
-              {errors.agreeOnTerms && (
-                <span className={styles.errorText}>
-                  {String(errors.agreeOnTerms)}
-                </span>
-              )}
-            </div>
-
-            <button
-              type="submit"
-              className={styles.submitBtn}
-              disabled={isSubmitting}
-              aria-busy={isSubmitting}
-            >
-              <BusyLabel busy={isSubmitting} busyText="Creating account">
-                Create Account ➜
-              </BusyLabel>
-            </button>
-          </form>
-
-          <footer className={styles.cardFooter}>
-            <p>
-              Already have an account? <Link to="/login">Log in here</Link>
-            </p>
-          </footer>
-        </section>
-      </main>
-    </PageTransition>
+        <Button type="submit" size="lg" block busy={isSubmitting} busyText="Creating account">
+          Create Account ➜
+        </Button>
+        {isSubmitting && <SlowNotice />}
+      </Form>
+    </AuthLayout>
   );
 };
 

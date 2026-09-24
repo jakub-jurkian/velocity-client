@@ -1,0 +1,131 @@
+@use "styles/theme" as v;
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.row {
+  display: grid;
+  gap: 1.25rem;
+
+  @media (min-width: v.$tablet) {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-width: 0;
+
+  > label,
+  .label {
+    color: v.$color-text-muted;
+    font-size: 0.85rem;
+    font-weight: 500;
+  }
+}
+
+.control {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid v.$border;
+  border-radius: v.$radius-md;
+  color: v.$color-text-main;
+  font: inherit;
+  // 1rem stops iOS zooming into the field on focus.
+  font-size: 1rem;
+  // Native pickers (date, select popups) render dark to match.
+  color-scheme: dark;
+  transition: v.$transition-base;
+
+  &::placeholder {
+    color: rgba(v.$color-text-muted, 0.5);
+  }
+
+  &:focus {
+    @include v.focus-ring;
+    background: rgba(0, 0, 0, 0.5);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+.invalid {
+  border-color: v.$danger;
+
+  &:focus {
+    @include v.focus-ring(v.$danger);
+  }
+}
+
+.selectWrap {
+  position: relative;
+
+  select {
+    appearance: none;
+    padding-right: 2.5rem;
+    cursor: pointer;
+  }
+
+  option {
+    background: v.$color-bg-card;
+    color: v.$color-text-main;
+  }
+
+  &::after {
+    content: "▾";
+    position: absolute;
+    top: 50%;
+    right: 1rem;
+    transform: translateY(-50%);
+    color: v.$color-primary;
+    font-size: 1.2rem;
+    pointer-events: none;
+  }
+}
+
+.readOnly {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  background: v.$surface-raised;
+  border: 1px solid v.$border-subtle;
+  border-radius: v.$radius-md;
+  font-size: 1rem;
+  overflow-wrap: anywhere;
+}
+
+.error {
+  color: v.$danger;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.checkbox {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  color: v.$color-text-muted;
+  font-size: 0.85rem;
+  line-height: 1.4;
+  cursor: pointer;
+
+  input {
+    flex: none;
+    width: 1rem;
+    height: 1rem;
+    margin-top: 0.1rem;
+    accent-color: v.$color-primary;
+    cursor: pointer;
+  }
+}

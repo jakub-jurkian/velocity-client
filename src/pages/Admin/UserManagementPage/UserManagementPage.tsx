@@ -1,607 +1,298 @@
-import { useCallback, useEffect, useState } from "react";
-import styles from "./UserManagementPage.module.scss";
-import type { AdminUser } from "../../../types/User";
-import type { PaginationMeta } from "../../../types/Pagination";
-import { EMPTY_META } from "../../../types/Pagination";
-import { fetchPage, readProblemDetail } from "../../../api/pagination";
-import PageTransition from "../../../components/common/PageTransition";
-import { scrollToTop } from "../../../utils/scroll";
-import BusyLabel from "../../../components/common/BusyLabel";
-import { getAvatarStyle, getInitials } from "../../../utils/avatar";
+import { useState, type ChangeEvent, type FormEvent } from "react";
 import toast from "react-hot-toast";
 import { useAppSelector } from "../../../store/hooks";
-import { SUPPORTED_CITIES, type City } from "../../../types/Fleet";
+import { ApiError, apiFetch, toastError } from "../../../api/client";
+import { usePaginatedList } from "../../../hooks/usePaginatedList";
+import { CITY_OPTIONS } from "../../../data/cities";
+import { SUPPORTED_ROLES, type AdminUser, type UserRole } from "../../../types/User";
+import { changedFields } from "../../../utils/changedFields";
+import { cx } from "../../../utils/cx";
+import { formatDate, humanize } from "../../../utils/format";
+import PageTransition from "../../../components/common/PageTransition";
+import Avatar from "../../../components/ui/Avatar";
+import Badge from "../../../components/ui/Badge";
+import Button from "../../../components/ui/Button";
+import ConfirmDialog from "../../../components/ui/ConfirmDialog";
+import DataTable, { type Column } from "../../../components/ui/DataTable";
+import { FieldRow, Form, ReadOnlyField, SelectField, TextField } from "../../../components/ui/Form";
+import Modal from "../../../components/ui/Modal";
+import PageHeader from "../../../components/ui/PageHeader";
+import Pagination from "../../../components/ui/Pagination";
+import styles from "./UserManagementPage.module.scss";
 
-const PAGE_SIZE = 10;
+const ROLE_LABELS: Record<UserRole, string> = { ADMIN: "Administrator", CLIENT: "Client" };
+const ROLE_OPTIONS = SUPPORTED_ROLES.map((role) => ({ value: role, label: ROLE_LABELS[role] }));
 
-// Fields the admin PATCH endpoint accepts. Every key is optional because the
-// request is a partial update: only genuinely changed fields are sent, so an
-// untouched field is left alone server-side rather than rewritten.
-
-interface UserUpdatePayloadByAdmin {
-  fullName?: string;
-  phone?: string;
-  email?: string;
-  city?: City;
-}
+// Fields the admin profile PATCH accepts. The role has its own endpoint.
+const PROFILE_FIELDS = ["fullName", "email", "phone", "city"] as const;
 
 const UserManagement = () => {
-  const [users, setUsers] = useState<AdminUser[]>([]);
-  const [meta, setMeta] = useState<PaginationMeta>(EMPTY_META);
-  const [page, setPage] = useState(0);
-  const [isLoading, setIsLoading] = useState(true);
+  const currentUserId = useAppSelector((state) => state.auth.user?.id);
+  const {
+    items: users,
+    setItems: setUsers,
+    meta,
+    goToPage,
+    isLoading,
+    reload,
+  } = usePaginatedList<AdminUser>("/api/v1/admin/users", { errorText: "Failed to load users." });
 
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<AdminUser | null>(null);
-  const [isBlockModalOpen, setIsBlockModalOpen] = useState(false);
-  const [userToBlock, setUserToBlock] = useState<AdminUser | null>(null);
+  const [userToToggle, setUserToToggle] = useState<AdminUser | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
-  const jwtToken = useAppSelector((state) => state.auth.token);
-  const currentUserId = useAppSelector((state) => state.auth.user?.id);
-  const apiUrl = import.meta.env.VITE_API_URL;
+  const replaceUser = (updated: AdminUser) =>
+    setUsers((list) => list.map((user) => (user.id === updated.id ? updated : user)));
 
-  // Reads one page and keeps `meta`, so the admin can reach every account
-  // rather than only the first pageful.
-  const loadUsers = useCallback(async () => {
-    if (!jwtToken) return;
+  // Binds an edit-modal input to one field of the user being edited.
+  const edit =
+    (key: keyof AdminUser) => (event: ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
+      setEditingUser((user) => user && ({ ...user, [key]: event.target.value } as AdminUser));
 
-    try {
-      const result = await fetchPage<AdminUser>(
-        "/api/v1/admin/users",
-        jwtToken,
-        { page, size: PAGE_SIZE },
-      );
-      setUsers(result.data);
-      setMeta(result.meta);
-    } catch (error) {
-      console.error("Failed to fetch users:", error);
-      toast.error(
-        error instanceof Error ? error.message : "Failed to load users.",
-      );
-    } finally {
-      setIsLoading(false);
-    }
-  }, [jwtToken, page]);
-
-  useEffect(() => {
-    setIsLoading(true);
-    loadUsers();
-  }, [loadUsers]);
-
-  const handleBlockClick = (userId: string) => {
-    if (userId === currentUserId) {
+  const requestToggle = (user: AdminUser) => {
+    if (user.id === currentUserId) {
       toast.error("You cannot block your own admin account.");
       return;
     }
-
-    const user = users.find((candidate) => candidate.id === userId);
-    if (!user) return;
-
-    setUserToBlock(user);
-    setIsBlockModalOpen(true);
+    setUserToToggle(user);
   };
 
-  const confirmBlockToggle = async () => {
-    if (!userToBlock || !jwtToken) return;
+  const blocking = userToToggle?.status === "ACTIVE";
+
+  const confirmToggle = async () => {
+    if (!userToToggle) return;
 
     setIsSaving(true);
     try {
-      await toggleBlock(userToBlock, jwtToken);
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  const toggleBlock = async (userToBlock: AdminUser, jwtToken: string) => {
-    const { id: userId, status: currentStatus } = userToBlock;
-    const statusUrl = currentStatus === "ACTIVE" ? "block" : "unblock";
-
-    try {
-      const response = await fetch(
-        `${apiUrl}/api/v1/admin/users/${userId}/${statusUrl}`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${jwtToken}`,
-          },
-        },
-      );
-
-      if (!response.ok) {
-        toast.error(
-          currentStatus === "ACTIVE"
-            ? "Failed to block user."
-            : "Failed to unblock user.",
-        );
-        return;
-      }
+      await apiFetch(`/api/v1/admin/users/${userToToggle.id}/${blocking ? "block" : "unblock"}`, {
+        method: "POST",
+      });
+      replaceUser({ ...userToToggle, status: blocking ? "BLOCKED" : "ACTIVE" });
+      toast.success(blocking ? "User blocked successfully!" : "User unblocked successfully!");
+      setUserToToggle(null);
     } catch (error) {
       console.error(error);
-      toast.error("Unable to update user status.");
-      return;
-    }
-
-    const newStatus = currentStatus === "ACTIVE" ? "BLOCKED" : "ACTIVE";
-    const updatedUsers: AdminUser[] = users.map((u) =>
-      u.id === userId ? { ...u, status: newStatus } : u,
-    );
-
-    setUsers(updatedUsers);
-
-    if (newStatus === "ACTIVE") {
-      toast.success("User unblocked successfully!");
-    } else {
-      toast.success("User blocked successfully!");
-    }
-
-    setIsBlockModalOpen(false);
-    setUserToBlock(null);
-  };
-
-  const closeBlockModal = () => {
-    if (isSaving) return;
-    setIsBlockModalOpen(false);
-    setUserToBlock(null);
-  };
-
-  const openEditModal = (user: AdminUser) => {
-    setEditingUser({ ...user });
-    setIsModalOpen(true);
-  };
-
-  const closeEditModal = () => {
-    if (isSaving) return;
-    setIsModalOpen(false);
-  };
-
-  const handleSaveUser = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!editingUser || !jwtToken) return;
-
-    setIsSaving(true);
-    try {
-      await saveUser(editingUser, jwtToken);
+      toastError(error, blocking ? "Failed to block user." : "Failed to unblock user.");
     } finally {
       setIsSaving(false);
     }
   };
 
-  const saveUser = async (editingUser: AdminUser, jwtToken: string) => {
-    const originalUser = users.find((u) => u.id === editingUser.id);
-    if (!originalUser) return;
+  const saveUser = async (event: FormEvent) => {
+    event.preventDefault();
+    const original = users.find((user) => user.id === editingUser?.id);
+    if (!editingUser || !original) return;
 
-    const fieldsToCheck = [
-      "fullName",
-      "email",
-      "phone",
-      "role",
-      "city",
-    ] as const;
-    const hasChanged = fieldsToCheck.some(
-      (field) => originalUser[field] !== editingUser[field],
-    );
+    // Only genuinely changed fields are sent, so an untouched one is left
+    // alone server-side rather than rewritten.
+    const profileChanges = changedFields(original, editingUser, PROFILE_FIELDS);
+    const hasProfileChanges = Object.keys(profileChanges).length > 0;
+    const roleChanged = original.role !== editingUser.role;
 
-    if (!hasChanged) {
+    if (!hasProfileChanges && !roleChanged) {
       toast("No changes made.", { icon: "ℹ️" });
-      setIsModalOpen(false);
+      setEditingUser(null);
       return;
     }
 
-    const changedPayload: UserUpdatePayloadByAdmin = {};
-
-    if (originalUser.fullName !== editingUser.fullName) {
-      changedPayload.fullName = editingUser.fullName;
-    }
-    if (originalUser.phone !== editingUser.phone) {
-      changedPayload.phone = editingUser.phone;
-    }
-    if (originalUser.city !== editingUser.city) {
-      changedPayload.city = editingUser.city;
-    }
-    if (originalUser.email !== editingUser.email) {
-      changedPayload.email = editingUser.email;
-    }
-
-    // First API Call: Profile Update
-    if (Object.keys(changedPayload).length !== 0) {
-      try {
-        const response = await fetch(
-          `${apiUrl}/api/v1/admin/users/${originalUser.id}`,
-          {
-            method: "PATCH",
-            headers: {
-              Authorization: `Bearer ${jwtToken}`,
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify(changedPayload),
-          },
-        );
-
-        if (!response.ok) {
-          toast.error(
-            await readProblemDetail(response, "Failed to update profile."),
-          );
-          return;
-        }
-      } catch (error) {
-        console.error(error);
-        toast.error("Network connection failed.");
-        return;
+    setIsSaving(true);
+    try {
+      if (hasProfileChanges) {
+        await apiFetch(`/api/v1/admin/users/${original.id}`, {
+          method: "PATCH",
+          body: profileChanges,
+        });
       }
-    }
 
-    // Second API Call: Role Update
-    if (originalUser.role !== editingUser.role) {
-      try {
-        const responseRole = await fetch(
-          `${apiUrl}/api/v1/admin/users/${originalUser.id}/role`,
-          {
+      if (roleChanged) {
+        try {
+          await apiFetch(`/api/v1/admin/users/${original.id}/role`, {
             method: "PATCH",
-            headers: {
-              Authorization: `Bearer ${jwtToken}`,
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ role: editingUser.role }),
-          },
-        );
-
-        if (!responseRole.ok) {
-          toast.error(
-            await readProblemDetail(responseRole, "Failed to update role."),
-          );
-
-          // The profile PATCH may already have succeeded, so pull the server's
-          // version rather than leaving a half-applied edit on screen.
-          await loadUsers();
-          return;
+            body: { role: editingUser.role },
+          });
+        } catch (error) {
+          // The profile PATCH may already have succeeded, so pull the
+          // server's version rather than leave a half-applied edit on screen.
+          if (error instanceof ApiError) reload();
+          throw error;
         }
-      } catch (error) {
-        console.error(error);
-        toast.error("Network connection failed.");
-        return;
       }
-    }
 
-    const updatedUsers = users.map((u) =>
-      u.id === editingUser.id ? editingUser : u,
-    );
-    setUsers(updatedUsers);
-    setIsModalOpen(false);
-    setEditingUser(null);
-    toast.success("User updated successfully!");
+      replaceUser(editingUser);
+      setEditingUser(null);
+      toast.success("User updated successfully!");
+    } catch (error) {
+      console.error(error);
+      toastError(error, "Failed to update the user.");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
-  const goToPage = (step: 1 | -1) => {
-    setPage((current) => current + step);
-    scrollToTop();
-  };
+  const columns: Column<AdminUser>[] = [
+    {
+      header: "User",
+      kind: "primary",
+      cell: (user) => (
+        <div className={styles.userCell}>
+          <Avatar id={user.id} name={user.fullName} size={36} />
+          <div className={styles.userInfo}>
+            <span className={styles.name}>{user.fullName}</span>
+            <span className={styles.email}>{user.email}</span>
+          </div>
+        </div>
+      ),
+    },
+    {
+      header: "Role",
+      cell: (user) => (
+        <Badge tone={user.role === "ADMIN" ? "primary" : "neutral"} fixed>
+          {ROLE_LABELS[user.role]}
+        </Badge>
+      ),
+    },
+    {
+      header: "Status",
+      cell: (user) => (
+        <span className={cx(styles.status, user.status === "ACTIVE" ? styles.active : styles.blocked)}>
+          {humanize(user.status)}
+        </span>
+      ),
+    },
+    { header: "Joined", cell: (user) => formatDate(user.createdAt) },
+    {
+      header: "Actions",
+      kind: "actions",
+      cell: (user) => (
+        <>
+          <Button variant="secondary" size="sm" onClick={() => setEditingUser({ ...user })}>
+            Edit
+          </Button>
+          <Button
+            variant={user.status === "ACTIVE" ? "danger" : "success"}
+            size="sm"
+            className={styles.toggle}
+            onClick={() => requestToggle(user)}
+          >
+            {/*
+              Both labels share one grid cell, so the button is as wide as
+              "Unblock" on every row and the Edit buttons line up in a column.
+            */}
+            <span className={cx(user.status !== "ACTIVE" && styles.hidden)}>Block</span>
+            <span className={cx(user.status === "ACTIVE" && styles.hidden)}>Unblock</span>
+          </Button>
+        </>
+      ),
+    },
+  ];
 
   return (
     <PageTransition>
-      <main className={styles.container}>
-        <header className={styles.pageHeader}>
-          <div className={styles.headerText}>
-            <h1>User Management</h1>
-            <p>View, edit, and manage system access.</p>
-          </div>
-        </header>
+      <PageHeader size="md" title="User Management" subtitle="View, edit, and manage system access." />
 
-        <div className={styles.tableContainer}>
-          <table className={styles.table}>
-            <thead>
-              <tr>
-                <th>User</th>
-                <th>Role</th>
-                <th>Status</th>
-                <th>Joined Date</th>
-                <th className={styles.alignRight}>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {users.map((user) => (
-                <tr key={user.id}>
-                  <td className={styles.primaryCell}>
-                    <div className={styles.userCell}>
-                      <div
-                        className={styles.avatar}
-                        style={getAvatarStyle(user.id)}
-                        aria-hidden="true"
-                      >
-                        {getInitials(user.fullName)}
-                      </div>
-                      <div className={styles.userInfo}>
-                        <span className={styles.name}>{user.fullName}</span>
-                        <span className={styles.email}>{user.email}</span>
-                      </div>
-                    </div>
-                  </td>
-                  <td data-label="Role">
-                    <span
-                      className={`${styles.roleTag} ${
-                        user.role === "ADMIN" ? styles.admin : styles.client
-                      }`}
-                    >
-                      {user.role === "ADMIN" ? "Administrator" : "Client"}
-                    </span>
-                  </td>
-                  <td data-label="Status">
-                    <span
-                      className={`${styles.statusDot} ${
-                        user.status === "ACTIVE"
-                          ? styles.active
-                          : styles.blocked
-                      }`}
-                    >
-                      {user.status}
-                    </span>
-                  </td>
-                  <td data-label="Joined">
-                    <span className={styles.dateText}>
-                      {new Date(user.createdAt).toLocaleDateString()}
-                    </span>
-                  </td>
+      <DataTable
+        columns={columns}
+        rows={users}
+        rowKey={(user) => user.id}
+        empty="No users found."
+        isLoading={isLoading}
+        minWidth={900}
+      />
 
-                  <td className={styles.actionsCell}>
-                    <button
-                      className={styles.actionBtn}
-                      onClick={() => openEditModal(user)}
-                    >
-                      Edit
-                    </button>
+      <Pagination meta={meta} onChange={goToPage} disabled={isLoading} label="User pages" noun="users" />
 
-                    <button
-                      className={`${styles.actionBtn} ${styles.statusToggle} ${
-                        user.status === "ACTIVE"
-                          ? styles.danger
-                          : styles.success
-                      }`}
-                      onClick={() => handleBlockClick(user.id!)}
-                    >
-                      {/*
-                        Both labels are always rendered in the same grid cell, so
-                        the button is as wide as "Unblock" on every row and the
-                        Edit buttons line up in one column.
-                      */}
-                      <span
-                        className={
-                          user.status === "ACTIVE" ? undefined : styles.inactive
-                        }
-                      >
-                        Block
-                      </span>
-                      <span
-                        className={
-                          user.status === "ACTIVE" ? styles.inactive : undefined
-                        }
-                      >
-                        Unblock
-                      </span>
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+      {editingUser && (
+        <Modal
+          title="Edit User"
+          size="md"
+          // Cyan edge while the user holds (or is being given) the admin role.
+          tone={editingUser.role === "ADMIN" ? "primary" : undefined}
+          onClose={() => setEditingUser(null)}
+          locked={isSaving}
+          actions={
+            <>
+              <Button variant="secondary" onClick={() => setEditingUser(null)} disabled={isSaving}>
+                Cancel
+              </Button>
+              <Button type="submit" form="edit-user" busy={isSaving} busyText="Saving">
+                Save Changes
+              </Button>
+            </>
+          }
+        >
+          <Form id="edit-user" onSubmit={saveUser}>
+            <TextField
+              id="modal-fullName"
+              label="Full Name"
+              value={editingUser.fullName}
+              onChange={edit("fullName")}
+              required
+            />
+            <FieldRow>
+              <TextField
+                id="modal-email"
+                label="Email"
+                type="email"
+                value={editingUser.email}
+                onChange={edit("email")}
+                required
+              />
+              <TextField
+                id="modal-phone"
+                label="Phone Number"
+                type="tel"
+                placeholder="+48..."
+                value={editingUser.phone}
+                onChange={edit("phone")}
+              />
+            </FieldRow>
+            <FieldRow>
+              {/* An admin cannot demote themselves out of the panel. */}
+              {editingUser.id === currentUserId ? (
+                <ReadOnlyField label="Role">
+                  {ROLE_LABELS[editingUser.role]}
+                  <span aria-hidden="true">🔒</span>
+                </ReadOnlyField>
+              ) : (
+                <SelectField
+                  id="modal-role"
+                  label="Role"
+                  options={ROLE_OPTIONS}
+                  value={editingUser.role}
+                  onChange={edit("role")}
+                />
+              )}
+              <SelectField
+                id="modal-city"
+                label="City"
+                options={CITY_OPTIONS}
+                value={editingUser.city}
+                onChange={edit("city")}
+              />
+            </FieldRow>
+          </Form>
+        </Modal>
+      )}
 
-        {/* PAGINATION */}
-        {meta.totalPages > 1 && (
-          <nav className={styles.pagination} aria-label="User pages">
-            <button
-              className={styles.pageBtn}
-              onClick={() => goToPage(-1)}
-              disabled={!meta.hasPrevious || isLoading}
-            >
-              ← Previous
-            </button>
-
-            <span className={styles.pageInfo} aria-live="polite">
-              Page {meta.currentPage + 1} of {meta.totalPages}
-              <span className={styles.pageTotal}>
-                {" "}
-                ({meta.totalElements} users)
-              </span>
-            </span>
-
-            <button
-              className={styles.pageBtn}
-              onClick={() => goToPage(1)}
-              disabled={!meta.hasNext || isLoading}
-            >
-              Next →
-            </button>
-          </nav>
-        )}
-
-        {/* EDIT MODAL */}
-        {isModalOpen && editingUser && (
-          <div className={styles.modalOverlay} onClick={closeEditModal}>
-            <div
-              className={styles.modal}
-              onClick={(event) => event.stopPropagation()}
-            >
-              <h2>Edit User</h2>
-              <form onSubmit={handleSaveUser}>
-                <div className={styles.formGroup}>
-                  <label htmlFor="modal-fullName">Full Name</label>
-                  <input
-                    id="modal-fullName"
-                    type="text"
-                    value={editingUser.fullName}
-                    onChange={(e) =>
-                      setEditingUser({
-                        ...editingUser,
-                        fullName: e.target.value,
-                      })
-                    }
-                    required
-                  />
-                </div>
-
-                <div className={styles.formRow}>
-                  <div className={styles.formGroup}>
-                    <label htmlFor="modal-email">Email</label>
-                    <input
-                      id="modal-email"
-                      type="email"
-                      value={editingUser.email}
-                      onChange={(e) =>
-                        setEditingUser({
-                          ...editingUser,
-                          email: e.target.value,
-                        })
-                      }
-                      required
-                    />
-                  </div>
-                  <div className={styles.formGroup}>
-                    <label htmlFor="modal-phone">Phone Number</label>
-                    <input
-                      id="modal-phone"
-                      type="tel"
-                      value={editingUser.phone}
-                      onChange={(e) =>
-                        setEditingUser({
-                          ...editingUser,
-                          phone: e.target.value,
-                        })
-                      }
-                      placeholder="+48..."
-                    />
-                  </div>
-                </div>
-
-                <div className={styles.formRow}>
-                  <div className={styles.formGroup}>
-                    <label htmlFor="modal-role">Role</label>
-                    {editingUser.id === currentUserId ? (
-                      <div className={styles.readOnly}>
-                        {editingUser.role === "ADMIN"
-                          ? "Administrator"
-                          : "Client"}
-                        <span className={styles.lockIcon} aria-hidden="true">
-                          🔒
-                        </span>
-                      </div>
-                    ) : (
-                      <select
-                        id="modal-role"
-                        value={editingUser.role}
-                        onChange={(e) =>
-                          setEditingUser({
-                            ...editingUser,
-                            role: e.target.value as "ADMIN" | "CLIENT",
-                          })
-                        }
-                      >
-                        <option value="CLIENT">Client</option>
-                        <option value="ADMIN">Administrator</option>
-                      </select>
-                    )}
-                  </div>
-
-                  <div className={styles.formGroup}>
-                    <label htmlFor="modal-city">City</label>
-                    <select
-                      id="modal-city"
-                      value={editingUser.city}
-                      onChange={(e) =>
-                        setEditingUser({
-                          ...editingUser,
-                          city: e.target.value as City,
-                        })
-                      }
-                    >
-                      {SUPPORTED_CITIES.map((city) => (
-                        <option key={city} value={city}>
-                          {city.charAt(0) + city.slice(1).toLowerCase()}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-
-                <div className={styles.modalActions}>
-                  <button
-                    type="button"
-                    className={styles.secondaryBtn}
-                    onClick={closeEditModal}
-                    disabled={isSaving}
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    className={styles.primaryBtn}
-                    disabled={isSaving}
-                    aria-busy={isSaving}
-                  >
-                    <BusyLabel busy={isSaving} busyText="Saving">
-                      Save Changes
-                    </BusyLabel>
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        )}
-
-        {/* BLOCK / UNBLOCK MODAL */}
-        {isBlockModalOpen && userToBlock && (
-          <div className={styles.modalOverlay} onClick={closeBlockModal}>
-            <div
-              className={styles.modal}
-              onClick={(event) => event.stopPropagation()}
-            >
-              <h2>
-                {userToBlock.status === "ACTIVE"
-                  ? "Block User?"
-                  : "Unblock User?"}
-              </h2>
-              <p>
-                Are you sure you want to{" "}
-                {userToBlock.status === "ACTIVE" ? "block" : "unblock"}{" "}
-                {userToBlock.fullName}?
-                <br />
-                This action will change their system access.
-              </p>
-              <div className={styles.modalActions}>
-                <button
-                  className={styles.secondaryBtn}
-                  onClick={closeBlockModal}
-                  disabled={isSaving}
-                >
-                  No, Keep it
-                </button>
-                <button
-                  className={
-                    userToBlock.status === "ACTIVE"
-                      ? styles.dangerBtn
-                      : styles.primaryBtn
-                  }
-                  onClick={confirmBlockToggle}
-                  disabled={isSaving}
-                  aria-busy={isSaving}
-                >
-                  <BusyLabel
-                    busy={isSaving}
-                    busyText={
-                      userToBlock.status === "ACTIVE"
-                        ? "Blocking"
-                        : "Unblocking"
-                    }
-                  >
-                    {userToBlock.status === "ACTIVE"
-                      ? "Yes, Block"
-                      : "Yes, Unblock"}
-                  </BusyLabel>
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-      </main>
+      {userToToggle && (
+        <ConfirmDialog
+          title={blocking ? "Block User?" : "Unblock User?"}
+          message={
+            <>
+              Are you sure you want to {blocking ? "block" : "unblock"} {userToToggle.fullName}?
+              <br />
+              This action will change their system access.
+            </>
+          }
+          cancelLabel="No, Keep it"
+          confirmLabel={blocking ? "Yes, Block" : "Yes, Unblock"}
+          tone={blocking ? "danger" : "primary"}
+          onConfirm={confirmToggle}
+          onCancel={() => setUserToToggle(null)}
+          busy={isSaving}
+          busyText={blocking ? "Blocking" : "Unblocking"}
+        />
+      )}
     </PageTransition>
   );
 };

@@ -1,195 +1,76 @@
-@use "sass:color";
-@use "../../styles/variables" as v;
+@use "styles/theme" as v;
 
-// MAIN LAYOUT
-.container {
-  min-height: 100vh;
-  background-color: v.$color-bg-main;
-  color: v.$color-text-main;
-  padding: 1.5rem;
+.page {
   display: flex;
   flex-direction: column;
+  min-height: 100vh;
+  padding: 1.5rem;
 }
 
 .topBar {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  max-width: 800px;
+  justify-content: space-between;
   width: 100%;
-  margin: 0 auto 3rem auto;
+  max-width: 800px;
+  margin: 0 auto 3rem;
+}
 
-  .logo {
-    font-size: 1.5rem;
-    font-weight: 800;
-    .highlight {
-      color: v.$color-primary;
-    }
-  }
+.closeBtn {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  color: v.$color-text-muted;
+  font-size: 1.5rem;
 
-  .closeBtn {
-    font-size: 1.5rem;
-    color: v.$color-text-muted;
-    text-decoration: none;
-    transition: color 0.2s;
-    width: 40px;
-    height: 40px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 50%;
-
-    &:hover {
-      color: v.$danger; // Or red
-      background: rgba(255, 255, 255, 0.05);
-    }
+  &:hover {
+    color: v.$danger;
+    background: v.$surface-hover;
   }
 }
 
-.wizardContent {
+.wizard {
+  flex: 1;
   width: 100%;
   max-width: 600px;
   margin: 0 auto;
-  flex: 1; // Take remaining height
 }
 
-// Animation for switching steps
-.stepContainer {
-  animation: fadeIn 0.4s ease-in-out;
+// Each step fades in as it replaces the one before.
+.step {
+  animation: stepIn 0.4s ease-in-out;
 
   h1 {
-    font-size: 2rem;
     margin-bottom: 0.5rem;
+    font-size: 2rem;
     font-weight: 700;
   }
 
-  .subtitle {
-    color: v.$color-text-muted;
-    margin-bottom: 2rem;
-    font-size: 1rem;
-    line-height: 1.5;
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
   }
 }
 
-// STEP 1: DATE SELECTION
+.subtitle {
+  margin-bottom: 2rem;
+  color: v.$color-text-muted;
+  line-height: 1.5;
+}
 
-// The "You are here" Banner
-.locationBanner {
-  background: rgba(v.$color-bg-card, 0.6);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-left: 4px solid v.$color-primary; // Neon accent
-  padding: 1.25rem;
-  border-radius: v.$radius-md;
-  display: flex;
-  align-items: center;
-  gap: 1rem;
+.back {
+  margin-bottom: 1.5rem;
+}
+
+// STEP 1: DATES
+.banner {
   margin-bottom: 2.5rem;
-  backdrop-filter: blur(10px);
-
-  .pinIcon {
-    font-size: 1.5rem;
-    background: rgba(v.$color-primary, 0.1);
-    color: v.$color-primary;
-    width: 48px;
-    height: 48px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 50%;
-    box-shadow: 0 0 10px rgba(v.$color-primary, 0.1);
-  }
-
-  .bannerText {
-    display: flex;
-    flex-direction: column;
-
-    .label {
-      font-size: 0.75rem;
-      color: v.$color-text-muted;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      font-weight: 600;
-      margin-bottom: 2px;
-    }
-
-    .city {
-      font-size: 1.25rem;
-      font-weight: 800;
-      color: v.$color-text-main;
-    }
-  }
 }
 
-.dateForm {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-
-  .inputGroup {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-
-    label {
-      color: v.$color-text-muted;
-      font-size: 0.9rem;
-      font-weight: 500;
-    }
-
-    .input {
-      background: v.$color-bg-card;
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      color: v.$color-text-main;
-      padding: 1rem;
-      border-radius: v.$radius-md;
-      font-size: 1rem;
-      font-family: inherit;
-      color-scheme: dark; // Browser native dark calendar
-      transition: all 0.2s ease;
-
-      &:focus {
-        outline: none;
-        border-color: v.$color-primary;
-        box-shadow: 0 0 0 3px rgba(v.$color-primary, 0.15);
-      }
-    }
-  }
-
-  .errorBox {
-    background: rgba(v.$danger, 0.1); // Red background
-    border: 1px solid rgba(v.$danger, 0.3);
-    color: v.$danger; // Red text
-    padding: 1rem;
-    border-radius: v.$radius-md;
-    font-size: 0.9rem;
-    font-weight: 600;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-  }
-
-  .primaryBtn {
-    background: v.$color-primary;
-    color: #000;
-    padding: 1rem;
-    border-radius: v.$radius-md;
-    font-weight: 700;
-    font-size: 1rem;
-    margin-top: 1rem;
-    cursor: pointer;
-    border: none;
-    transition: all 0.2s;
-    box-shadow: 0 0 15px rgba(v.$color-primary, 0.3);
-
-    &:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 0 25px rgba(v.$color-primary, 0.5);
-    }
-
-    &:active {
-      transform: translateY(0);
-    }
-  }
+.city {
+  font-size: 1.25rem;
+  font-weight: 800;
 }
 
 // The allowed return window, shown once a start date is picked.
@@ -205,330 +86,63 @@
   flex-direction: column;
   gap: 2px;
   padding: 0.6rem 0.8rem;
-  background: rgba(v.$color-primary, 0.05);
-  border: 1px solid rgba(v.$color-primary, 0.15);
+  background: rgba(v.$color-secondary, 0.08);
+  border: 1px solid rgba(v.$color-secondary-light, 0.45);
   border-radius: v.$radius-md;
 }
 
 .boundLabel {
-  font-size: 0.7rem;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
   color: v.$color-text-muted;
+  font-size: 0.7rem;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
 }
 
 .boundDate {
+  color: v.$color-secondary-light;
   font-size: 0.95rem;
   font-weight: 600;
-  color: v.$color-primary;
 }
 
-// STEP 2: LOADING
-.loadingContainer {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  height: 50vh;
-  animation: fadeIn 0.5s ease;
-
-  .spinner {
-    width: 60px;
-    height: 60px;
-    border: 4px solid rgba(v.$color-primary, 0.1);
-    border-top: 4px solid v.$color-primary;
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-    margin-bottom: 1.5rem;
-    box-shadow: 0 0 20px rgba(v.$color-primary, 0.2);
-  }
-
-  p {
-    color: v.$color-text-muted;
-    font-weight: 500;
-    font-size: 1.1rem;
-    animation: pulse 1.5s infinite ease-in-out;
-  }
-}
-
-// STEP 3: RESULTS
-.backBtn {
-  color: v.$color-text-muted;
-  margin-bottom: 1.5rem;
-  font-size: 0.9rem;
-  font-weight: 500;
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 0;
-
-  &:hover:not(:disabled) {
-    color: v.$color-primary;
-    text-decoration: underline;
-  }
-
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-}
-
+// STEP 2: BIKES
 .bikeList {
   display: flex;
   flex-direction: column;
   gap: 1rem;
-  margin-top: 1rem;
 }
 
-// Lives inside the shared BikeModelCard's action slot, which handles spacing.
-.bookBtn {
-  background: v.$color-secondary; // Purple/Secondary brand color
-  color: #fff;
-  padding: 0.6rem 1.2rem;
-  border-radius: v.$radius-md;
-  font-weight: 600;
-  border: none;
-  cursor: pointer;
-  transition: background 0.2s;
-
-  &:hover {
-    background: color.adjust(v.$color-secondary, $lightness: 10%);
-    box-shadow: 0 0 15px rgba(v.$color-secondary, 0.4);
-  }
-}
-
-.noResults {
-  text-align: center;
-  padding: 4rem 2rem;
-  border: 1px dashed rgba(255, 255, 255, 0.1);
-  border-radius: v.$radius-lg;
-  background: rgba(v.$color-bg-card, 0.3);
-
-  p {
-    color: v.$color-text-muted;
-    font-size: 1.1rem;
-    margin-bottom: 1.5rem;
-  }
-
-  .retryBtn {
-    background: transparent;
-    border: 1px solid v.$color-primary;
-    color: v.$color-primary;
-    padding: 0.75rem 1.5rem;
-    border-radius: v.$radius-md;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s;
-
-    &:hover {
-      background: v.$color-primary;
-      color: #000;
-    }
-  }
-}
-
-// STEP 4: CONFIRMATION & SUMMARY
-
+// STEP 3: SUMMARY
 .summaryCard {
-  background: rgba(255, 255, 255, 0.03); // Subtle glass effect
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: v.$radius-lg;
+  margin: 1rem 0 2rem;
   padding: 2rem;
-  margin-top: 1rem;
-  margin-bottom: 2rem;
+  background: v.$surface-raised;
+  border: 1px solid v.$border;
+  border-radius: v.$radius-lg;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
 
-  .summaryRow {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 1.2rem;
-    font-size: 1rem;
-
-    .label {
-      color: v.$color-text-muted;
-      font-weight: 500;
-    }
-
-    .value {
-      color: v.$color-text-main;
-      font-weight: 700;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      text-align: right;
-    }
-  }
-
-  .divider {
-    height: 1px;
-    background: linear-gradient(
-      90deg,
-      transparent 0%,
-      rgba(255, 255, 255, 0.1) 20%,
-      rgba(255, 255, 255, 0.1) 80%,
-      transparent 100%
-    );
-    margin: 1.5rem 0;
-  }
-
-  // Specific styles for the "Total Price" row
-  .totalRow {
-    margin-bottom: 0;
-    margin-top: 1.5rem;
-    align-items: flex-end; // Align text to bottom line
-
-    .label {
-      font-size: 1.1rem;
-      color: v.$color-text-main;
-    }
-
-    .totalValue {
-      font-size: 2rem;
-      line-height: 1;
-      font-weight: 800;
-      color: v.$color-primary; // Neon Green
-      text-shadow: 0 0 20px rgba(v.$color-primary, 0.25);
-    }
+  @media (max-width: v.$mobile) {
+    padding: 1.5rem;
   }
 }
 
-// The big "Confirm & Pay" button
-.confirmBtn {
-  width: 100%;
-  background: v.$color-primary;
-  color: #000;
-  padding: 1.2rem;
-  border-radius: v.$radius-md;
-  font-size: 1.2rem;
-  font-weight: 800;
-  border: none;
-  cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 0 15px rgba(v.$color-primary, 0.3);
-  text-transform: uppercase;
-  letter-spacing: 1px;
-
-  &:hover:not(:disabled) {
-    transform: translateY(-3px);
-    box-shadow: 0 0 30px rgba(v.$color-primary, 0.5);
-    background: color.adjust(v.$color-primary, $lightness: 5%);
-  }
-
-  &:active:not(:disabled) {
-    transform: translateY(-1px);
-    box-shadow: 0 0 10px rgba(v.$color-primary, 0.3);
-  }
-
-  // Without this the button still lifts and glows on hover while the request
-  // is in flight, which reads as clickable when it is not.
-  &:disabled {
-    opacity: 0.7;
-    cursor: not-allowed;
-    transform: none;
-    box-shadow: 0 0 10px rgba(v.$color-primary, 0.2);
-  }
-}
-
-.payBtn {
-  width: 100%;
-  background: v.$color-primary;
-  color: #000;
-  padding: 1.2rem;
-  border-radius: v.$radius-md;
-  font-size: 1.1rem;
-  font-weight: 800;
-  border: none;
-  cursor: pointer;
-  display: flex;
-  justify-content: center;
+.rate {
+  display: inline-flex;
+  flex-wrap: wrap;
   align-items: center;
-  transition: all 0.2s;
-
-  &:hover:not(:disabled) {
-    transform: translateY(-2px);
-    box-shadow: 0 0 20px rgba(v.$color-primary, 0.4);
-  }
-
-  &:disabled {
-    background: #4b5563; // Grey
-    cursor: not-allowed;
-    color: #9ca3af;
-  }
-}
-
-.alignCenter {
-  align-items: center;
-}
-
-.rateContainer {
-  display: flex;
-  align-items: center;
-  gap: 8px;
+  justify-content: flex-end;
+  gap: 0.5rem;
 }
 
 .oldRate {
-  text-decoration: line-through;
-  color: #6b7280;
+  color: v.$color-text-muted;
   font-size: 0.9rem;
+  font-weight: 400;
+  text-decoration: line-through;
 }
 
-.discountBadge {
-  background-color: #7c3aed; // Primary purple
-  color: white;
-  font-size: 0.75rem;
-  padding: 2px 6px;
-  border-radius: 4px;
-  font-weight: bold;
-}
-
-@media (max-width: 600px) {
-  .summaryCard {
-    padding: 1.5rem;
-
-    .totalRow {
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 0.5rem;
-
-      .totalValue {
-        align-self: flex-end;
-      }
-    }
-  }
-  .row {
-    flex-direction: column;
-  }
-}
-
-// ANIMATIONS
-@keyframes spin {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
-}
-
-@keyframes fadeIn {
+@keyframes stepIn {
   from {
     opacity: 0;
     transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes pulse {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.5;
   }
 }

@@ -18,36 +18,35 @@
     -->
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="VeloCity" />
+    <meta property="og:url" content="https://www.velocityfleet.dev/" />
     <meta property="og:title" content="VeloCity | E-Bike Rentals for Couriers" />
     <meta
       property="og:description"
       content="Reserve a courier e-bike by the day. Live availability, tiered pricing, and a booking that is never double-sold."
     />
     <!--
-      Slack and Facebook resolve a root-relative image, but LinkedIn and
-      several others require an absolute URL. Once the production domain is
-      fixed, make this (and og:url) absolute:
-        <meta property="og:image" content="https://<domain>/og-image.png" />
+      Absolute, because LinkedIn and several other crawlers ignore a
+      root-relative image. The domain is the production one; the bare
+      velocityfleet.dev redirects to www.
     -->
-    <meta property="og:image" content="/og-image.png" />
+    <meta property="og:image" content="https://www.velocityfleet.dev/og-image.png" />
+    <meta property="og:image:type" content="image/png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <meta
       property="og:image:alt"
-      content="VeloCity landing page: Own the night, own your shift."
+      content="VeloCity landing page: Own the ride, own your shift."
     />
-    <meta name="twitter:image" content="/og-image.png" />
+    <meta name="twitter:image" content="https://www.velocityfleet.dev/og-image.png" />
+    <meta
+      name="twitter:image:alt"
+      content="VeloCity landing page: Own the ride, own your shift."
+    />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="VeloCity | E-Bike Rentals for Couriers" />
     <meta
       name="twitter:description"
       content="Reserve a courier e-bike by the day. Live availability, tiered pricing, and a booking that is never double-sold."
-    />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
-      rel="stylesheet"
     />
   </head>
   <body>
