@@ -1,72 +1,6 @@
 @use "styles/theme" as v;
 
-// LAYOUT CONTAINER
-.container {
-  padding: 1rem;
-  width: 100%;
-  max-width: 1200px;
-  margin: 0 auto;
-
-  @media (min-width: v.$tablet) {
-    padding: 2rem;
-  }
-}
-
-// HEADER SECTION
-.pageHeader {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  margin-bottom: 1.5rem;
-
-  @media (min-width: v.$tablet) {
-    flex-direction: row;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 2rem;
-  }
-
-  .headerText {
-    h1 {
-      font-size: 1.6rem;
-      font-weight: 700;
-      color: v.$color-text-main;
-      margin-bottom: 0.25rem;
-
-      @media (min-width: v.$tablet) {
-        font-size: 1.8rem;
-      }
-    }
-    p {
-      color: v.$color-text-muted;
-      font-size: 0.9rem;
-    }
-  }
-}
-
-.primaryBtn {
-  background: v.$color-primary;
-  color: #000;
-  border: none;
-  padding: 0.75rem 1.5rem;
-  border-radius: v.$radius-md;
-  font-weight: 600;
-  cursor: pointer;
-  transition: opacity 0.2s;
-  white-space: nowrap;
-
-  &:hover:not(:disabled) {
-    opacity: 0.9;
-  }
-
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-}
-
-// TOOLBAR (FILTER)
-.toolbar {
+.filters {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
@@ -76,161 +10,29 @@
 .filterChip {
   padding: 0.5rem 1rem;
   background: v.$color-bg-card;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid v.$border;
+  border-radius: v.$radius-pill;
   color: v.$color-text-muted;
-  border-radius: 99px;
   font-size: 0.85rem;
   font-weight: 500;
-  cursor: pointer;
   transition: v.$transition-base;
 
   &:hover:not(.selected) {
-    border-color: rgba(255, 255, 255, 0.3);
+    border-color: v.$border-strong;
     color: v.$color-text-main;
   }
-
-  &.selected {
-    background: rgba(v.$color-primary, 0.12);
-    border-color: v.$color-primary;
-    color: v.$color-primary;
-    font-weight: 600;
-  }
 }
 
-// RESPONSIVE TABLE
-.tableContainer {
-  width: 100%;
-
-  @media (min-width: v.$desktop) {
-    background: v.$color-bg-card;
-    border: 1px solid rgba(255, 255, 255, 0.05);
-    border-radius: v.$radius-lg;
-    box-shadow: v.$shadow-sm;
-
-    overflow-x: auto;
-    overflow-y: hidden;
-    -webkit-overflow-scrolling: touch;
-  }
+.selected {
+  @include v.tint(v.$color-primary);
+  border-color: v.$color-primary;
+  font-weight: 600;
 }
 
-.table {
-  width: 100%;
-  border-collapse: collapse;
-
-  @media (min-width: v.$desktop) {
-    min-width: 700px;
-  }
-
-  // MOBILE VIEW (Card Layout)
-  thead {
-    display: none;
-  }
-
-  tbody {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-  }
-
-  tr {
-    background: v.$color-bg-card;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: v.$radius-md;
-    padding: 1rem;
-    display: flex;
-    flex-direction: column;
-    gap: 0.8rem;
-  }
-
-  .emptyRow {
-    text-align: center;
-    color: v.$color-text-muted;
-    padding: 3rem 1rem;
-  }
-
-  td {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-size: 0.95rem;
-    color: v.$color-text-main;
-
-    &[data-label]::before {
-      content: attr(data-label);
-      color: v.$color-text-muted;
-      font-weight: 500;
-      font-size: 0.85rem;
-    }
-  }
-
-  // DESKTOP VIEW (Table Layout)
-  @media (min-width: v.$desktop) {
-    display: table;
-
-    thead {
-      display: table-header-group;
-      th {
-        text-align: left;
-        padding: 1rem 1.5rem;
-        color: v.$color-text-muted;
-        font-size: 0.75rem;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        background: rgba(0, 0, 0, 0.2);
-      }
-    }
-
-    tbody {
-      display: table-row-group;
-    }
-
-    tr {
-      display: table-row;
-      background: transparent;
-      border: none;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-
-      &:hover {
-        background: rgba(255, 255, 255, 0.02);
-      }
-
-      &:last-child {
-        border-bottom: none;
-      }
-    }
-
-    .emptyRow {
-      display: table-row;
-
-      td {
-        display: table-cell;
-        text-align: center;
-      }
-    }
-
-    td {
-      display: table-cell;
-      padding: 1rem 1.5rem;
-      border: none;
-
-      &[data-label]::before {
-        display: none !important;
-      }
-    }
-  }
-}
-
-// CELL STYLES
-// Retired is terminal, so those rows step back and let the working fleet
-// stand out. The action stays at full strength: the server decides what is
-// allowed, not the styling.
-.retiredRow td:not(.actionsCell) {
+.retiredRow td:not(:last-child) {
   opacity: 0.5;
 }
 
-// A wrapper rather than flex on the td itself, which would pull the cell out
-// of the table layout on desktop.
 .modelCell {
   display: flex;
   align-items: center;
@@ -238,14 +40,13 @@
 }
 
 .modelIcon {
-  flex: 0 0 auto;
+  display: grid;
+  flex: none;
+  place-items: center;
   width: 36px;
   height: 36px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
   border-radius: v.$radius-md;
-  background: rgba(255, 255, 255, 0.05);
+  background: v.$surface-hover;
   font-size: 1.1rem;
 }
 
@@ -257,312 +58,39 @@
 
 .modelName {
   font-weight: 600;
-  color: v.$color-text-main;
 }
 
 .modelMeta {
-  font-size: 0.8rem;
   color: v.$color-text-muted;
+  font-size: 0.8rem;
 }
 
 .bikeId {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  color: v.$color-text-muted;
+  font-family: v.$font-mono;
   font-size: 0.95em;
-  color: v.$color-text-muted;
 }
 
-@mixin status-tint($color) {
-  color: $color;
-  background: rgba($color, 0.12);
-  border-color: rgba($color, 0.3);
-}
-
-// One width for every status pill: "Maintenance", the longest label, is ~6.25em
-// at the pill's 0.8rem (~5.1rem), plus padding and border. In rem rather than
-// em so the mobile city value can share it at its own font size.
-$status-pill-width: calc(5.15rem + 22px);
-
-// On mobile cards the city sits directly above the status pill. Giving it the
-// pill's width with centred text puts both values on one centre line, instead
-// of a right-aligned word over a pill whose text is centred.
-.cityValue {
-  display: inline-block;
-  min-width: $status-pill-width;
-  text-align: center;
-
-  @media (min-width: v.$desktop) {
-    min-width: 0;
-    text-align: left;
-  }
-}
-
-// Same pill shape as the role tags on the Users page.
-.statusPill {
-  // Equal widths so the desktop column reads as a clean stack.
-  min-width: $status-pill-width;
-  display: inline-block;
-  text-align: center;
-  padding: 3px 10px;
-  border-radius: 99px;
-  border: 1px solid transparent;
-  font-weight: 600;
-  font-size: 0.8rem;
-
-  // ACTIVE: in service, same green used for active users elsewhere.
-  &.active {
-    @include status-tint(v.$success);
-  }
-  // MAINTENANCE: temporarily out of service, but expected back.
-  &.maintenance {
-    @include status-tint(v.$warning);
-  }
-  // LOST: unaccounted for; needs attention before it can be trusted again.
-  &.lost {
-    @include status-tint(v.$danger);
-  }
-  // RETIRED: permanently decommissioned, no distinct alert color needed.
-  &.retired {
-    @include status-tint(v.$color-text-muted);
-  }
-}
-
-.actionsCell {
-  margin-top: 0.5rem;
-  justify-content: flex-end;
-
-  @media (min-width: v.$desktop) {
-    margin-top: 0;
-    text-align: right;
-    white-space: nowrap;
-  }
-}
-
-.actionBtn {
-  padding: 0.4rem 0.8rem;
-  background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  color: v.$color-text-main;
-  border-radius: v.$radius-sm;
-  font-size: 0.85rem;
-  cursor: pointer;
-  transition: all 0.2s;
-
-  &:hover {
-    border-color: v.$color-primary;
-    background: rgba(255, 255, 255, 0.05);
-  }
-}
-
-.alignRight {
-  text-align: right;
-}
-
-// MODAL STYLES
-.modalOverlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.85);
-  backdrop-filter: blur(4px);
+.fields {
   display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 2000;
-  padding: 1.5rem;
-}
-
-.modal {
-  background: v.$color-bg-card;
-  padding: 1.5rem;
-  border-radius: v.$radius-lg;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
-  animation: slideIn 0.2s ease-out;
-
-  width: 100%;
-  max-width: 440px;
-  max-height: 90vh;
-  overflow-y: auto;
-
-  h2 {
-    margin-bottom: 0.5rem;
-    color: v.$color-text-main;
-    font-size: 1.4rem;
-  }
-
-  @media (min-width: v.$tablet) {
-    padding: 2rem;
-  }
-}
-
-.modalSubtitle {
-  color: v.$color-text-muted;
-  font-size: 0.9rem;
-  margin-bottom: 1.5rem;
-}
-
-@keyframes slideIn {
-  from {
-    transform: translateY(20px);
-    opacity: 0;
-  }
-  to {
-    transform: translateY(0);
-    opacity: 1;
-  }
-}
-
-.formGroup {
-  margin-bottom: 1rem;
-
-  label {
-    display: block;
-    margin-bottom: 0.5rem;
-    color: v.$color-text-muted;
-    font-size: 0.9rem;
-  }
-
-  select {
-    width: 100%;
-    padding: 0.8rem;
-    background: rgba(0, 0, 0, 0.2);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: v.$radius-md;
-    color: #fff;
-    font-size: 1rem;
-
-    &:focus {
-      outline: none;
-      border-color: v.$color-primary;
-      box-shadow: 0 0 0 2px rgba(v.$color-primary, 0.2);
-    }
-
-    &:disabled {
-      opacity: 0.6;
-      cursor: not-allowed;
-    }
-  }
-}
-
-// The current-status readout in the modal: styled as an inert field so it
-// reads as informational, not as another control the admin can edit.
-.valueDisplay {
-  padding: 0.8rem;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: v.$radius-md;
-  color: v.$color-text-main;
-  font-size: 1rem;
-
-  // The current status wears the same colours as its pill in the table, so
-  // the state being left is recognisable at a glance.
-  &.active {
-    @include status-tint(v.$success);
-  }
-  &.maintenance {
-    @include status-tint(v.$warning);
-  }
-  &.lost {
-    @include status-tint(v.$danger);
-  }
-  &.retired {
-    @include status-tint(v.$color-text-muted);
-  }
-}
-
-.modalActions {
-  display: flex;
-  gap: 1rem;
-  margin-top: 2rem;
-  justify-content: flex-end;
-}
-
-.secondaryBtn {
-  background: transparent;
-  color: v.$color-text-muted;
-  border: none;
-  cursor: pointer;
-  padding: 0.6rem 1.2rem;
-  font-weight: 500;
-
-  &:hover:not(:disabled) {
-    color: v.$color-text-main;
-  }
-
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-}
-
-// PAGINATION
-.pagination {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-wrap: wrap;
-  gap: 1rem;
-  margin-top: 2rem;
-}
-
-.pageBtn {
-  padding: 0.6rem 1.2rem;
-
-  background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  color: v.$color-text-muted;
-  border-radius: v.$radius-md;
-  font-size: 0.9rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: v.$transition-base;
-
-  &:hover:not(:disabled) {
-    border-color: v.$color-primary;
-    color: v.$color-primary;
-  }
-
-  &:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
-  }
-}
-
-.pageInfo {
-  color: v.$color-text-main;
-  font-size: 0.9rem;
-  font-weight: 500;
-}
-
-.pageTotal {
-  color: v.$color-text-muted;
-  font-weight: 400;
-}
-
-// CONFLICT CONFIRMATION (step two of a status change)
-
-// Visually distinct from the ordinary status modal: this one voids other
-// people's bookings, so it should not look like the step before it.
-.dangerModal {
-  border-color: rgba(v.$danger, 0.5);
+  flex-direction: column;
+  gap: 1.25rem;
+  margin-top: 1rem;
 }
 
 .conflictList {
-  list-style: none;
-  margin: 0.5rem 0 1.5rem;
-  padding: 0;
   max-height: 16rem;
+  margin-top: 1rem;
   overflow-y: auto;
   border: 1px solid rgba(v.$danger, 0.25);
-  border-radius: 8px;
+  border-radius: v.$radius-md;
+  list-style: none;
 }
 
 .conflictRow {
   display: flex;
-  justify-content: space-between;
   align-items: baseline;
+  justify-content: space-between;
   gap: 1rem;
   padding: 0.65rem 0.85rem;
   font-size: 0.9rem;
@@ -579,26 +107,6 @@ $status-pill-width: calc(5.15rem + 22px);
 
 .conflictDates {
   color: v.$color-text-muted;
-  white-space: nowrap;
   font-variant-numeric: tabular-nums;
-}
-
-.dangerBtn {
-  background: v.$danger;
-  color: #fff;
-  border: none;
-  padding: 0.6rem 1.1rem;
-  border-radius: 8px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: filter 0.2s ease;
-
-  &:hover:not(:disabled) {
-    filter: brightness(1.1);
-  }
-
-  &:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-  }
+  white-space: nowrap;
 }

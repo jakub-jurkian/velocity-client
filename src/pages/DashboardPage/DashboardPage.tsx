@@ -1,220 +1,107 @@
-import { useMemo, useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAppSelector } from "../../store/hooks";
-import PageTransition from "../../components/common/PageTransition";
-import styles from "./DashboardPage.module.scss";
-import type { Reservation } from "../../types/Reservation";
+import { apiFetch } from "../../api/client";
 import { fetchAllPages } from "../../api/pagination";
+import { CITY_HUBS, CITY_LABELS } from "../../data/cities";
+import type { Reservation } from "../../types/Reservation";
+import { cx } from "../../utils/cx";
+import PageTransition from "../../components/common/PageTransition";
+import Badge from "../../components/ui/Badge";
+import Callout from "../../components/ui/Callout";
+import StatCard from "../../components/ui/StatCard";
+import styles from "./DashboardPage.module.scss";
 
-interface HubInfo {
-  cityLabel: string;
-  address: string;
-  hours: string;
-}
-
-const HUBS: Record<string, HubInfo> = {
-  warsaw: {
-    cityLabel: "Warsaw",
-    address: "VeloCity Hub Śródmieście, ul. Marszałkowska 10, 00-001 Warszawa",
-    hours: "Mon–Sun, 7:00–22:00",
-  },
-  wroclaw: {
-    cityLabel: "Wrocław",
-    address: "VeloCity Hub Rynek, ul. Oławska 5, 50-123 Wrocław",
-    hours: "Mon–Sun, 8:00–21:00",
-  },
-  poznan: {
-    cityLabel: "Poznań",
-    address: "VeloCity Hub Centrum, ul. Półwiejska 25, 61-888 Poznań",
-    hours: "Mon–Sun, 8:00–21:00",
-  },
-  gdansk: {
-    cityLabel: "Gdańsk",
-    address: "VeloCity Hub Główne Miasto, ul. Długa 30, 80-827 Gdańsk",
-    hours: "Mon–Sun, 8:00–21:00",
-  },
-};
-
-const normalizeCity = (value?: string) =>
-  (value || "")
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "");
-
-const getHubByCity = (city?: string): HubInfo | null => {
-  const key = normalizeCity(city);
-  if (["warsaw", "warszawa"].includes(key)) return HUBS.warsaw;
-  if (["wroclaw", "wrocław"].includes(key)) return HUBS.wroclaw;
-  if (["poznan", "poznań"].includes(key)) return HUBS.poznan;
-  if (["gdansk", "gdańsk"].includes(key)) return HUBS.gdansk;
-  return null;
-};
+const QUICK_ACTIONS = [
+  { to: "/rent-bike", icon: "🚲", title: "Rent a Bike", text: "Find and book an e-bike near you", primary: true },
+  { to: "/profile", icon: "👤", title: "My Profile", text: "Update your personal details" },
+  { to: "/my-rentals", icon: "📜", title: "Ride History", text: "View your ride history" },
+];
 
 const DashboardPage = () => {
-  const jwtToken = useAppSelector((state) => state.auth.token);
   const user = useAppSelector((state) => state.auth.user);
   const userId = user?.id;
   const userCity = user?.city;
 
-  const [activeRentals, setActiveRentals] = useState<number>(0);
-  const [activeBikesCount, setActiveBikesCount] = useState<number>(0);
+  const [activeRentals, setActiveRentals] = useState(0);
+  const [bikesNearby, setBikesNearby] = useState(0);
 
   useEffect(() => {
-    const apiUrl = import.meta.env.VITE_API_URL;
-    let ignore = false;
+    if (!userId || !userCity) return;
+    const controller = new AbortController();
+    const { signal } = controller;
 
-    const fetchActiveRentals = async () => {
-      if (!userId || !jwtToken) return;
+    // A true aggregate, not a screenful, so it walks every page. Counting only
+    // the first page under-reported anyone with more reservations than the
+    // default page size.
+    fetchAllPages<Reservation>("/api/v1/reservations/my", { signal })
+      .then((all) => setActiveRentals(all.filter((r) => r.status === "CONFIRMED").length))
+      .catch((error) => {
+        if (!signal.aborted) console.error("Failed to fetch active rentals:", error);
+      });
 
-      try {
-        // This is a true aggregate, not a screenful, so it walks every page.
-        // Counting only the first page under-reported anyone with more
-        // reservations than the default page size.
-        const all = await fetchAllPages<Reservation>(
-          "/api/v1/reservations/my",
-          jwtToken,
-        );
+    apiFetch<{ count: number } | null>("/api/v1/fleet/count", {
+      query: { city: userCity, status: "ACTIVE" },
+      signal,
+    })
+      .then((data) => setBikesNearby(data?.count ?? 0))
+      .catch((error) => {
+        if (!signal.aborted) console.error("Failed to fetch fleet count:", error);
+      });
 
-        if (ignore) return;
-
-        setActiveRentals(
-          all.filter((r) => r.status === "CONFIRMED").length,
-        );
-      } catch (error) {
-        console.error("Failed to fetch active rentals:", error);
-      }
-    };
-
-    const fetchActiveBikes = async () => {
-      if (!userId || !jwtToken) return;
-
-      try {
-        const response = await fetch(
-          `${apiUrl}/api/v1/fleet/count?city=${userCity}&status=ACTIVE`,
-          {
-            headers: {
-              Authorization: `Bearer ${jwtToken}`,
-            },
-          },
-        );
-
-        const contentType = response.headers.get("content-type") || "";
-        const isJson = contentType.includes("application/json");
-
-        if (response.ok && isJson && !ignore) {
-          const data = await response.json();
-          setActiveBikesCount(data.count);
-        }
-      } catch (error) {
-        console.error("Failed to fetch fleet count:", error);
-      }
-    };
-
-    fetchActiveRentals();
-    fetchActiveBikes();
-
-    return () => {
-      ignore = true;
-    };
-  }, [userId, userCity, jwtToken]);
-
-  const hubInfo = useMemo(() => getHubByCity(userCity), [userCity]);
+    return () => controller.abort();
+  }, [userId, userCity]);
 
   if (!user) return null;
 
+  const hub = CITY_HUBS[user.city];
+
   return (
     <PageTransition>
-      <main className={styles.dashboardPage}>
-        <section className={styles.welcomeSection}>
-          <h1>
-            Hello,{" "}
-            <span className={styles.highlight}>
-              {user.fullName.split(" ")[0]}
-            </span>
-            .
-          </h1>
-          <p className={styles.subtitle}>Ready for your next ride?</p>
-          {hubInfo && (
-            <div className={styles.hubNotice} role="note" aria-live="polite">
-              <div className={styles.hubIcon} aria-hidden="true">📍</div>
-              <div className={styles.hubContent}>
-                <div className={styles.hubLine}>
-                  Pick-up hub{" "}
-                  <span className={styles.hubCity}>({hubInfo.cityLabel})</span>:
-                  <span className={styles.hubAddress}> {hubInfo.address}</span>
-                </div>
-                <div className={styles.hubHours}>Hours: {hubInfo.hours}</div>
-              </div>
-            </div>
-          )}
-        </section>
+      <section className={styles.welcome}>
+        <h1>
+          Hello, <span className={styles.highlight}>{user.fullName.split(" ")[0]}</span>.
+        </h1>
+        <p className={styles.subtitle}>Ready for your next ride?</p>
+        {hub && (
+          <Callout icon="📍" title={`Pick-up hub · ${CITY_LABELS[user.city]}`} role="note">
+            <span className={styles.hubAddress}>{hub.address}</span>
+            <span className={styles.hubHours}>Hours: {hub.hours}</span>
+          </Callout>
+        )}
+      </section>
 
-        {/* Stats Grid */}
-        <section className={styles.statsGrid} aria-label="User Statistics">
-          <article className={styles.statCard}>
-            <h3>Rentals</h3>
-            <div className={styles.statValue}>
-              {activeRentals}
-              <span className={styles.statUnit}>
-                {activeRentals === 1 ? "bike" : "bikes"}
-              </span>
-            </div>
-            <div
-              className={`${styles.statusIndicator} ${
-                activeRentals > 0 ? styles.active : ""
-              }`}
-            >
-              {activeRentals > 0 ? "Active" : "No active rides"}
-            </div>
-          </article>
+      <section className={styles.statsGrid} aria-label="User Statistics">
+        <StatCard label="Rentals" value={activeRentals} unit={activeRentals === 1 ? "bike" : "bikes"}>
+          <Badge tone={activeRentals > 0 ? "success" : "neutral"}>
+            {activeRentals > 0 ? "Active" : "No active rides"}
+          </Badge>
+        </StatCard>
+        <StatCard label="Fleet Status" value={bikesNearby} hint="E-bikes nearby" />
+        <StatCard label="Your Impact" value="0 km" hint="Total distance ridden" />
+      </section>
 
-          <article className={styles.statCard}>
-            <h3>Fleet Status</h3>
-            <div className={styles.statValue}>{activeBikesCount}</div>
-            <p className={styles.statLabel}>E-bikes nearby</p>
-          </article>
-
-          <article className={styles.statCard}>
-            <h3>Your Impact</h3>
-            <div className={styles.statValue}>0 km</div>
-            <p className={styles.statLabel}>Total distance ridden</p>
-          </article>
-        </section>
-
-        {/* Actions Grid */}
-        <h2 className={styles.sectionTitle}>Quick Actions</h2>
-        <section className={styles.actionsGrid} aria-label="Quick Actions">
+      <h2 className={styles.sectionTitle}>Quick Actions</h2>
+      <section className={styles.actionsGrid} aria-label="Quick Actions">
+        {QUICK_ACTIONS.map((action) => (
           <Link
-            to="/rent-bike"
-            className={`${styles.actionCard} ${styles.primaryAction}`}
+            key={action.to}
+            to={action.to}
+            className={cx(styles.actionCard, action.primary && styles.primaryAction)}
           >
-            <div className={styles.icon} aria-hidden="true">🚲</div>
-            <div className={styles.actionInfo}>
-              <h3>Rent a Bike</h3>
-              <p>Find and book an e-bike near you</p>
+            <div className={styles.icon} aria-hidden="true">
+              {action.icon}
             </div>
-            <div className={styles.arrow} aria-hidden="true">➜</div>
-          </Link>
-
-          <Link to="/profile" className={styles.actionCard}>
-            <div className={styles.icon} aria-hidden="true">👤</div>
             <div className={styles.actionInfo}>
-              <h3>My Profile</h3>
-              <p>Update your personal details</p>
+              <h3>{action.title}</h3>
+              <p>{action.text}</p>
             </div>
-            <div className={styles.arrow} aria-hidden="true">➜</div>
-          </Link>
-
-          <Link to="/my-rentals" className={styles.actionCard}>
-            <div className={styles.icon} aria-hidden="true">📜</div>
-            <div className={styles.actionInfo}>
-              <h3>Ride History</h3>
-              <p>View your ride history</p>
+            <div className={styles.arrow} aria-hidden="true">
+              ➜
             </div>
-            <div className={styles.arrow} aria-hidden="true">➜</div>
           </Link>
-        </section>
-      </main>
+        ))}
+      </section>
     </PageTransition>
   );
 };
