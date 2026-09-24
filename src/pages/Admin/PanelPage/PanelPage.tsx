@@ -132,16 +132,22 @@ const PanelPage = () => {
             <div className={styles.value}>
               {formatCurrency(dashboard.kpi.revenue)}
             </div>
+            <div className={styles.subtext}>Confirmed and completed bookings</div>
           </div>
+          {/*
+            Both figures are a snapshot of today, not a period average: the API
+            counts confirmed bookings whose dates span today, and divides that
+            by the bikes currently in service.
+          */}
           <div className={styles.card}>
-            <h3>Occupancy Rate</h3>
+            <h3>Fleet in Use</h3>
             <div className={styles.value}>{dashboard.kpi.occupancy}%</div>
-            <div className={styles.subtext}>Monthly Average</div>
+            <div className={styles.subtext}>Of in-service bikes, right now</div>
           </div>
           <div className={styles.card}>
-            <h3>Active Rentals</h3>
+            <h3>Rides in Progress</h3>
             <div className={styles.value}>{dashboard.kpi.activeRentals}</div>
-            <div className={styles.subtext}>Current live bookings</div>
+            <div className={styles.subtext}>Bikes out with customers today</div>
           </div>
         </section>
 
