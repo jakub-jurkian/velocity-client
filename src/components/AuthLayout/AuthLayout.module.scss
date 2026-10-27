@@ -27,6 +27,20 @@
   }
 }
 
+// Pinned to the corner so the card stays centred.
+.back {
+  position: absolute;
+  top: 1.5rem;
+  left: 1.5rem;
+  z-index: 1; // Above the glow
+  margin-bottom: 0;
+
+  @media (max-width: v.$mobile) {
+    top: 1rem;
+    left: 1rem;
+  }
+}
+
 .card {
   position: relative; // Above the glow
   width: 100%;

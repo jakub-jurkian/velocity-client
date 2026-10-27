@@ -1,0 +1,16 @@
+@use "styles/theme" as v;
+
+.back {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-bottom: 1.5rem;
+  color: v.$color-text-muted;
+  font-size: 0.95rem;
+  font-weight: 500;
+  transition: v.$transition-base;
+
+  &:hover {
+    color: v.$color-primary;
+  }
+}

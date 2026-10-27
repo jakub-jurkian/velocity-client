@@ -9,6 +9,7 @@ import { downloadReservationsCSV } from "../../utils/exportHelper";
 import { formatCurrency, formatDate, humanize } from "../../utils/format";
 import { cx } from "../../utils/cx";
 import PageTransition from "../../components/common/PageTransition";
+import BackLink from "../../components/ui/BackLink";
 import Button from "../../components/ui/Button";
 import Callout from "../../components/ui/Callout";
 import ConfirmDialog from "../../components/ui/ConfirmDialog";
@@ -89,6 +90,7 @@ const RentalsPage = () => {
   if (meta.totalElements === 0) {
     return (
       <PageTransition>
+        <BackLink />
         <EmptyState
           icon="📜"
           title="No history yet"
@@ -102,6 +104,7 @@ const RentalsPage = () => {
 
   return (
     <PageTransition>
+      <BackLink />
       <PageHeader
         title="Ride History"
         subtitle="Your past and upcoming journeys."
