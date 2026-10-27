@@ -1,5 +1,6 @@
 import { useId, type ReactNode } from "react";
 import PageTransition from "../common/PageTransition";
+import BackLink from "../ui/BackLink";
 import Logo from "../ui/Logo";
 import { cx } from "../../utils/cx";
 import styles from "./AuthLayout.module.scss";
@@ -23,6 +24,8 @@ const AuthLayout = ({ title, subtitle, footer, children, wide = false, glow = "p
     <PageTransition>
       <main className={styles.container}>
         <div className={cx(styles.glow, styles[glow])} aria-hidden="true" />
+        {/* Home, not history: log in and register link to each other. */}
+        <BackLink to="/" label="Home" className={styles.back} />
 
         <section className={cx(styles.card, wide && styles.wide)} aria-labelledby={titleId}>
           <header className={styles.header}>

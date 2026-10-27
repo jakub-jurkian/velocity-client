@@ -10,6 +10,7 @@ import { CITY_LABELS, CITY_OPTIONS } from "../../data/cities";
 import type { User } from "../../types/User";
 import PageTransition from "../../components/common/PageTransition";
 import Avatar from "../../components/ui/Avatar";
+import BackLink from "../../components/ui/BackLink";
 import Badge from "../../components/ui/Badge";
 import Button from "../../components/ui/Button";
 import { Form, ReadOnlyField, SelectField, TextField } from "../../components/ui/Form";
@@ -77,6 +78,7 @@ const ProfilePage = () => {
 
   return (
     <PageTransition>
+      <BackLink />
       <div className={styles.profileCard}>
         <aside className={styles.sidebar}>
           <Avatar id={user.id} name={user.fullName} size={120} className={styles.avatar} />
